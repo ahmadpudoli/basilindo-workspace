@@ -1,0 +1,26 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "basilindo/core",
+    "description": "Shared domain models, migrations and general libraries for Legospay applications.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^4.0",
+        "illuminate/database": "^12.0",
+        "illuminate/support": "^12.0",
+        "spatie/laravel-permission": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Core\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Core\\CoreServiceProvider"
+            ]
+        }
+    }
+}

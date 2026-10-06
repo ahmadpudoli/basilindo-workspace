@@ -1,0 +1,17 @@
+# Abaikan folder vendor dan node_modules di semua subfolder aplikasi
+**/vendor/
+**/node_modules/
+
+# Abaikan file environment/konfigurasi rahasia di semua subfolder
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Abaikan folder storage bawaan Laravel (kecuali framework mau di-keep)
+**/storage/*.key
+**/storage/framework/cache/data/*
+**/storage/framework/sessions/*
+**/storage/framework/views/*
+
+# Abaikan file logs
+**/*.log
