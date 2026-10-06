@@ -13,5 +13,8 @@
 **/storage/framework/sessions/*
 **/storage/framework/views/*
 
+# Abaikan docs
+/docs
+
 # Abaikan file logs
 **/*.log
