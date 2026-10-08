@@ -2,18 +2,16 @@
 
 namespace App\Filament\Resources\Users;
 
-use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\RelationManagers\ProjectsRelationManager;
 use App\Filament\Resources\Users\RelationManagers\CompaniesRelationManager;
-use App\Models\User;
+use Core\Models\User;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,7 +22,6 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
@@ -38,29 +35,37 @@ class UserResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('email')
-                    ->email()
-                    ->required()
-                    ->unique(
-                        ignoreRecord: true
-                    )
-                    ->maxLength(255),
-                DateTimePicker::make('email_verified_at'),
+                TextInput::make('name')->label('Nama')->required()->maxLength(255),
+                TextInput::make('email')->label('Email')->email()->required()->unique(ignoreRecord: true)->maxLength(255),
                 TextInput::make('password')
+                    ->label('Password')
                     ->password()
-                    ->dehydrateStateUsing(fn ($state) => ! empty($state) ? Hash::make($state) : null
-                    )
-                    ->dehydrated(fn ($state) => ! empty($state))
-                    ->required(fn (string $operation): bool => in_array($operation, ['create', 'attach.createOption']))
-                    ->maxLength(255),
+                    ->required(fn (string $operation): bool => $operation === 'create')
+                    ->dehydrated(fn (?string $state): bool => filled($state))
+                    ->minLength(8)
+                    ->revealable(),
                 Select::make('roles')
-                    ->relationship('roles', 'name')
+                    ->label('Role aplikasi')
+                    ->relationship(
+                        'roles',
+                        'name',
+                        modifyQueryUsing: function (Builder $query, Select $component): Builder {
+                            if (! $component->getRecord()?->isProtectedSystemAccount()) {
+                                $query->where('name', '!=', 'super_admin');
+                            }
+
+                            return $query;
+                        },
+                    )
                     ->multiple()
                     ->preload()
-                    ->searchable(),
+                    ->searchable()
+                    ->disabled(fn (Select $component): bool => $component->getRecord()?->isProtectedSystemAccount() ?? false)
+                    ->dehydrated(fn (Select $component): bool => ! ($component->getRecord()?->isProtectedSystemAccount() ?? false))
+                    ->hintIcon(
+                        'heroicon-m-information-circle',
+                        'Menentukan hak akses global user di aplikasi, seperti menu dan aksi administrasi yang dapat digunakan. Role ini berlaku lintas perusahaan.',
+                    ),
             ]);
     }
 
@@ -134,11 +139,19 @@ class UserResource extends Resource
                         ->icon('heroicon-o-shield-check')
                         ->form([
                             Select::make('roles')
-                                ->label('Roles')
-                                ->relationship('roles', 'name')
+                                ->label('Role aplikasi')
+                                ->relationship(
+                                    'roles',
+                                    'name',
+                                    modifyQueryUsing: fn (Builder $query): Builder => $query->where('name', '!=', 'super_admin'),
+                                )
                                 ->multiple()
                                 ->preload()
                                 ->searchable()
+                                ->hintIcon(
+                                    'heroicon-m-information-circle',
+                                    'Role aplikasi berlaku secara global. Scope perusahaan tetap diatur pada daftar perusahaan user.',
+                                )
                                 ->required(),
 
                             Radio::make('role_mode')
@@ -176,13 +189,18 @@ class UserResource extends Resource
     {
         return [
             'index' => ListUsers::route('/'),
-            'create' => CreateUser::route('/create'),
+            'create' => \App\Filament\Resources\Users\Pages\CreateUser::route('/create'),
             'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery();
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        return (string) static::getEloquentQuery()->count();
     }
 }

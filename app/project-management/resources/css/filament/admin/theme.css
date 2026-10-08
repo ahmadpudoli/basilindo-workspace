@@ -2,3 +2,36 @@
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
+
+.fi-body {
+    background-color: #faf9ff;
+    background-image:
+        radial-gradient(circle at 100% 0%, rgb(224 231 255 / 85%) 0, rgb(224 231 255 / 0%) 36rem),
+        radial-gradient(circle at 0% 100%, rgb(254 215 170 / 55%) 0, rgb(254 215 170 / 0%) 30rem),
+        linear-gradient(135deg, #faf9ff 0%, #fffaf5 100%);
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.fi-main-ctn { background: transparent; }
+
+.fi-sidebar {
+    background: rgb(255 255 255 / 72%) !important;
+    border-inline-end: 1px solid rgb(99 102 241 / 18%);
+    box-shadow: 8px 0 24px rgb(79 70 229 / 6%);
+}
+
+.dark .fi-body {
+    background-color: #17152b;
+    background-image:
+        radial-gradient(circle at 100% 0%, rgb(8 145 178 / 35%) 0, rgb(8 145 178 / 0%) 38rem),
+        radial-gradient(circle at 0% 100%, rgb(37 99 235 / 28%) 0, rgb(37 99 235 / 0%) 32rem),
+        linear-gradient(135deg, #17152b 0%, #241b3f 100%);
+}
+
+.dark .fi-sidebar {
+    background: transparent !important;
+    border-inline-end-color: rgb(196 181 253 / 35%);
+}

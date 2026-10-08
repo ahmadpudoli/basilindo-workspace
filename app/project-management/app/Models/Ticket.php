@@ -13,6 +13,8 @@ class Ticket extends Model
 {
     use HasFactory;
 
+    protected $connection = 'pgsql';
+
     protected $fillable = [
         'project_id',
         'ticket_status_id',

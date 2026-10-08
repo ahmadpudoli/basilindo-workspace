@@ -1,22 +1,24 @@
 <?php
 
 use App\Models\ExternalIdentity;
-use App\Models\User;
+use Core\Models\User;
+use Core\Models\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-it('redirects the File Organizer login page to company SSO', function () {
+it('keeps the Workspace login page local even when optional SSO is configured', function () {
     config()->set([
         'sso.enabled' => true,
         'sso.issuer_url' => 'http://127.0.0.1:8100',
         'sso.client_id' => 'file-organizer-test',
-        'sso.redirect_uri' => 'http://localhost:8000/auth/sso/callback',
+        'sso.redirect_uri' => 'http://localhost:8001/auth/sso/callback',
     ]);
 
     $response = $this->get('/admin/login');
-    $response->assertRedirect(route('auth.sso'));
+    $response->assertOk();
 
     $providerResponse = $this->get('/auth/sso');
     $providerResponse->assertRedirect();
@@ -33,6 +35,7 @@ it('starts SSO with a PKCE challenge', function () {
     $response->assertRedirect();
     expect($query['code_challenge_method'])->toBe('S256')
         ->and($query['code_challenge'])->toHaveLength(43)
+        ->and($query)->not->toHaveKey('prompt')
         ->and(session('sso_code_verifier'))->toHaveLength(96);
 });
 
@@ -42,7 +45,7 @@ it('links a new local account to a project-sso subject after callback validation
         'sso.issuer_url' => 'http://127.0.0.1:8100',
         'sso.client_id' => 'file-organizer-test',
         'sso.client_secret' => 'test-secret',
-        'sso.redirect_uri' => 'http://localhost:8000/auth/sso/callback',
+        'sso.redirect_uri' => 'http://localhost:8001/auth/sso/callback',
     ]);
 
     Http::fake([
@@ -75,10 +78,12 @@ it('links the protected local recovery account only when explicitly enabled', fu
         'sso.issuer_url' => 'http://127.0.0.1:8100',
         'sso.client_id' => 'file-organizer-test',
         'sso.client_secret' => 'test-secret',
-        'sso.redirect_uri' => 'http://localhost:8000/auth/sso/callback',
+        'sso.redirect_uri' => 'http://localhost:8001/auth/sso/callback',
     ]);
 
-    $admin = User::factory()->create(['email' => 'admin@example.com']);
+    $adminEmail = 'admin-recovery-'.Str::random(8).'@example.com';
+    $admin = User::factory()->create(['email' => $adminEmail, 'is_system_account' => true]);
+    Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
     $admin->forceFill(['is_system_account' => true])->save();
 
     Http::fake([
@@ -86,7 +91,7 @@ it('links the protected local recovery account only when explicitly enabled', fu
         'http://127.0.0.1:8100/oidc/userinfo' => Http::response([
             'sub' => 'admin-subject',
             'name' => 'Administrator',
-            'email' => 'admin@example.com',
+            'email' => $adminEmail,
             'email_verified' => true,
             'applications' => ['current' => ['allowed' => true, 'roles' => ['admin']], 'available' => []],
         ], 200),

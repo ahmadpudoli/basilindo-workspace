@@ -5,7 +5,7 @@ namespace App\Filament\Resources\Companies;
 use App\Filament\Resources\Companies\Pages\CreateCompany;
 use App\Filament\Resources\Companies\Pages\EditCompany;
 use App\Filament\Resources\Companies\Pages\ListCompanies;
-use App\Models\Company;
+use Core\Models\Company;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;

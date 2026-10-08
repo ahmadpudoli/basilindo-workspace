@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Models;
+
+use Core\Models\Company;
+use Illuminate\Database\Eloquent\Model;
+
+class DocumentType extends Model
+{
+    protected $connection = 'documents';
+    protected $table = 'document_types';
+    protected $fillable = ['company_id', 'name', 'code', 'required_fields', 'is_active'];
+
+    protected function casts(): array
+    {
+        return ['required_fields' => 'array', 'is_active' => 'boolean'];
+    }
+
+    public function company() { return $this->belongsTo(Company::class); }
+    public function documents() { return $this->hasMany(Document::class); }
+}

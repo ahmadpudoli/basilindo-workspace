@@ -8,14 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('document_parties', function (Blueprint $table): void {
+        $prefix = config('database.connections.pgsql.prefix', '');
+
+        Schema::create('document_parties', function (Blueprint $table) use ($prefix): void {
             $table->id();
             $table->uuid('document_id');
             $table->unsignedBigInteger('company_id');
             $table->string('role');
             $table->timestamps();
             $table->foreign('document_id')->references('id')->on('documents')->cascadeOnDelete();
-            $table->unique(['document_id', 'company_id', 'role'], 'fo_document_parties_unique');
+            $table->unique(['document_id', 'company_id', 'role'], $prefix.'document_parties_unique');
             $table->index(['company_id', 'role']);
         });
     }

@@ -46,6 +46,50 @@
             @endforeach
         </section>
 
+        <section class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-white/5">
+            <div class="mb-4 flex items-center justify-between">
+                <div>
+                    <h2 class="font-semibold text-slate-900 dark:text-white">Workspace lintas modul</h2>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Ringkasan data CRM dan Project Management dalam scope Anda.</p>
+                </div>
+                <span class="rounded-full bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700 dark:bg-cyan-400/10 dark:text-cyan-300">Workspace</span>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <a href="{{ route('filament.admin.resources.crm-accounts.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-cyan-300 hover:bg-cyan-50/40 dark:border-white/10 dark:hover:bg-cyan-400/5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">CRM Accounts</p>
+                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($data['workspaceStats']['accounts']) }}</p>
+                </a>
+                <a href="{{ route('filament.admin.resources.crm-opportunities.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-cyan-300 hover:bg-cyan-50/40 dark:border-white/10 dark:hover:bg-cyan-400/5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Opportunity terbuka</p>
+                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($data['workspaceStats']['opportunities']) }}</p>
+                </a>
+                <a href="{{ route('filament.admin.resources.tickets.index') }}" class="rounded-xl border border-slate-200 p-4 transition hover:border-cyan-300 hover:bg-cyan-50/40 dark:border-white/10 dark:hover:bg-cyan-400/5">
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Ticket terbuka</p>
+                    <p class="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{{ number_format($data['workspaceStats']['tickets']) }}</p>
+                </a>
+            </div>
+            <div class="mt-4 border-t border-slate-100 pt-4 dark:border-white/10">
+                <div class="mb-3 flex items-center justify-between">
+                    <p class="text-sm font-semibold text-slate-800 dark:text-slate-100">Pipeline opportunity</p>
+                    <a href="{{ route('filament.admin.resources.crm-opportunities.index') }}" class="text-xs font-semibold text-cyan-700 hover:text-cyan-600 dark:text-cyan-300">Kelola pipeline</a>
+                </div>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-6">
+                    @foreach ([
+                        ['key' => 'qualification', 'label' => 'Qualification'],
+                        ['key' => 'proposal', 'label' => 'Proposal'],
+                        ['key' => 'negotiation', 'label' => 'Negosiasi'],
+                        ['key' => 'won', 'label' => 'Won'],
+                        ['key' => 'lost', 'label' => 'Lost'],
+                    ] as $stage)
+                        <div class="rounded-lg bg-slate-50 px-3 py-2 dark:bg-white/5">
+                            <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">{{ $stage['label'] }}</p>
+                            <p class="mt-1 text-lg font-bold text-slate-900 dark:text-white">{{ number_format($data['workspaceStats']['pipeline'][$stage['key']] ?? 0) }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+
         <div class="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
             <section class="rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
                 <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-white/10">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Core\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 class AuditEvent extends Model

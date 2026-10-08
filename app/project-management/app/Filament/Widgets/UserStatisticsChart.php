@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\User;
 use Filament\Widgets\ChartWidget;
 use BezhanSalleh\FilamentShield\Traits\HasWidgetShield;
+use Illuminate\Support\Facades\DB;
 
 class UserStatisticsChart extends ChartWidget
 {
@@ -29,16 +30,19 @@ class UserStatisticsChart extends ChartWidget
             ->when(!auth()->user()->hasRole('super_admin'), function ($query) {
                 $query->where('id', auth()->id());
             })
-            ->withCount([
-                'projects as total_projects',
-                'assignedTickets as total_assigned_tickets'
-            ])
+            ->withCount('projects as total_projects')
             ->orderBy('name')
             ->get();
+
+        $assignedTickets = DB::connection('pgsql')
+            ->table('ticket_users')
+            ->selectRaw('user_id, count(*) as total')
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
         
         $labels = $users->pluck('name')->toArray();
         $projectsData = $users->pluck('total_projects')->toArray();
-        $ticketsData = $users->pluck('total_assigned_tickets')->toArray();
+        $ticketsData = $users->map(fn (User $user) => (int) ($assignedTickets[$user->getKey()] ?? 0))->all();
         
         return [
             'datasets' => [

@@ -19,9 +19,14 @@ class CoreServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations/shared');
         }
 
-        $applicationMigrationSet = env('APP_MIGRATION_SET');
-        if (in_array($applicationMigrationSet, ['file-organizer', 'project-management'], true)) {
-            $this->loadMigrationsFrom(__DIR__.'/../database/migrations/'.$applicationMigrationSet);
+        $applicationMigrationSet = env('APP_MIGRATION_SET', 'workspace');
+        $migrationDirectories = [
+            'workspace' => 'file-organizer',
+            'file-organizer' => 'file-organizer',
+            'project-management' => 'project-management',
+        ];
+        if (isset($migrationDirectories[$applicationMigrationSet])) {
+            $this->loadMigrationsFrom(__DIR__.'/../database/migrations/'.$migrationDirectories[$applicationMigrationSet]);
         }
 
         foreach ([

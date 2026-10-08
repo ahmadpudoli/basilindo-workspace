@@ -2,24 +2,23 @@
 
 ## Prinsip
 
-File Organizer dan Project Management adalah dua aplikasi Laravel + Filament yang berbagi `core/` sebagai source code untuk domain general. Domain tetap dipisahkan melalui service, policy, job, dan event agar kelak dapat diekstrak atau diintegrasikan dengan aplikasi grup perusahaan tanpa rewrite besar. `project-sso/` adalah sistem terpisah dan bukan bagian dari shared core.
+`app/workspace` menjadi Basilindo Workspace modular monolith yang memuat Core/Identity, Company, CRM, Project Management, dan Document Management. Domain dipisahkan melalui service, policy, job, event, dan permission, tetapi seluruh modul berjalan dalam satu aplikasi Laravel Filament, satu session, satu database, dan satu deployment pada `http://localhost:8080` untuk development.
 
 ## Komponen
 
 ```text
 Browser
   -> Nginx/TLS
-  -> Laravel + Filament 4
-       -> PostgreSQL terpusat `db_file_organize` (tabel `core_`, `fo_`, dan `pm_`)
+  -> app/workspace: Laravel + Filament 4
+       -> PostgreSQL terpusat `db_basilindo_workspace` (tabel shared `core_` dan tabel Workspace `ws_`)
        -> Redis       (cache, queue, lock, rate limit)
        -> MinIO/S3    (binary file, preview, bundle ZIP)
-       -> project-sso/ (internal OIDC Identity Provider)
 ```
 
-- **project-sso/**: central identity provider internal untuk login dan federation beberapa aplikasi perusahaan.
-- **core/**: shared code untuk model general, migration, factory, dan library yang dipakai File Organizer serta Project Management. Core bukan UI dan bukan identity provider.
-- **Laravel/Filament**: UI admin, policies, validation, orchestration, dan domain services; File Organizer tidak menjadi identity provider.
-- **PostgreSQL**: source of truth terpusat untuk metadata dan status bisnis. Binary tidak disimpan di database. Koneksi default setiap aplikasi memakai prefix domain (`fo_`/`pm_`), sedangkan model shared memakai koneksi `core` dengan prefix `core_`.
+- **Identity**: Core/Identity mengelola user, password lokal, role, permission, company membership, session, dan audit login. Tidak ada SSO pada runtime.
+- **core/**: shared code untuk model general, migration, factory, dan library. Core bukan aplikasi terpisah.
+- **Laravel/Filament**: UI admin, local authentication, policies, validation, orchestration, dan domain services untuk seluruh modul Workspace.
+- **PostgreSQL**: source of truth terpusat untuk metadata dan status bisnis. Binary tidak disimpan di database. Modul Workspace memakai prefix `ws_`, sedangkan model shared memakai koneksi `core` dengan prefix `core_`.
 - **Redis**: cache hasil yang aman, queue backend, distributed lock, dan throttling. Redis bukan source of truth.
 - **MinIO**: bucket private dengan object key yang tidak berasal langsung dari nama file pengguna.
 - **Queue worker**: OCR, checksum, preview, matching berat, dan bundling berjalan asynchronous.
@@ -32,10 +31,10 @@ Browser
 - `Core\\Models\\Company`: master seluruh entitas perusahaan, baik Group/anak perusahaan internal maupun client/vendor eksternal.
 - `Core\\Models\\ProjectParty`: hubungan perusahaan dengan project berdasarkan role `client`, `vendor`, atau `partner`.
 - `Core\\Models\\Project`: project lintas aplikasi; fitur ticket atau dokumen tetap dimiliki aplikasi pemakainya.
-- `Core\\Models\\Setting`, `Roles`, dan `ExternalIdentity`: fungsi general aplikasi.
+- `Core\\Models\\Setting` dan `Roles`: fungsi general aplikasi.
 - Seluruh file migration aktif berada di `core/database/migrations`, dikelompokkan menjadi `shared/`, `file-organizer/`, dan `project-management/`.
 - Ownership logic tetap mengikuti domain, tetapi `core` menjadi satu-satunya source of truth untuk schema database.
-- Migration `shared/` dijalankan oleh File Organizer sebagai owner core; masing-masing set aplikasi dijalankan oleh aplikasi pemiliknya melalui path di dalam `core`.
+- Migration `shared/` dan migration Workspace dijalankan oleh `app/workspace` sebagai owner tunggal database.
 
 Ownership perubahan data harus mengikuti pemilik domain. Aplikasi lain menyimpan reference ID dan memakai service/API/event ketika boundary dipisahkan; tidak boleh membuat salinan model yang sama dengan aturan bisnis berbeda.
 
@@ -73,4 +72,4 @@ Search selalu membangun authorization scope lebih dahulu, kemudian filter metada
 
 ## Deployment dan operasional
 
-Development memakai Docker Compose: app, nginx, PostgreSQL, Redis, dan MinIO. `project-sso/` memiliki deployment dan database/secret lifecycle yang terpisah. Production wajib memisahkan secret, memakai TLS, backup PostgreSQL, lifecycle/backup MinIO, monitoring queue, log aggregation, dan health checks. Jangan menggunakan default credential atau exposed MinIO console tanpa kontrol jaringan.
+Development memakai Docker Compose: satu Workspace app, nginx, PostgreSQL, Redis, dan MinIO. Production wajib memisahkan secret, memakai TLS, backup PostgreSQL, lifecycle/backup MinIO, monitoring queue, log aggregation, dan health checks. Jangan menggunakan default credential atau exposed MinIO console tanpa kontrol jaringan.

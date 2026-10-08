@@ -69,6 +69,11 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->hasMany(ExternalIdentity::class);
     }
 
+    public function applicationAccess(): HasMany
+    {
+        return $this->hasMany(ApplicationAccess::class);
+    }
+
     public function tickets(): HasMany
     {
         return $this->hasMany(config('core.models.ticket'));

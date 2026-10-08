@@ -1,0 +1,85 @@
+name: Basilindo Workspace CI
+
+on:
+  push:
+    paths:
+      - 'app/workspace/**'
+      - 'core/**'
+      - 'docs/**'
+      - '.github/workflows/workspace-ci.yml'
+  pull_request:
+    paths:
+      - 'app/workspace/**'
+      - 'core/**'
+      - 'docs/**'
+      - '.github/workflows/workspace-ci.yml'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: db_workspace_test
+          POSTGRES_USER: basilindo
+          POSTGRES_PASSWORD: basilindo-test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U basilindo -d db_workspace_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: app/workspace
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql, bcmath, intl, zip, gd
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: db_workspace_test
+          DB_USERNAME: basilindo
+          DB_PASSWORD: basilindo-test
+          DB_TABLE_PREFIX: ws_
+          APP_MIGRATION_SET: workspace
+          CORE_MIGRATIONS_OWNER: true
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan migrate:fresh --seed --force
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: db_workspace_test
+          DB_USERNAME: basilindo
+          DB_PASSWORD: basilindo-test
+          DB_TABLE_PREFIX: ws_
+        run: php artisan test
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build

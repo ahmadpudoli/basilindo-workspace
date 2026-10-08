@@ -2,7 +2,7 @@
 
 ## Fase 0 — Discovery dan baseline
 
-Requirement, role matrix, document taxonomy, data dictionary, Docker stack, setup docs, dan kontrak integrasi dengan `app/project-sso/`.
+Requirement, role matrix, document taxonomy, data dictionary, Docker stack, dan setup docs untuk satu Workspace modular monolith.
 
 ## Fase 1 — MVP operasional
 
@@ -22,6 +22,6 @@ OCR, text extraction, duplicate detection, configurable matching rules, import/m
 
 ## Fase 5 — Group readiness
 
-Integrasi production dengan `project-sso/`, company isolation review, centralized audit/observability, retention/legal hold, backup/restore drill, dan onboarding aplikasi grup lain sebagai OIDC client.
+Company isolation review, centralized audit/observability, retention/legal hold, backup/restore drill, dan adapter OIDC opsional untuk integrasi eksternal.
 
 Setiap fase harus memiliki acceptance criteria dan tidak boleh memaksa fitur fase berikutnya masuk ke MVP tanpa keputusan produk.

@@ -5,9 +5,8 @@
 ### Pemilik data
 
 - `core/`: users, companies, vendors, projects, project membership, external identities, dan settings general.
-- `file-organizer/`: document types, documents, document versions, relations, verification, bundles, dan audit event dokumen.
-- `project-management/`: tickets, epics, ticket status/priority, notes, external access, notifications, dan workflow project management.
-- `project-sso/`: issuer OIDC, client registration, subject, consent/session, dan entitlement SSO.
+- `app/file-organizer/` Workspace: Core/Identity, Company, CRM, Project Management, dan Document Management dalam satu modular monolith.
+- `project-sso/`: adapter OIDC opsional/future federation; bukan bagian dari runtime domain utama Workspace.
 
 - `companies`: satu-satunya master seluruh entitas legal/bisnis; mencakup Group Basilindo, perusahaan internal yang berada di bawah Basilindo, serta client/vendor/partner eksternal. `classification` membedakan `internal` dan `external`, sedangkan `roles` menyimpan peran bisnis (`operating_company`, `client`, `vendor`, `partner`). Tidak ada master vendor terpisah untuk data baru.
 - `parent_company_id`: hierarki Group Basilindo dan anak perusahaan.
@@ -24,6 +23,12 @@
 - `verification_items`: hasil rule, discrepancy, evidence, dan keputusan reviewer.
 - `bundles`: snapshot filter/IDs, status job, object key, expiry, dan requester.
 - `audit_events`: actor, action, subject, scope, request ID, metadata aman, timestamp.
+- `crm_accounts`: extension CRM untuk company, status prospect/customer, segment, owner, dan estimated value.
+- `crm_contacts`: contact person eksternal milik account; bukan user login workspace.
+- `crm_leads`: lead dengan source, status, owner, dan optional account.
+- `crm_opportunities`: pipeline opportunity milik account yang dapat menghasilkan project.
+- `crm_activities`: call, meeting, email, task, atau note dengan due date dan completion state.
+- `tickets`: ticket/task milik project dengan status, priority, assignee, dan due date.
 
 ## Aturan data
 
@@ -33,4 +38,7 @@
 - Tanggal dokumen dipisahkan dari `created_at`.
 - Duplicate detection minimum memakai company + document type + normalized reference number + checksum, dengan pengecualian yang terdokumentasi.
 - Penghapusan memakai soft delete/quarantine; hard delete hanya lewat retention job yang terkontrol.
+- Upload dokumen selalu masuk `quarantine`; hanya service lifecycle terotorisasi yang dapat mengubahnya menjadi `ready` atau `rejected`. Penolakan wajib memiliki alasan dan seluruh perubahan dicatat sebagai audit event.
+- `DocumentType.required_fields` mendefinisikan metadata wajib dan divalidasi pada boundary upload. Reference number dinormalisasi untuk pencarian/matching dan tag disimpan dalam bentuk lowercase unik.
+- `SavedSearch` dimiliki user dan dibatasi ke company scope; filter disimpan sebagai JSON agar dapat diperluas tanpa mengubah skema dokumen.
 - Semua relation dan verification wajib menyimpan actor serta timestamps.

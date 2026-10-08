@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Core\Models\Company;
 use Illuminate\Database\Eloquent\Model;
 
 class DocumentType extends Model

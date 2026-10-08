@@ -4,7 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\ExternalIdentity;
-use App\Models\User;
+use App\Services\Audit\AuditLogger;
+use Core\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Http\Client\RequestException;
 use Spatie\Permission\Models\Role;
 use RuntimeException;
 
@@ -25,7 +27,17 @@ class SsoController extends Controller
         $nonce = Str::random(64);
         $codeVerifier = Str::random(96);
         $codeChallenge = rtrim(strtr(base64_encode(hash('sha256', $codeVerifier, true)), '+/', '-_'), '=');
-        session(['sso_state' => $state, 'sso_nonce' => $nonce, 'sso_code_verifier' => $codeVerifier]);
+        session([
+            'sso_state' => $state,
+            'sso_nonce' => $nonce,
+            'sso_code_verifier' => $codeVerifier,
+            "sso_transactions.{$state}" => [
+                'nonce' => $nonce,
+                'code_verifier' => $codeVerifier,
+                'redirect_uri' => config('sso.redirect_uri'),
+                'created_at' => now()->timestamp,
+            ],
+        ]);
 
         $query = http_build_query([
             'client_id' => config('sso.client_id'),
@@ -45,18 +57,46 @@ class SsoController extends Controller
     {
         abort_unless(config('sso.enabled'), 404);
 
-        if (! hash_equals((string) session('sso_state'), (string) $request->string('state'))) {
+        $state = $request->string('state')->toString();
+        $transaction = session("sso_transactions.{$state}");
+
+        // Keep compatibility with an in-flight login started before the
+        // per-state transaction store was introduced.
+        if (! is_array($transaction) && hash_equals((string) session('sso_state'), $state)) {
+            $transaction = [
+                'nonce' => session('sso_nonce'),
+                'code_verifier' => session('sso_code_verifier'),
+                'redirect_uri' => config('sso.redirect_uri'),
+            ];
+        }
+
+        if (! is_array($transaction)) {
             abort(419, 'SSO state mismatch.');
         }
 
-        $tokenResponse = Http::asForm()->post(rtrim(config('sso.issuer_url'), '/').'/oauth/token', [
-            'grant_type' => 'authorization_code',
-            'client_id' => config('sso.client_id'),
-            'client_secret' => config('sso.client_secret'),
-            'redirect_uri' => config('sso.redirect_uri'),
-            'code' => $request->string('code')->toString(),
-            'code_verifier' => (string) session('sso_code_verifier'),
-        ])->throw()->json();
+        try {
+            $tokenResponse = Http::asForm()->post(rtrim(config('sso.issuer_url'), '/').'/oauth/token', [
+                'grant_type' => 'authorization_code',
+                'client_id' => config('sso.client_id'),
+                'client_secret' => config('sso.client_secret'),
+                'redirect_uri' => $transaction['redirect_uri'] ?? config('sso.redirect_uri'),
+                'code' => $request->string('code')->toString(),
+                'code_verifier' => (string) ($transaction['code_verifier'] ?? ''),
+            ])->throw()->json();
+        } catch (RequestException $exception) {
+            session()->forget("sso_transactions.{$state}");
+
+            Log::warning('SSO authorization code exchange failed', [
+                'state_present' => $state !== '',
+                'status' => $exception->response?->status(),
+                'error' => $exception->response?->json('error'),
+                'error_description' => $exception->response?->json('error_description'),
+            ]);
+
+            return redirect()
+                ->route('auth.sso')
+                ->withErrors(['sso' => 'Sesi login SSO kedaluwarsa atau sudah digunakan. Silakan coba login kembali.']);
+        }
 
         $claims = Http::withToken($tokenResponse['access_token'])->get(rtrim(config('sso.issuer_url'), '/').'/oidc/userinfo')->throw()->json();
         $issuer = rtrim(config('sso.issuer_url'), '/');
@@ -108,8 +148,17 @@ class SsoController extends Controller
         });
 
         Auth::login($user, true);
+        app(AuditLogger::class)->record('auth.sso_login', $user, null, [
+            'identity_linked' => true,
+            'issuer' => $issuer,
+        ]);
         $request->session()->regenerate();
-        $request->session()->forget(['sso_state', 'sso_nonce', 'sso_code_verifier']);
+        $request->session()->forget([
+            'sso_state',
+            'sso_nonce',
+            'sso_code_verifier',
+            "sso_transactions.{$state}",
+        ]);
 
         return redirect()->intended('/admin');
     }
@@ -119,13 +168,23 @@ class SsoController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect()->away(rtrim(config('sso.issuer_url'), '/').'/oidc/logout?'.http_build_query([
-            'post_logout_redirect_uri' => url('/'),
-        ]));
+
+        return redirect('/');
     }
 
     private function syncMappedRoles(User $user, array $claims): void
     {
+        // The system recovery account owns the single super_admin role. Never
+        // run syncRoles() for it: a provider claim must not replace or remove
+        // its protected role.
+        if ($user->isProtectedSystemAccount()) {
+            if (! $user->hasRole('super_admin')) {
+                $user->assignRole('super_admin');
+            }
+
+            return;
+        }
+
         $groups = array_values(array_filter(array_merge(
             (array) ($claims['groups'] ?? []),
             (array) data_get($claims, 'applications.current.roles', []),
@@ -136,6 +195,7 @@ class SsoController extends Controller
             $groups,
         ))));
         $roles = Role::whereIn('name', $roles)->pluck('name')->all();
+
         if ($roles !== []) {
             $user->syncRoles($roles);
         } else {

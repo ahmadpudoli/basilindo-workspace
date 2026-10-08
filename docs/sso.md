@@ -1,8 +1,11 @@
-# Strategi SSO dan Identity Federation
+# Arsip: Strategi SSO dan Identity Federation
+
+> Deprecated. Dokumen ini adalah catatan historis. Runtime aktif tidak lagi
+> menggunakan SSO; lihat [Identitas Workspace](identity.md) dan ADR-013.
 
 ## Arah yang dipilih
 
-`app/project-sso/` akan menjadi Identity Provider/SSO internal perusahaan. File Organizer di `app/file-organizer/` menjadi OIDC relying party/client. Aplikasi internal lain dapat mendaftarkan client masing-masing ke `app/project-sso/` sehingga karyawan menggunakan identitas yang sama di seluruh aplikasi.
+Runtime utama Basilindo Workspace menggunakan login lokal Laravel/Filament dalam satu aplikasi modular monolith. `app/project-sso/` dipertahankan sebagai adapter/future identity federation, bukan dependency login normal.
 
 OIDC menjadi protokol utama karena cocok untuk aplikasi web internal. SAML hanya dipertimbangkan sebagai integrasi tambahan jika ada kebutuhan legacy atau federation eksternal.
 
@@ -29,6 +32,7 @@ OIDC menjadi protokol utama karena cocok untuk aplikasi web internal. SAML hanya
 - Simpan refresh token hanya bila benar-benar diperlukan; enkripsi atau hindari penyimpanan.
 - Validate issuer, audience, signature, nonce, state, expiry, dan redirect URI.
 - SSO tidak menggantikan authorization lokal. User tetap harus memiliki company membership dan permission.
+- Mapping Workspace juga mencakup `crm_admin`, `crm_member`, `project_admin`, dan `project_member`. Setelah login ulang, user tetap harus memiliki company membership agar menu dan data client dapat diakses sesuai scope.
 - `app/project-sso/` tidak boleh menjadi tempat menyimpan permission domain File Organizer; aplikasi tetap bertanggung jawab atas authorization bisnisnya.
 - Sediakan emergency/admin recovery path yang diaudit dan dibatasi.
 
@@ -41,3 +45,16 @@ ke subject SSO ketika `SSO_ALLOW_SYSTEM_ACCOUNT_LINKING=true` pada environment
 development dan claim email dari SSO sudah terverifikasi. Nilai tersebut harus
 tetap `false` pada production; akun biasa memakai account-linking administratif
 berbasis issuer + subject.
+
+## Application access projection
+
+Database Project SSO dan Workspace tidak dibaca silang. Project SSO menyediakan
+endpoint internal projection yang dilindungi Passport client-credentials dengan
+scope `application:access:read` dan allowlist client. Response sengaja hanya
+memuat subject dan status access tanpa nama, email, atau claims identitas.
+
+File Organizer menyimpan projection lokal pada `core_application_access` dan
+menjalankannya melalui command `sso:sync-application-access`. User lokal dipetakan
+berdasarkan `(issuer, subject)` dari `external_identities`; email bukan kunci
+otorisasi. Access yang hilang dari response ditandai `revoked`, bukan dihapus
+agar audit dan rekonsiliasi tetap tersedia.

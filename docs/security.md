@@ -21,6 +21,8 @@ Risiko utama: kebocoran dokumen melalui URL, user melihat company lain, upload f
 
 Retention bukan hard-code tanpa keputusan bisnis. Sediakan konfigurasi per company/document type, legal hold, expiry notification, dan approval untuk purge. Detail kebijakan harus disetujui pemilik data/finance/legal.
 
+Upload baru masuk status `quarantine` dan tidak dianggap siap digunakan sebelum direlease oleh workflow terotorisasi. `legal_hold` mencegah proses purge retention; executor purge belum diaktifkan sampai kebijakan Finance/Legal disetujui.
+
 ## Security acceptance criteria
 
 Dokumen tidak dapat diakses dengan mengganti ID/URL, user lintas company tidak melihat hasil search, bundle hanya berisi dokumen yang diizinkan saat request, expired link gagal, dan seluruh tindakan sensitif dapat ditelusuri ke actor/request ID.

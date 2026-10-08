@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\Users;
 
-use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
+use App\Filament\Resources\Users\RelationManagers\CompaniesRelationManager;
 use App\Filament\Resources\Users\RelationManagers\ProjectsRelationManager;
 use App\Models\User;
 use Filament\Actions\BulkAction;
@@ -12,10 +12,8 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -23,7 +21,7 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class UserResource extends Resource
 {
@@ -37,29 +35,28 @@ class UserResource extends Resource
     {
         return $schema
             ->components([
-                TextInput::make('name')
-                    ->required()
-                    ->maxLength(255),
-                TextInput::make('email')
-                    ->email()
-                    ->required()
-                    ->unique(
-                        ignoreRecord: true
-                    )
-                    ->maxLength(255),
-                DateTimePicker::make('email_verified_at'),
-                TextInput::make('password')
-                    ->password()
-                    ->dehydrateStateUsing(fn ($state) => ! empty($state) ? Hash::make($state) : null
-                    )
-                    ->dehydrated(fn ($state) => ! empty($state))
-                    ->required(fn (string $operation): bool => in_array($operation, ['create', 'attach.createOption']))
-                    ->maxLength(255),
                 Select::make('roles')
-                    ->relationship('roles', 'name')
+                    ->label('Role aplikasi')
+                    ->relationship(
+                        'roles',
+                        'name',
+                        modifyQueryUsing: function (Builder $query, Select $component): Builder {
+                            if (! $component->getRecord()?->isProtectedSystemAccount()) {
+                                $query->where('name', '!=', 'super_admin');
+                            }
+
+                            return $query;
+                        },
+                    )
                     ->multiple()
                     ->preload()
-                    ->searchable(),
+                    ->searchable()
+                    ->disabled(fn (Select $component): bool => $component->getRecord()?->isProtectedSystemAccount() ?? false)
+                    ->dehydrated(fn (Select $component): bool => ! ($component->getRecord()?->isProtectedSystemAccount() ?? false))
+                    ->hintIcon(
+                        'heroicon-m-information-circle',
+                        'Menentukan hak akses global user di aplikasi, seperti menu dan aksi administrasi yang dapat digunakan. Role ini berlaku lintas perusahaan.',
+                    ),
             ]);
     }
 
@@ -90,15 +87,19 @@ class UserResource extends Resource
 
                 TextColumn::make('assigned_tickets_count')
                     ->label('Assigned Tickets')
-                    ->counts('assignedTickets')
+                    ->getStateUsing(fn (User $record): int => DB::connection('pgsql')
+                        ->table('ticket_users')
+                        ->where('user_id', $record->getKey())
+                        ->count())
                     ->tooltip('Number of tickets assigned to this user')
                     ->sortable(),
 
                 TextColumn::make('created_tickets_count')
                     ->label('Created Tickets')
-                    ->getStateUsing(function (User $record): int {
-                        return $record->createdTickets()->count();
-                    })
+                    ->getStateUsing(fn (User $record): int => DB::connection('pgsql')
+                        ->table('tickets')
+                        ->where('created_by', $record->getKey())
+                        ->count())
                     ->tooltip('Number of tickets created by this user')
                     ->sortable(),
 
@@ -124,11 +125,17 @@ class UserResource extends Resource
 
                 Filter::make('has_assigned_tickets')
                     ->label('Has Assigned Tickets')
-                    ->query(fn (Builder $query): Builder => $query->whereHas('assignedTickets')),
+                    ->query(fn (Builder $query): Builder => $query->whereIn(
+                        $query->getModel()->getTable().'.id',
+                        DB::connection('pgsql')->table('ticket_users')->distinct()->pluck('user_id'),
+                    )),
 
                 Filter::make('has_created_tickets')
                     ->label('Has Created Tickets')
-                    ->query(fn (Builder $query): Builder => $query->whereHas('createdTickets')),
+                    ->query(fn (Builder $query): Builder => $query->whereIn(
+                        $query->getModel()->getTable().'.id',
+                        DB::connection('pgsql')->table('tickets')->distinct()->pluck('created_by'),
+                    )),
 
                 // Filter by role
                 SelectFilter::make('roles')
@@ -155,11 +162,19 @@ class UserResource extends Resource
                         ->icon('heroicon-o-shield-check')
                         ->form([
                             Select::make('roles')
-                                ->label('Roles')
-                                ->relationship('roles', 'name')
+                                ->label('Role aplikasi')
+                                ->relationship(
+                                    'roles',
+                                    'name',
+                                    modifyQueryUsing: fn (Builder $query): Builder => $query->where('name', '!=', 'super_admin'),
+                                )
                                 ->multiple()
                                 ->preload()
                                 ->searchable()
+                                ->hintIcon(
+                                    'heroicon-m-information-circle',
+                                    'Role aplikasi berlaku secara global. Scope perusahaan tetap diatur pada daftar perusahaan user.',
+                                )
                                 ->required(),
 
                             Radio::make('role_mode')
@@ -188,6 +203,7 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [
+            CompaniesRelationManager::class,
             ProjectsRelationManager::class,
         ];
     }
@@ -196,7 +212,6 @@ class UserResource extends Resource
     {
         return [
             'index' => ListUsers::route('/'),
-            'create' => CreateUser::route('/create'),
             'edit' => EditUser::route('/{record}/edit'),
         ];
     }

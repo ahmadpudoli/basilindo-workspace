@@ -31,7 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
-            ->brandName('Basilindo Document Hub')
+            ->brandName('Basilindo Workspace')
             ->colors([
                 'primary' => Color::Cyan,
             ])

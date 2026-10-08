@@ -56,7 +56,7 @@ class DocumentTypeResource extends Resource
         $query = parent::getEloquentQuery();
         if (! auth()->user()?->hasRole('super_admin')) {
             $query->where(function (Builder $q) {
-                $q->whereNull('company_id')->orWhereIn('company_id', auth()->user()?->companies()->select('companies.id') ?? []);
+                $q->whereNull('company_id')->orWhereIn('company_id', auth()->user()?->companies()->select('core_companies.id') ?? []);
             });
         }
         return $query;

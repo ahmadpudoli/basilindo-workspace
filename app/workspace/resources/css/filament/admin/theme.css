@@ -1,0 +1,41 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/* Match the light cyan/blue atmosphere of the Basilindo Access login page. */
+.fi-body {
+    background-color: #f7fafc;
+    background-image:
+        radial-gradient(circle at 100% 0%, rgb(207 250 254 / 90%) 0, rgb(207 250 254 / 0%) 38rem),
+        radial-gradient(circle at 0% 100%, rgb(219 234 254 / 80%) 0, rgb(219 234 254 / 0%) 32rem),
+        linear-gradient(135deg, #f7fafc 0%, #f8fafc 100%);
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.fi-main-ctn {
+    background: transparent;
+}
+
+.fi-sidebar {
+    background: transparent !important;
+    border-inline-end: 2px solid rgb(14 116 144 / 50%);
+    box-shadow: 4px 0 14px rgb(3 105 161 / 8%);
+}
+
+.dark .fi-body {
+    background-color: #0f172a;
+    background-image:
+        radial-gradient(circle at 100% 0%, rgb(8 145 178 / 35%) 0, rgb(8 145 178 / 0%) 38rem),
+        radial-gradient(circle at 0% 100%, rgb(37 99 235 / 28%) 0, rgb(37 99 235 / 0%) 32rem),
+        linear-gradient(135deg, #0f172a 0%, #172554 100%);
+}
+
+.dark .fi-sidebar {
+    background: transparent !important;
+    border-inline-end-color: rgb(125 211 252 / 50%);
+    box-shadow: 4px 0 16px rgb(2 6 23 / 20%);
+}

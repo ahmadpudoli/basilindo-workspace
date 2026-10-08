@@ -47,7 +47,7 @@ Installation
 
 Usage
 
-    Access the Filament admin panel at http://localhost:8000/admin
+    Access the Filament admin panel at http://localhost:8001/admin
     Log in with the Filament user credentials you created
     Create a new project with custom ticket prefix
     Add team members to the project

@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $prefix = config('database.connections.pgsql.prefix', '');
+
         Schema::create('document_types', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('company_id')->nullable();
@@ -60,7 +62,7 @@ return new class extends Migration
             $table->index(['document_id', 'is_current']);
         });
 
-        Schema::create('document_relations', function (Blueprint $table) {
+        Schema::create('document_relations', function (Blueprint $table) use ($prefix) {
             $table->id();
             $table->uuid('source_document_id');
             $table->uuid('target_document_id');
@@ -69,7 +71,7 @@ return new class extends Migration
             $table->timestamps();
             $table->foreign('source_document_id')->references('id')->on('documents')->cascadeOnDelete();
             $table->foreign('target_document_id')->references('id')->on('documents')->cascadeOnDelete();
-            $table->unique(['source_document_id', 'target_document_id', 'relation_type'], 'document_relation_unique');
+            $table->unique(['source_document_id', 'target_document_id', 'relation_type'], $prefix.'document_relation_unique');
         });
 
         Schema::create('verification_cases', function (Blueprint $table) {

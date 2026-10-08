@@ -11,7 +11,7 @@ Bangun aplikasi manajemen dokumen perusahaan untuk membantu tim Finance dan admi
 - mengunduh kumpulan dokumen sebagai bundel ZIP;
 - menyediakan audit trail dan kontrol akses yang dapat dipertanggungjawabkan.
 
-Implementasi aplikasi berada di `app/file-organizer/`. Identity Provider/SSO internal perusahaan akan dibangun di `project-sso/` dan dirancang untuk dipakai oleh File Organizer serta aplikasi internal lain. Dokumentasi, keputusan arsitektur, log pekerjaan, dan checklist berada di `docs/`. `app/project-management/` adalah referensi tampilan, pola Filament, dan struktur aplikasi; jangan mengubah direktori referensi tersebut.
+Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace adalah satu aplikasi Laravel Filament modular monolith yang memuat Core, Company, CRM, Project Management, dan Document Management. Dokumentasi, keputusan arsitektur, log pekerjaan, dan checklist berada di `docs/`. `app/file-organizer/`, `app/project-management/`, dan `app/project-sso/` adalah sumber legacy selama migrasi dan tidak boleh dijalankan sebagai runtime.
 
 ## Kontrak teknologi
 
@@ -45,7 +45,7 @@ Implementasi aplikasi berada di `app/file-organizer/`. Identity Provider/SSO int
 
 ### Agent 0 — Discovery dan baseline
 
-- Audit isi `app/file-organizer/` dan referensi `app/project-management/`.
+- Audit isi `app/workspace/` dan sumber legacy hanya sebagai referensi migrasi.
 - Pastikan versi Laravel, Filament, PHP, dan paket yang dipakai terdokumentasi.
 - Buat `.env.example`, Docker Compose, health checks, dan README setup tanpa secret.
 - Output: baseline yang dapat dijalankan, dokumentasi setup, dan log.
@@ -59,12 +59,10 @@ Implementasi aplikasi berada di `app/file-organizer/`. Identity Provider/SSO int
 
 ### Agent 2 — Identity, SSO internal, dan authorization
 
-- Bangun atau integrasikan `app/project-sso/` sebagai Identity Provider internal perusahaan berbasis OIDC.
-- File Organizer bertindak sebagai OIDC relying party/client; aplikasi internal lain dapat memakai `app/project-sso/` yang sama.
-- Bangun local login fallback hanya untuk development/emergency yang terkontrol.
-- Pemetaan subject ke user aplikasi harus memakai issuer + subject, bukan email saja.
+- Bangun login lokal Laravel/Filament pada `app/workspace/` sebagai satu-satunya authentication runtime.
+- Jangan menambahkan SSO, OIDC, Google login, atau login lintas aplikasi tanpa ADR baru dan persetujuan arsitektur.
 - Terapkan role, permission, company/project scope, session security, dan audit login.
-- Output: auth flow antar-project, client registration, policy, role matrix, konfigurasi SSO, dan test authorization.
+- Output: policy, role matrix, session security, audit login, dan test authorization.
 
 ### Agent 3 — Object storage dan dokumen
 
@@ -124,7 +122,7 @@ Fitur dianggap selesai apabila:
 
 ## Perintah verifikasi minimum
 
-Sesuaikan dengan isi `app/file-organizer/`, tetapi target akhirnya adalah:
+Sesuaikan dengan isi `app/workspace/`, tetapi target akhirnya adalah:
 
 ```bash
 php artisan test

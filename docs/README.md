@@ -1,4 +1,4 @@
-# Dokumentasi File Organizer
+# Dokumentasi Basilindo Workspace
 
 Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca dokumen yang relevan sebelum bekerja dan memperbarui checklist serta log setelah bekerja.
 
@@ -7,12 +7,25 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Arsitektur](architecture.md)
 - [Domain model](domain-model.md)
 - [Keamanan](security.md)
-- [SSO/OIDC](sso.md)
+- [Identitas dan login lokal](identity.md)
 - [Roadmap](roadmap.md)
 - [Checklist fitur](feature-checklist.md)
 - [Keputusan arsitektur](decisions.md)
+- [Requirement provisioning akun dan akses aplikasi](requirements/account-provisioning-and-application-access.md)
+- [Requirement Basilindo Workspace modular monolith](requirements/workspace-modular-monolith.md)
+- [Requirement projection application access](requirements/application-access-projection.md)
+- [Panduan provisioning akun (Markdown)](panduan-provisioning-akun.md)
+- [Panduan provisioning akun (Markdown canonical)](panduan-provisioning-akun.md)
+- `panduan-provisioning-akun.docx` adalah artefak versi sebelumnya dan perlu diregenerasi sebelum dibagikan.
 - [Requirement shared core](requirements/shared-core-architecture.md)
 - [Log pekerjaan](logs/)
+- [Runbook backup dan restore](operations/backup-restore.md)
+- [Monitoring](operations/monitoring.md)
+- [Requirement health dan monitoring](requirements/monitoring-and-health.md)
+- [Requirement single-app identity](requirements/single-app-identity.md)
+- [Requirement Workspace runtime tunggal](requirements/workspace-runtime.md)
+- [Release checklist dan rollback](operations/release-checklist.md)
+- CI baseline: `.github/workflows/workspace-ci.yml`
 
 ## Lingkup MVP
 

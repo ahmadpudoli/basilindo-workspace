@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Core\Models\Company;
+use Core\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 

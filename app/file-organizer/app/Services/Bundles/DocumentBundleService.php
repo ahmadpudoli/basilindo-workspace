@@ -12,7 +12,7 @@ use InvalidArgumentException;
 use RuntimeException;
 use ZipArchive;
 use App\Services\Documents\DocumentQueryService;
-use App\Models\User;
+use Core\Models\User;
 
 class DocumentBundleService
 {

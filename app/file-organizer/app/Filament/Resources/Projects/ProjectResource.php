@@ -7,7 +7,10 @@ use App\Filament\Resources\Projects\Pages\EditProject;
 use App\Filament\Resources\Projects\Pages\ListProjects;
 use App\Filament\Resources\Projects\Pages\ViewProject;
 use App\Filament\Resources\Projects\RelationManagers\MembersRelationManager;
-use App\Models\Project;
+use App\Filament\Resources\Projects\RelationManagers\TicketsRelationManager;
+use App\Filament\Resources\Projects\RelationManagers\DocumentsRelationManager;
+use Core\Models\Company;
+use Core\Models\Project;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -29,7 +32,7 @@ class ProjectResource extends Resource
 {
     protected static ?string $model = Project::class;
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static string|\UnitEnum|null $navigationGroup = 'Catalog';
+    protected static string|\UnitEnum|null $navigationGroup = 'Project Management';
     protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
@@ -38,7 +41,7 @@ class ProjectResource extends Resource
             TextInput::make('name')->required()->maxLength(255),
             Select::make('company_id')
                 ->label('Perusahaan')
-                ->relationship('company', 'name')
+                ->options(fn (): array => static::companyOptions())
                 ->searchable()
                 ->preload()
                 ->required(),
@@ -78,7 +81,11 @@ class ProjectResource extends Resource
 
     public static function getRelations(): array
     {
-        return [MembersRelationManager::class];
+        return [
+            MembersRelationManager::class,
+            TicketsRelationManager::class,
+            DocumentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -98,5 +105,17 @@ class ProjectResource extends Resource
             $query->whereHas('members', fn (Builder $members) => $members->where('user_id', auth()->id()));
         }
         return $query;
+    }
+
+    private static function companyOptions(): array
+    {
+        $query = Company::query()->where('status', 'active')->orderBy('name');
+        $user = auth()->user();
+
+        if ($user && ! $user->hasRole('super_admin')) {
+            $query->whereIn('id', $user->companies()->pluck('core_companies.id'));
+        }
+
+        return $query->pluck('name', 'id')->all();
     }
 }

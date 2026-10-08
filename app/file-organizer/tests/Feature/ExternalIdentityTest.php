@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\ExternalIdentity;
-use App\Models\User;
+use Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

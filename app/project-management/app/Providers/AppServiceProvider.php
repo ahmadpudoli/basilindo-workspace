@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Controllers\Auth\SsoLogoutResponse;
 use App\Filament\Resources\TicketResource\Pages\EditCommentModal;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -10,6 +11,9 @@ use Filament\Pages\BasePage as Page;
 use Filament\Resources\Resource;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Str;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Filament\Auth\Http\Responses\Contracts\LogoutResponse as LogoutResponseContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(LogoutResponseContract::class, SsoLogoutResponse::class);
     }
 
     /**
@@ -26,6 +30,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::USER_MENU_BEFORE,
+            fn (): string => view('filament.components.application-launcher', [
+                'applications' => data_get(auth()->user()?->externalIdentities()->latest('last_login_at')->first()?->claims ?? [], 'applications.available', []),
+            ])->render(),
+        );
+
         Livewire::component('edit-comment-modal', EditCommentModal::class);
         FilamentShield::buildPermissionKeyUsing(
             function (string $entity, string $affix, string $subject, string $case, string $separator) {

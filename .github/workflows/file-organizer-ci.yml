@@ -1,0 +1,90 @@
+name: Basilindo Workspace CI
+
+on:
+  push:
+    paths:
+      - 'app/file-organizer/**'
+      - 'core/**'
+      - 'docs/**'
+      - '.github/workflows/file-organizer-ci.yml'
+  pull_request:
+    paths:
+      - 'app/file-organizer/**'
+      - 'core/**'
+      - 'docs/**'
+      - '.github/workflows/file-organizer-ci.yml'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: db_file_organize_test
+          POSTGRES_USER: basilindo
+          POSTGRES_PASSWORD: basilindo-test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U basilindo -d db_file_organize_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: app/file-organizer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_pgsql, bcmath, intl, zip, gd
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: db_file_organize_test
+          DB_USERNAME: basilindo
+          DB_PASSWORD: basilindo-test
+          DB_TABLE_PREFIX: fo_
+          APP_MIGRATION_SET: file-organizer
+          CORE_MIGRATIONS_OWNER: true
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan migrate:fresh --seed --force
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: db_file_organize_test
+          DB_USERNAME: basilindo
+          DB_PASSWORD: basilindo-test
+          DB_TABLE_PREFIX: fo_
+        run: php artisan test
+
+      - name: Validate migration SQL
+        run: >-
+          php artisan migrate --pretend
+          --path=../../core/database/migrations/file-organizer/2026_10_08_130000_create_core_application_access_projection.php
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
