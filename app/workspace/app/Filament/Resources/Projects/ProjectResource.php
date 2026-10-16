@@ -11,6 +11,9 @@ use App\Filament\Resources\Projects\Pages\ViewProject;
 use App\Filament\Resources\Projects\RelationManagers\MembersRelationManager;
 use App\Filament\Resources\Projects\RelationManagers\TicketsRelationManager;
 use App\Filament\Resources\Projects\RelationManagers\DocumentsRelationManager;
+use App\Filament\Resources\Projects\RelationManagers\EpicsRelationManager;
+use App\Filament\Resources\Projects\RelationManagers\NotesRelationManager;
+use App\Filament\Resources\Projects\RelationManagers\TicketStatusesRelationManager;
 use Core\Models\Company;
 use Core\Models\Project;
 use Filament\Actions\BulkActionGroup;
@@ -88,6 +91,9 @@ class ProjectResource extends Resource
             MembersRelationManager::class,
             TicketsRelationManager::class,
             DocumentsRelationManager::class,
+            EpicsRelationManager::class,
+            NotesRelationManager::class,
+            TicketStatusesRelationManager::class,
         ];
     }
 

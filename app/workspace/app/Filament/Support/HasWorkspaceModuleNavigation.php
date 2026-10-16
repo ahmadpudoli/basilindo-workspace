@@ -17,8 +17,9 @@ trait HasWorkspaceModuleNavigation
 
         return match ($group) {
             'CRM' => 'crm',
+            'Analytics' => 'project-management',
             'Project Management' => 'project-management',
-            'File Organizer' => 'documents',
+            'File Organizer', 'Document Management' => 'documents',
             default => 'core',
         };
     }

@@ -8,6 +8,7 @@ use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\RelationManagers\ProjectsRelationManager;
 use App\Filament\Resources\Users\RelationManagers\CompaniesRelationManager;
+use App\Filament\Resources\Users\RelationManagers\TicketsRelationManager;
 use Core\Models\User;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -27,6 +28,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
+    protected static string|\UnitEnum|null $navigationGroup = null;
+    protected static ?int $navigationSort = 1;
     use HasWorkspaceModuleNavigation;
     protected static ?string $model = User::class;
 
@@ -185,6 +188,7 @@ class UserResource extends Resource
         return [
             CompaniesRelationManager::class,
             ProjectsRelationManager::class,
+            TicketsRelationManager::class,
         ];
     }
 

@@ -5,11 +5,18 @@ namespace App\Filament\Resources\Documents\Pages;
 use App\Filament\Resources\Documents\DocumentResource;
 use App\Services\Documents\DocumentUploadService;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Schemas\Components\Component;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateDocument extends CreateRecord
 {
     protected static string $resource = DocumentResource::class;
+
+    public function getFormContentComponent(): Component
+    {
+        return parent::getFormContentComponent()
+            ->extraAttributes(['novalidate' => true]);
+    }
 
     protected function handleRecordCreation(array $data): Model
     {

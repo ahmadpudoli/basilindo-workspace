@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Core\Models\Company;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -38,5 +39,15 @@ class DatabaseSeeder extends Seeder
 
         $admin->forceFill(['is_system_account' => true])->save();
         $admin->assignRole('super_admin');
+
+        foreach (['QUINSIS', 'LEGOSPAY'] as $companyCode) {
+            $company = Company::query()->where('code', $companyCode)->first();
+
+            if ($company) {
+                $admin->companies()->syncWithoutDetaching([
+                    $company->getKey() => ['scope_role' => 'member'],
+                ]);
+            }
+        }
     }
 }

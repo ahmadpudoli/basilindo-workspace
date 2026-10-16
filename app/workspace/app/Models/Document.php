@@ -17,8 +17,8 @@ class Document extends Model
 
 
     protected $fillable = [
-        'company_id', 'project_id', 'crm_account_id', 'crm_opportunity_id', 'vendor_id', 'document_type_id', 'uploaded_by',
-        'title', 'original_filename', 'reference_number', 'normalized_reference_number',
+        'company_id', 'counterparty_company_id', 'project_id', 'crm_account_id', 'crm_opportunity_id', 'vendor_id', 'document_type_id', 'uploaded_by',
+        'title', 'description', 'original_filename', 'reference_number', 'normalized_reference_number',
         'document_date', 'amount', 'currency', 'status', 'metadata', 'tags', 'retention_until', 'legal_hold', 'verified_at',
         'rejection_reason', 'quarantined_at', 'released_at', 'rejected_at',
     ];
@@ -29,6 +29,7 @@ class Document extends Model
     }
 
     public function company() { return $this->belongsTo(Company::class); }
+    public function counterpartyCompany() { return $this->belongsTo(Company::class, 'counterparty_company_id'); }
     public function project() { return $this->belongsTo(Project::class); }
     public function crmAccount() { return $this->belongsTo(CrmAccount::class, 'crm_account_id'); }
     public function crmOpportunity() { return $this->belongsTo(CrmOpportunity::class, 'crm_opportunity_id'); }

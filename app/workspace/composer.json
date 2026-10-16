@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "basilindo/file-organizer",
+    "name": "basilindo/workspace",
     "type": "project",
-    "description": "Modul File Organizer untuk Basilindo Workspace.",
+    "description": "Basilindo Workspace modular monolith.",
     "keywords": ["laravel", "framework"],
     "license": "GPL-3.0-or-later",
     "require": {
@@ -60,7 +60,10 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve --port=8080\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve --port=8080\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names=server,queue,vite"
+        ],
+        "logs": [
+            "php artisan pail --timeout=0"
         ],
         "octane-dev": [
             "Composer\\Config::disableProcessTimeout",

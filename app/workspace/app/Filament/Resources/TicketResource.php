@@ -30,7 +30,7 @@ class TicketResource extends Resource
     protected static ?string $model = Ticket::class;
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-ticket';
     protected static string|\UnitEnum|null $navigationGroup = 'Project Management';
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
     protected static ?string $navigationLabel = 'Tickets';
 
     public static function form(Schema $schema): Schema
@@ -80,6 +80,11 @@ class TicketResource extends Resource
             $query->whereHas('project.members', fn (Builder $members): Builder => $members->whereKey($user->getKey()));
         }
         return $query;
+    }
+
+    public static function getRelations(): array
+    {
+        return [TicketCommentsRelationManager::class];
     }
 
     public static function getPages(): array

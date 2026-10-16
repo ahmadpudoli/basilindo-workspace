@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Document;
+use App\Services\Documents\DocumentCompanyScope;
 use Core\Models\User;
 
 class DocumentPolicy
@@ -16,8 +17,7 @@ class DocumentPolicy
     }
     public function view(User $user, Document $document): bool
     {
-        return $user->hasRole('super_admin')
-            || $user->companies()->whereKey($document->company_id)->exists();
+        return app(DocumentCompanyScope::class)->canAccess($user, (int) $document->company_id);
     }
 
     public function download(User $user, Document $document): bool

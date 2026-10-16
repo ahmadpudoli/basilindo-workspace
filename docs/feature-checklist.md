@@ -5,8 +5,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 ## Platform
 
 - [x] Basilindo Workspace modular monolith berbasis `app/workspace`
-- [x] Migrasi penuh runtime dari legacy app ke `app/workspace`
-- [ ] Menghapus folder legacy `app/file-organizer` dan `app/project-management` setelah smoke test Workspace
+- [x] Migrasi penuh fitur bisnis yang dipertahankan dari legacy app ke `app/workspace`
+- [x] Menghapus folder legacy `app/file-organizer` dan `app/project-management` setelah parity dan smoke test Workspace
 - [x] Boundary Core/Identity, Company, CRM, Project Management, dan Document Management diimplementasikan
 - [x] Shared core (`core/`) untuk model, migration, factory, dan library general
 - [x] Seluruh migration aktif dipusatkan di `core/database/migrations`
@@ -16,6 +16,12 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] PostgreSQL connection dan migrations
 - [x] Redis cache/queue/lock/rate limit
 - [x] MinIO private S3 disk dan bucket lifecycle
+- [x] Object storage memakai bucket `app-workspace` dengan prefix aplikasi dan path dokumen berdasarkan `storage_key` perusahaan/tanggal dokumen
+- [x] Temporary upload Livewire memakai folder `workspace-tmp` pada bucket MinIO private dan dihapus setelah upload permanen berhasil
+- [x] Temporary upload memiliki cleanup terjadwal berdasarkan TTL environment dan berjalan setiap jam
+- [x] Preview dokumen ditampilkan pada PDF viewer dalam modal dialog dengan authorization dan audit trail
+- [x] Metadata pada detail dokumen ditampilkan sebagai tabel nama field dan nilai
+- [x] Perusahaan memiliki `storage_key` ULID immutable untuk object storage; data lama di-backfill melalui migration
 - [x] Docker Compose health checks untuk PostgreSQL, Redis, dan MinIO
 - [x] `.env.example` tanpa secret
 - [x] Local development command Windows-safe (Pail dipisah dari `composer run dev`)
@@ -29,6 +35,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Role dan permission matrix
 - [x] Policy untuk list/view/upload/download/edit/delete
 - [x] Policy company scope untuk Account, Lead, Opportunity, Activity, Ticket, dan Document
+- [x] Document Management memakai assignment perusahaan eksplisit sebagai scope, termasuk untuk super admin yang memiliki assignment
 - [x] Audit login dan permission changes
 - [x] Login lokal Workspace sebagai satu-satunya metode authentication runtime
 - [x] Satu session dan satu deployment untuk seluruh modul
@@ -44,12 +51,27 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Master perusahaan menyatukan internal, client, vendor, dan partner
 - [x] Assignment multi-company pada user dengan scope role
 - [x] Project list dan bulk actions kompatibel dengan Filament 4
-- [x] Workspace Project Management: project, member, ticket, status, priority, dan assignee
+- [-] Workspace Project Management: project, member, ticket, status, priority, assignee, epic, notes, comments, board, timeline, dan reporting
+- [x] Workspace Project Management domain baseline: Epic, Project Notes, Ticket Comments, dan Notification model/migration
+- [ ] Workspace Project Management UI parity: board, timeline, leaderboard, user contributions, dan notification resource
 - [x] Project creation dibatasi pada company scope user
 - [x] Detail project menampilkan members, tickets, dan dokumen terkait
 - [x] Vendor management (legacy view; canonical entity tetap `companies`)
 - [x] Document type management
-- [x] Required metadata per document type
+- [x] Typed and optional metadata per document type
+- [x] Metadata Numeric integer dan Numeric Decimal dibedakan, dinormalisasi, divalidasi server, dan disanitasi pada tampilan
+- [x] Metadata Numeric dan Numeric Decimal disanitasi saat input dan tetap divalidasi di server
+- [x] Metadata angka menggunakan format tampilan Indonesia dan disimpan dalam format canonical di server
+- [x] Nominal menggunakan format tampilan Indonesia dengan desimal dan dinormalisasi sebelum disimpan
+- [x] Locale/format angka dan timezone tampilan dikonfigurasi melalui environment; timezone storage ditetapkan UTC
+- [x] Jenis dokumen yang sudah digunakan menjaga scope perusahaan dan struktur metadata tetap immutable
+- [x] Form dokumen reactive terhadap perusahaan internal dan jenis dokumen, dengan loading state serta panel metadata dinamis
+- [x] Form dokumen memiliki tanggal wajib, client/vendor opsional, mata uang opsional berbentuk dropdown IDR/USD/SGD, dan deskripsi WYSIWYG
+- [x] Pesan validasi input tersedia dalam Bahasa Indonesia dan menjelaskan tindakan perbaikan
+- [x] Form dokumen menonaktifkan native browser validation agar pesan validasi Filament/Livewire tampil konsisten
+- [x] Pilihan proyek pada dokumen mengikuti perusahaan internal dan relasinya divalidasi di server
+- [x] Pilihan jenis dokumen pada dokumen mengikuti perusahaan internal dan relasinya divalidasi di server
+- [x] Form dokumen memiliki tanggal wajib, mata uang opsional berbentuk dropdown IDR/USD/SGD, dan deskripsi WYSIWYG
 - [x] Tags dan reference normalization
 - [x] Duplicate detection dasar
 - [x] CRM schema baseline untuk account, contact, lead, opportunity, dan activity
@@ -122,7 +144,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Project Management memakai branding Basilindo dan landing page publik tanpa DewaKoding
 - [x] Project Management memakai layout panel konsisten dengan File Organizer
 - [x] Project Management memiliki konsep visual berbeda: gradien terang dan tata letak weekly pulse
-- [x] Project Management login melalui SSO dan logout lokal kembali ke landing page
+- [x] Project Management login lokal pada Workspace; SSO legacy tidak dipindahkan
 - [x] Project Management notification memakai koneksi shared `core` dan tabel `core_notifications`
 - [x] Landing page publik khusus manajemen dokumen Basilindo
 - [x] Dashboard Finance dengan metrik dokumen, review, dan aktivitas audit
@@ -139,6 +161,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Safe transition state ketika tabel projection belum dimigrasikan
 - [x] GitHub Actions CI untuk migration, test suite, dan frontend build
 - [x] Asset frontend Workspace berhasil dibuild untuk production
+- [x] Vite development server dan HMR dikunci pada port 5173
 - [x] Branding DewaKoding dibersihkan dari aplikasi File Organizer
 - [x] Landing page publik responsif dengan CTA, focus state, dan copy domain Basilindo
 - [x] Background halaman admin setelah login konsisten dengan halaman Basilindo Access
@@ -164,6 +187,11 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Orphan model `SavedSearch` dihapus setelah tabel `saved_searches` dipastikan tidak ada
 
 ## Administrasi SSO
+
+- [x] Project Management menampilkan login lokal Filament dan tidak mengarahkan pengguna ke SSO legacy.
+- [x] Project Management mempertahankan board, timeline, epic, notes, comments,
+  status/priority, import/export ticket template, dashboard widgets, dan
+  relation managers di Workspace.
 
 - [x] Project Management memakai port terisolasi: Artisan `8002` dan Vite `5175`.
 - [x] Port lokal terisolasi: Project SSO `8000`, File Organizer `8001`, Project Management `8002`.

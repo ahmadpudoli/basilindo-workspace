@@ -34,11 +34,23 @@ class Ticket extends Model
             }
             $ticket->created_by ??= auth()->id();
         });
+
+        static::updated(function (self $ticket): void {
+            if ($ticket->wasChanged('ticket_status_id')) {
+                $ticket->histories()->create([
+                    'user_id' => auth()->id(),
+                    'ticket_status_id' => $ticket->ticket_status_id,
+                ]);
+            }
+        });
     }
 
     public function project() { return $this->belongsTo(Project::class); }
     public function status() { return $this->belongsTo(TicketStatus::class, 'ticket_status_id'); }
     public function priority() { return $this->belongsTo(TicketPriority::class, 'priority_id'); }
-    public function assignees() { return $this->belongsToMany(User::class, 'ticket_users'); }
+    public function epic() { return $this->belongsTo(Epic::class); }
+    public function comments() { return $this->hasMany(TicketComment::class); }
+    public function histories() { return $this->hasMany(TicketHistory::class)->latest(); }
+    public function assignees() { return $this->belongsToMany(ProjectManagementUser::class, 'pm_ticket_users', 'ticket_id', 'user_id'); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
 }

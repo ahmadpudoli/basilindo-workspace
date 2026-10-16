@@ -23,6 +23,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Temporary upload Livewire disimpan pada folder private di MinIO/S3.
+        config([
+            'livewire.temporary_file_upload.disk' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DISK', 's3'),
+            'livewire.temporary_file_upload.directory' => env('LIVEWIRE_TEMPORARY_FILE_UPLOAD_DIRECTORY', 'workspace-tmp'),
+        ]);
+
         Role::created(fn (Role $role) => app(AuditLogger::class)->record('permission.role_created', $role, null, ['role_id' => $role->getKey()]));
         Role::updated(fn (Role $role) => app(AuditLogger::class)->record('permission.role_updated', $role, null, ['role_id' => $role->getKey(), 'changed_fields' => array_keys($role->getChanges())]));
         Role::deleted(fn (Role $role) => app(AuditLogger::class)->record('permission.role_deleted', $role, null, ['role_id' => $role->getKey()]));

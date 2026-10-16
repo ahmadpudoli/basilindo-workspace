@@ -26,7 +26,7 @@ class SavedSearchResource extends Resource
     use HasWorkspaceModuleNavigation;
     protected static ?string $model = SavedSearch::class;
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-bookmark-square';
-    protected static string|\UnitEnum|null $navigationGroup = 'File Organizer';
+    protected static string|\UnitEnum|null $navigationGroup = 'Document Management';
     protected static ?int $navigationSort = 5;
     protected static ?string $modelLabel = 'Pencarian tersimpan';
     protected static ?string $pluralModelLabel = 'Pencarian tersimpan';

@@ -8,12 +8,16 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DocumentQueryService
 {
+    public function __construct(private readonly DocumentCompanyScope $companyScope) {}
+
     public function visibleTo(User $user): Builder
     {
         $query = Document::query();
-        if (! $user->hasRole('super_admin')) {
-            $query->whereIn('company_id', $user->companies()->select('core_companies.id'));
+
+        if (($companyIds = $this->companyScope->ids($user)) !== null) {
+            $query->whereIn('company_id', $companyIds);
         }
+
         return $query;
     }
 

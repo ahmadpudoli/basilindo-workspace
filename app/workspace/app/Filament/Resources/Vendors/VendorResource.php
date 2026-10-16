@@ -25,7 +25,7 @@ class VendorResource extends Resource
 
     protected static ?string $model = Vendor::class;
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-truck';
-    protected static string|\UnitEnum|null $navigationGroup = 'File Organizer';
+    protected static string|\UnitEnum|null $navigationGroup = 'Document Management';
     protected static ?int $navigationSort = 3;
     protected static ?string $modelLabel = 'Vendor';
     protected static ?string $pluralModelLabel = 'Vendor';

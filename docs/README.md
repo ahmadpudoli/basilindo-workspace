@@ -24,6 +24,7 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Requirement health dan monitoring](requirements/monitoring-and-health.md)
 - [Requirement single-app identity](requirements/single-app-identity.md)
 - [Requirement Workspace runtime tunggal](requirements/workspace-runtime.md)
+- [Requirement migrasi fitur legacy ke Workspace](requirements/legacy-feature-migration-to-workspace.md)
 - [Release checklist dan rollback](operations/release-checklist.md)
 - CI baseline: `.github/workflows/workspace-ci.yml`
 

@@ -37,10 +37,10 @@ return new class extends Migration
     private function provisionRole(string $roleName, array $permissionNames): void
     {
         $permissions = collect($permissionNames)->map(function (string $name): Permission {
-            return Permission::on('pgsql')->firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+            return Permission::on('core')->firstOrCreate(['name' => $name, 'guard_name' => 'web']);
         });
 
-        $role = Role::on('pgsql')->firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+        $role = Role::on('core')->firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
         // Add only missing permissions; never revoke existing access in an upgrade.
         $role->givePermissionTo($permissions);
     }

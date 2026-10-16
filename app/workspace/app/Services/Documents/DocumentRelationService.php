@@ -16,7 +16,7 @@ class DocumentRelationService
         if ($source->is($target) || $source->company_id !== $target->company_id) {
             throw new InvalidArgumentException('Dokumen harus berbeda dan berasal dari perusahaan yang sama.');
         }
-        if (! $user->companies()->whereKey($source->company_id)->exists() && ! $user->hasRole('super_admin')) {
+        if (! app(DocumentCompanyScope::class)->canAccess($user, (int) $source->company_id)) {
             throw new AuthorizationException('User tidak memiliki akses ke perusahaan dokumen.');
         }
 

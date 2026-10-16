@@ -4,6 +4,7 @@ namespace Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Company extends Model
 {
@@ -14,6 +15,21 @@ class Company extends Model
     protected $fillable = [
         'name', 'code', 'entity_type', 'classification', 'roles', 'parent_company_id', 'status',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $company): void {
+            if (blank($company->storage_key)) {
+                $company->storage_key = (string) Str::ulid();
+            }
+        });
+
+        static::updating(function (self $company): void {
+            if ($company->isDirty('storage_key')) {
+                $company->storage_key = $company->getOriginal('storage_key');
+            }
+        });
+    }
 
     protected function casts(): array
     {
