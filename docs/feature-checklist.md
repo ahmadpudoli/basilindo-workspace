@@ -91,6 +91,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Form dokumen memiliki tanggal wajib, client/vendor opsional, mata uang opsional berbentuk dropdown IDR/USD/SGD, dan deskripsi WYSIWYG
 - [x] Pesan validasi input tersedia dalam Bahasa Indonesia dan menjelaskan tindakan perbaikan
 - [x] Form dokumen memiliki validation state server-side yang konsisten dengan panel Livewire
+- [x] Form upload dokumen memiliki pasangan file-preview dan deskripsi Summernote, dengan judul setelah pasangan tersebut
 - [x] Pilihan proyek pada dokumen mengikuti perusahaan internal dan relasinya divalidasi di server
 - [x] Pilihan jenis dokumen pada dokumen mengikuti perusahaan internal dan relasinya divalidasi di server
 - [x] Form dokumen memiliki tanggal wajib, mata uang opsional berbentuk dropdown IDR/USD/SGD, dan deskripsi WYSIWYG
@@ -258,3 +259,12 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Audit metadata perubahan application access
 - [x] Lokasi runtime Workspace dicatat konsisten pada `workspace/`; CI dan dokumentasi aktif tidak lagi menunjuk `app/workspace/`
 - [x] Development server Laravel tidak menetapkan `PHP_CLI_SERVER_WORKERS` saat memakai mode reload
+- [x] Form edit dokumen mengikuti susunan form tambah dan menampilkan panel metadata tambahan berdasarkan tipe dokumen
+- [x] Tipe dokumen dapat dikaitkan dengan beberapa perusahaan melalui searchable multi-select dan pivot relation
+- [x] Validasi perusahaan tipe dokumen memakai koneksi Core dan mendukung tipe global
+- [x] Teks dropdown perusahaan tipe dokumen ter-align vertikal tanpa menambah tinggi input
+- [x] Floating label dan animasi fokus diterapkan secara global pada field form Workspace
+- [x] Tinggi kontrol input satu baris Workspace diseragamkan secara global menjadi 40px
+- [x] Form perusahaan memiliki pasangan field dan aturan dependensi peran/parent berdasarkan klasifikasi
+- [x] Searchable dropdown tidak terpotong oleh overflow card pada form Workspace
+- [x] Perusahaan yang memiliki relasi vendor mengunci peran vendor, jenis entitas, klasifikasi, dan status

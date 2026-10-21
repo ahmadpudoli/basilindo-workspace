@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'Basilindo Workspace') }}</title>
+    <link rel="stylesheet" href="{{ asset('vendor/summernote/summernote-lite.css') }}">
+    <script src="{{ asset('vendor/summernote/jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ asset('vendor/summernote/summernote-lite.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>

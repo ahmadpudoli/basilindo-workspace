@@ -270,7 +270,8 @@ class DocumentUploadService
             ->where('is_active', true)
             ->where(function ($query) use ($document): void {
                 $query->whereNull('company_id')
-                    ->orWhere('company_id', $document->company_id);
+                    ->orWhere('company_id', $document->company_id)
+                    ->orWhereIn('id', DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'));
             })
             ->exists();
 

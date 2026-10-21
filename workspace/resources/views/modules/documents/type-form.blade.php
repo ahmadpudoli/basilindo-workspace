@@ -3,6 +3,8 @@
 @php
     $type = $type ?? null;
     $isEdit = $type !== null;
+    $selectedCompanyIds = old('company_ids', $selectedCompanyIds ?? ($type?->company_id ? [$type->company_id] : []));
+    $selectedCompanyIds = array_map('strval', (array) $selectedCompanyIds);
     $typeRequiredFields = old('required_fields', $type?->required_fields ?? []);
     if (is_string($typeRequiredFields)) {
         $typeRequiredFields = json_decode($typeRequiredFields, true) ?: [];
@@ -21,7 +23,7 @@
 <form method="POST" action="{{ $isEdit ? route('workspace.documents.types.update', $type) : route('workspace.documents.types.store') }}" class="card border-0 shadow-sm" data-metadata-form>
     <div class="card-body">
         @csrf @if($isEdit) @method('PUT') @endif
-        <div class="row g-3"><div class="col-md-6"><label class="form-label">Nama *</label><input name="name" value="{{ old('name', $type?->name ?? '') }}" class="form-control" required></div><div class="col-md-6"><label class="form-label">Kode *</label><input name="code" value="{{ old('code', $type?->code ?? '') }}" class="form-control" required></div><div class="col-md-6"><label class="form-label">Perusahaan</label><select name="company_id" class="form-select"><option value="">Global</option>@foreach($companies as $id => $name)<option value="{{ $id }}" @selected((string) old('company_id', $type?->company_id ?? '') === (string) $id)>{{ $name }}</option>@endforeach</select></div></div>
+        <div class="row g-3"><div class="col-md-6"><label class="form-label">Nama *</label><input name="name" value="{{ old('name', $type?->name ?? '') }}" class="form-control" required></div><div class="col-md-6"><label class="form-label">Kode *</label><input name="code" value="{{ old('code', $type?->code ?? '') }}" class="form-control" required></div><div class="col-md-6"><label class="form-label">Perusahaan</label><div class="workspace-dropdown-multiselect dropdown" data-searchable-dropdown data-dropdown-empty-label="Global — semua perusahaan operasional"><button type="button" class="form-select text-start workspace-dropdown-trigger workspace-compact-dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><span data-dropdown-label>Pilih perusahaan</span></button><div class="dropdown-menu workspace-dropdown-menu p-2"><input type="search" class="form-control form-control-sm mb-2" placeholder="Cari perusahaan..." data-dropdown-search><div class="workspace-dropdown-options">@foreach($companies as $id => $name)<label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="company_ids[]" value="{{ $id }}" data-dropdown-item data-dropdown-value="{{ $name }}" @checked(in_array((string) $id, $selectedCompanyIds, true))><span>{{ $name }}</span></label>@endforeach</div></div></div><div id="document-type-company-help" class="form-text">Kosongkan untuk tipe global. Pilih satu atau beberapa perusahaan.</div></div></div>
         <div class="workspace-metadata-editor mt-4" data-metadata-editor>
             <div class="workspace-metadata-editor-heading"><div><h2 class="h6 mb-1">Metadata tambahan</h2><p class="text-secondary small mb-0">Tambahkan field dan tarik baris untuk mengatur urutan tampilnya.</p></div><button type="button" class="btn btn-sm btn-outline-primary" data-metadata-add>+ Tambah metadata</button></div>
             <div class="workspace-metadata-list" data-metadata-list></div>

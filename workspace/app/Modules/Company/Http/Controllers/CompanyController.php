@@ -5,6 +5,7 @@ namespace App\Modules\Company\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Company\Http\Requests\CompanyRequest;
 use Core\Models\Company;
+use Core\Models\Vendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,7 +50,7 @@ class CompanyController extends Controller
         return view('modules.company.companies', compact('companies', 'sort', 'direction', 'entityType', 'classification', 'status', 'roles', 'perPage'));
     }
 
-    public function create(): View { Gate::authorize('create', Company::class); return view('modules.company.form', ['company' => new Company(), 'parentCompanies' => $this->parentCompanies(), 'operationalCompanies' => $this->operationalCompanies(), 'action' => route('workspace.company.store'), 'method' => 'POST']); }
+    public function create(): View { Gate::authorize('create', Company::class); return view('modules.company.form', ['company' => new Company(), 'hasVendorRelations' => false, 'parentCompanies' => $this->parentCompanies(), 'operationalCompanies' => $this->operationalCompanies(), 'action' => route('workspace.company.store'), 'method' => 'POST']); }
     public function store(CompanyRequest $request): RedirectResponse
     {
         Gate::authorize('create', Company::class);
@@ -90,7 +91,7 @@ class CompanyController extends Controller
             'Cache-Control' => 'private, no-store',
         ]);
     }
-    public function edit(Company $company): View { Gate::authorize('update', $company); return view('modules.company.form', ['company' => $company, 'parentCompanies' => $this->parentCompanies($company), 'operationalCompanies' => $this->operationalCompanies($company), 'action' => route('workspace.company.update', $company), 'method' => 'PUT']); }
+    public function edit(Company $company): View { Gate::authorize('update', $company); return view('modules.company.form', ['company' => $company, 'hasVendorRelations' => $this->hasVendorRelations($company), 'parentCompanies' => $this->parentCompanies($company), 'operationalCompanies' => $this->operationalCompanies($company), 'action' => route('workspace.company.update', $company), 'method' => 'PUT']); }
     public function update(CompanyRequest $request, Company $company): RedirectResponse
     {
         Gate::authorize('update', $company);
@@ -158,6 +159,13 @@ class CompanyController extends Controller
         if ($oldDisk && $oldObjectKey && ($oldDisk !== $disk || $oldObjectKey !== $objectKey)) {
             Storage::disk($oldDisk)->delete($oldObjectKey);
         }
+    }
+
+    private function hasVendorRelations(Company $company): bool
+    {
+        return Vendor::query()
+            ->where(fn ($query) => $query->where('vendor_company_id', $company->getKey())->orWhere('company_id', $company->getKey()))
+            ->exists();
     }
 
     private function parentCompanies(?Company $company = null)

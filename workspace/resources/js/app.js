@@ -33,6 +33,77 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     enhanceFloatingFields();
+
+    document.querySelectorAll('[data-document-upload]').forEach((upload) => {
+        const input = upload.querySelector('[data-document-upload-input]');
+        const preview = upload.querySelector('[data-document-upload-preview]');
+        if (!input || !preview) return;
+
+        let previewUrl = null;
+        const formatBytes = (bytes) => {
+            if (bytes < 1024) return `${bytes} B`;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        };
+        const fileIcon = (file) => {
+            const icon = document.createElement('span');
+            icon.className = 'workspace-document-file-icon';
+            icon.textContent = file.type === 'application/pdf'
+                ? 'PDF'
+                : (file.name.split('.').pop()?.slice(0, 4).toUpperCase() || 'FILE');
+            return icon;
+        };
+        const renderFile = () => {
+            if (previewUrl) URL.revokeObjectURL(previewUrl);
+            previewUrl = null;
+            preview.replaceChildren();
+            const file = input.files?.[0];
+            if (!file) {
+                preview.innerHTML = '<div class="workspace-document-preview-empty"><span class="workspace-document-preview-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M9 17h4"/></svg></span><span>Pilih file untuk melihat preview</span></div>';
+                return;
+            }
+
+            const body = document.createElement('div');
+            body.className = 'workspace-document-preview-body';
+            if (file.type.startsWith('image/')) {
+                previewUrl = URL.createObjectURL(file);
+                const image = document.createElement('img');
+                image.src = previewUrl;
+                image.alt = `Preview ${file.name}`;
+                image.className = 'workspace-document-image-preview';
+                body.append(image);
+            } else {
+                body.append(fileIcon(file));
+            }
+
+            const meta = document.createElement('div');
+            meta.className = 'workspace-document-preview-meta';
+            const name = document.createElement('strong');
+            name.textContent = file.name;
+            const details = document.createElement('span');
+            details.textContent = `${file.type || 'Format file'} · ${formatBytes(file.size)}`;
+            meta.append(name, details);
+            preview.append(body, meta);
+        };
+
+        input.addEventListener('change', renderFile);
+    });
+
+    const richTextEditors = document.querySelectorAll('.workspace-richtext-editor');
+    if (window.jQuery?.fn?.summernote) {
+        window.jQuery(richTextEditors).summernote({
+            height: 60,
+            placeholder: 'Tulis deskripsi dokumen...',
+            dialogsInBody: true,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'table']],
+                ['view', ['undo', 'redo', 'codeview']],
+            ],
+        });
+    }
+
     const floatingObserver = new MutationObserver(enhanceFloatingFields);
     floatingObserver.observe(document.body, { childList: true, subtree: true });
 
@@ -283,19 +354,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyRoleControl = document.querySelector('[data-company-role-control]');
     const companyVisibilityControl = document.querySelector('[data-company-visibility-control]');
     const companyGroupRoleHint = document.querySelector('[data-company-group-role-hint]');
+    const companyRoleTrigger = document.querySelector('[data-company-role-trigger]');
+    const companyRoleHint = document.querySelector('[data-company-role-hint]');
+    const companyParent = document.querySelector('[data-company-parent]');
+    const companyVendorRoleLocked = Boolean(document.querySelector('[data-company-vendor-role][disabled]'));
     if (companyEntityType && (companyRoleControl || companyVisibilityControl)) {
         const syncCompanyRoleField = () => {
             const isGroup = companyEntityType.value === 'group';
             const isExternal = companyClassification?.value === 'external';
+            const rolesReady = Boolean(companyEntityType.value && companyClassification?.value);
             companyRoleControl?.classList.toggle('d-none', isGroup);
             companyVisibilityControl?.classList.toggle('d-none', isGroup);
             companyGroupRoleHint?.classList.toggle('d-none', !isGroup);
+            companyRoleTrigger && (companyRoleTrigger.disabled = isGroup || !rolesReady);
+            if (companyRoleHint) companyRoleHint.textContent = isGroup ? 'Role Group ditetapkan otomatis berdasarkan jenis entitas.' : rolesReady ? 'Pilih satu atau beberapa peran bisnis yang sesuai.' : 'Isi jenis entitas dan klasifikasi terlebih dahulu untuk memilih peran bisnis.';
             companyRoleControl?.querySelectorAll('input[name="roles[]"]').forEach((input) => {
                 const isOperatingCompany = input.value === 'operating_company';
-                input.disabled = isGroup || (isExternal && isOperatingCompany);
+                const isVendorRole = input.value === 'vendor';
+                input.disabled = isGroup || !rolesReady || (isExternal && isOperatingCompany) || (companyVendorRoleLocked && isVendorRole);
                 input.closest('[data-dropdown-option]')?.classList.toggle('is-disabled', input.disabled);
-                if (isGroup || (isExternal && isOperatingCompany)) input.checked = false;
+                if ((isGroup || !rolesReady || (isExternal && isOperatingCompany)) && !(companyVendorRoleLocked && isVendorRole)) input.checked = false;
             });
+            if (companyParent) {
+                companyParent.disabled = !companyClassification?.value;
+                [...companyParent.options].forEach((option) => {
+                    if (!option.value) return;
+                    const allowed = Boolean(companyClassification?.value) && option.dataset.parentClassification === companyClassification.value;
+                    option.disabled = !allowed;
+                    if (!allowed && option.selected) companyParent.value = '';
+                });
+            }
             companyVisibilityControl?.querySelectorAll('input[name="visibility_company_ids[]"]').forEach((input) => {
                 input.disabled = isGroup;
                 if (isGroup) input.checked = false;

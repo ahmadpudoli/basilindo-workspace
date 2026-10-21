@@ -42,6 +42,8 @@ Implementasi runtime aplikasi berada di `workspace/`. Basilindo Workspace adalah
 12. Jangan menambahkan library baru sebelum memeriksa apakah Laravel atau package yang sudah tersedia dapat menyelesaikan kebutuhan.
 13. Gunakan Bahasa Indonesia untuk label antarmuka bisnis, tetapi gunakan nama class, table, enum, dan kode internal dalam Bahasa Inggris yang konsisten.
 14. Bila ada keputusan yang belum pasti, catat asumsi dan alternatifnya di `docs/decisions.md`; jangan menyembunyikan keputusan di dalam kode.
+15. Migration database wajib incremental dan mempertahankan data lama. Jangan menggunakan `migrate:fresh`, `DROP TABLE`, penghapusan kolom, atau reset database pada database development/production yang berisi data. Untuk perubahan struktur, gunakan backfill, kompatibilitas sementara, validasi jumlah data, dan rollback yang aman; `migrate:fresh` hanya boleh digunakan pada database testing disposable.
+15. Migration database wajib incremental dan mempertahankan data lama. Jangan menggunakan `migrate:fresh`, `DROP TABLE`, penghapusan kolom, atau reset database pada database development/production yang berisi data. Untuk perubahan struktur, gunakan backfill, kompatibilitas sementara, validasi jumlah data, dan rollback yang aman; `migrate:fresh` hanya boleh digunakan pada database testing disposable.
 
 ## Urutan agen dan fase pekerjaan
 

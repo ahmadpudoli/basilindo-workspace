@@ -3,6 +3,7 @@
 @section('content')
 @php($selectedRoles = old('roles', $company->roles ?? []))
 @php($selectedVisibilityCompanies = old('visibility_company_ids', $company->exists ? $company->operationalVisibility->pluck('id')->all() : []))
+@php($hasVendorRelations = $hasVendorRelations ?? false)
 <div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Company management</div><h1 class="h3 mb-1">{{ $company->exists ? 'Edit perusahaan' : 'Tambah perusahaan' }}</h1><p class="text-secondary mb-0">Kelola struktur group dan perusahaan internal dalam Basilindo Workspace.</p></div>
 <form method="POST" action="{{ $action }}" enctype="multipart/form-data" class="card border-0 shadow-sm workspace-company-form" data-client-validation="company" novalidate>
     <div class="card-body">
@@ -27,11 +28,12 @@
         <div class="row g-3">
             <div class="col-md-6"><label class="form-label">Nama *</label><input name="name" value="{{ old('name', $company->name) }}" class="form-control @error('name') is-invalid @enderror">@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-6"><label class="form-label">Kode *</label><input name="code" value="{{ old('code', $company->code) }}" class="form-control @error('code') is-invalid @enderror">@error('code')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-            <div class="col-md-6"><label class="form-label">Jenis entitas *</label><select name="entity_type" class="form-select @error('entity_type') is-invalid @enderror"><option value="">Pilih jenis entitas</option><option value="group" @selected(old('entity_type', $company->entity_type) === 'group')>Group</option><option value="company" @selected(old('entity_type', $company->entity_type) === 'company')>Company</option></select>@error('entity_type')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6"><label class="form-label">Klasifikasi *</label>@if($hasVendorRelations)<input type="hidden" name="classification" value="{{ $company->classification }}">@endif<select name="classification" class="form-select @error('classification') is-invalid @enderror" @disabled($hasVendorRelations)><option value="">Pilih klasifikasi</option><option value="internal" @selected(old('classification', $company->classification) === 'internal')>Internal</option><option value="external" @selected(old('classification', $company->classification) === 'external')>External</option></select>@error('classification')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-6" data-company-role-control>
+                @if($hasVendorRelations)<input type="hidden" name="roles[]" value="vendor">@endif
                 <div class="workspace-floating-field">
                     <div class="workspace-dropdown-multiselect dropdown" data-searchable-dropdown>
-                        <button type="button" class="form-select text-start workspace-dropdown-trigger" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        <button type="button" class="form-select text-start workspace-dropdown-trigger" data-company-role-trigger data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             <span data-dropdown-label>Pilih peran bisnis</span>
                         </button>
                         <div class="dropdown-menu workspace-dropdown-menu p-2">
@@ -39,18 +41,18 @@
                             <div class="workspace-dropdown-options">
                                 <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="operating_company" data-dropdown-item @checked(in_array('operating_company', $selectedRoles, true))><span>Perusahaan operasional</span></label>
                                 <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="client" data-dropdown-item @checked(in_array('client', $selectedRoles, true))><span>Client</span></label>
-                                <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="vendor" data-dropdown-item @checked(in_array('vendor', $selectedRoles, true))><span>Vendor</span></label>
+                                <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="vendor" data-dropdown-item data-company-vendor-role @disabled($hasVendorRelations) @checked(in_array('vendor', $selectedRoles, true))><span>Vendor</span></label>
                                 <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="partner" data-dropdown-item @checked(in_array('partner', $selectedRoles, true))><span>Partner</span></label>
                             </div>
                         </div>
                     </div>
                     <label class="form-label">Peran bisnis perusahaan</label>
                 </div>
-                <div class="form-text">Company internal dapat memiliki peran operasional, client, vendor, atau partner. Company External tidak dapat menjadi perusahaan operasional.</div>
+                <div class="form-text" data-company-role-hint>Isi jenis entitas dan klasifikasi terlebih dahulu untuk memilih peran bisnis.</div>
                 @error('roles')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6"><label class="form-label">Klasifikasi *</label><select name="classification" class="form-select @error('classification') is-invalid @enderror"><option value="">Pilih klasifikasi</option><option value="internal" @selected(old('classification', $company->classification) === 'internal')>Internal</option><option value="external" @selected(old('classification', $company->classification) === 'external')>External</option></select>@error('classification')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
-            <div class="col-md-6"><label class="form-label">Parent perusahaan</label><select name="parent_company_id" class="form-select @error('parent_company_id') is-invalid @enderror"><option value="">Tidak memiliki parent</option>@foreach($parentCompanies as $parent)<option value="{{ $parent->getKey() }}" @selected((string) old('parent_company_id', $company->parent_company_id) === (string) $parent->getKey())>{{ $parent->name }} ({{ $parent->code }})</option>@endforeach</select><div class="form-text">Daftar parent hanya berisi entitas bertipe group yang aktif.</div>@error('parent_company_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6"><label class="form-label">Jenis entitas *</label>@if($hasVendorRelations)<input type="hidden" name="entity_type" value="{{ $company->entity_type }}">@endif<select name="entity_type" class="form-select @error('entity_type') is-invalid @enderror" @disabled($hasVendorRelations)><option value="">Pilih jenis entitas</option><option value="group" @selected(old('entity_type', $company->entity_type) === 'group')>Group</option><option value="company" @selected(old('entity_type', $company->entity_type) === 'company')>Company</option></select>@error('entity_type')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6" data-company-parent-control><label class="form-label">Parent perusahaan</label><select name="parent_company_id" data-company-parent class="form-select @error('parent_company_id') is-invalid @enderror"><option value="">Tidak memiliki parent</option>@foreach($parentCompanies as $parent)<option value="{{ $parent->getKey() }}" data-parent-classification="{{ $parent->classification }}" @selected((string) old('parent_company_id', $company->parent_company_id) === (string) $parent->getKey())>{{ $parent->name }} ({{ $parent->code }})</option>@endforeach</select><div class="form-text">Parent harus memiliki klasifikasi yang sama.</div>@error('parent_company_id')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-md-6 d-none" data-company-group-role-hint><div class="alert alert-primary mb-0 h-100 d-flex align-items-center">Role <strong class="mx-1">Group</strong> ditetapkan otomatis berdasarkan jenis entitas.</div></div>
             <div class="col-md-6" data-company-visibility-control>
                 <div class="workspace-floating-field">
@@ -77,7 +79,7 @@
                 <div class="form-text">Kosongkan untuk visibilitas global ke semua perusahaan operasional. Jika diisi, hanya kode yang dipilih yang dapat melihat dan menggunakan data ini. Hak akses user tetap berlaku.</div>
                 @error('visibility_company_ids.*')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6"><label class="form-label">Status *</label><select name="status" class="form-select @error('status') is-invalid @enderror"><option value="active" @selected(old('status', $company->status ?: 'active') === 'active')>Aktif</option><option value="inactive" @selected(old('status', $company->status) === 'inactive')>Nonaktif</option></select>@error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6" data-company-status-control><label class="form-label">Status *</label>@if($hasVendorRelations)<input type="hidden" name="status" value="{{ $company->status }}">@endif<select name="status" class="form-select @error('status') is-invalid @enderror" @disabled($hasVendorRelations)><option value="active" @selected(old('status', $company->status ?: 'active') === 'active')>Aktif</option><option value="inactive" @selected(old('status', $company->status) === 'inactive')>Nonaktif</option></select>@error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
         </div>
     </div>
     <div class="card-footer bg-white d-flex gap-2"><button class="btn btn-primary">Simpan</button><a href="{{ route('workspace.company.companies') }}" class="btn btn-outline-secondary">Batal</a></div>
