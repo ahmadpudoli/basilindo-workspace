@@ -257,6 +257,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!metadataField.value?.trim()) addError(metadataField.name, 'Metadata wajib diisi.', metadataField);
             });
         }
+        if (type === 'document-type') {
+            if (!value('name')) addError('name', 'Nama tipe dokumen wajib diisi.');
+            else if (value('name').length > 255) addError('name', 'Nama tipe dokumen maksimal 255 karakter.');
+            if (!value('code')) addError('code', 'Kode tipe dokumen wajib diisi.');
+            else if (value('code').length > 100) addError('code', 'Kode tipe dokumen maksimal 100 karakter.');
+
+            const allowedMetadataTypes = new Set(['string', 'text', 'numeric', 'numeric_decimal', 'date', 'datetime', 'boolean']);
+            const metadataNames = new Set();
+            form.querySelectorAll('[data-metadata-row]').forEach((row) => {
+                const metadataName = row.querySelector('[data-metadata-name]');
+                const metadataType = row.querySelector('[data-metadata-type]');
+                const fieldName = metadataName?.value?.trim() || '';
+                const fieldType = metadataType?.value || '';
+
+                if (!fieldName) addError('metadata-field', 'Nama field metadata wajib diisi.', metadataName);
+                else if (!/^[a-z][a-z0-9_]*$/.test(fieldName)) addError('metadata-field', 'Nama field hanya boleh berisi huruf kecil, angka, dan garis bawah.', metadataName);
+                else if (metadataNames.has(fieldName)) addError('metadata-field', 'Nama field metadata tidak boleh sama.', metadataName);
+                else metadataNames.add(fieldName);
+                if (!allowedMetadataTypes.has(fieldType)) addError('metadata-type', 'Tipe input metadata tidak valid.', metadataType);
+            });
+        }
         if (errors.length) {
             errors[0].target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             errors[0].target.focus({ preventScroll: true });
@@ -446,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             companyGroupRoleHint?.classList.toggle('d-none', !isGroup);
             companyRoleTrigger && (companyRoleTrigger.disabled = isGroup || !rolesReady);
             if (companyRoleHint) companyRoleHint.textContent = isGroup ? 'Role Group ditetapkan otomatis berdasarkan jenis entitas.' : rolesReady ? 'Pilih satu atau beberapa peran bisnis yang sesuai.' : 'Isi jenis entitas dan klasifikasi terlebih dahulu untuk memilih peran bisnis.';
-            companyRoleControl?.querySelectorAll('input[name="roles[]"]').forEach((input) => {
+            companyRoleControl?.querySelectorAll('input[name="roles[]"][data-dropdown-item]').forEach((input) => {
                 const isOperatingCompany = input.value === 'operating_company';
                 const isVendorRole = input.value === 'vendor';
                 input.disabled = isGroup || !rolesReady || (isExternal && isOperatingCompany) || (companyVendorRoleLocked && isVendorRole);

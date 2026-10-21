@@ -163,9 +163,7 @@ class CompanyController extends Controller
 
     private function hasVendorRelations(Company $company): bool
     {
-        return Vendor::query()
-            ->where(fn ($query) => $query->where('vendor_company_id', $company->getKey())->orWhere('company_id', $company->getKey()))
-            ->exists();
+        return Vendor::query()->where('vendor_company_id', $company->getKey())->exists();
     }
 
     private function parentCompanies(?Company $company = null)

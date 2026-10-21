@@ -20,6 +20,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Document Management memiliki halaman Blade nyata untuk daftar dokumen, tipe dokumen, verifikasi, dan bundel
 - [x] Company memiliki CRUD perusahaan berbasis Blade dengan policy dan validasi boundary modul
 - [x] Detail perusahaan lengkap dengan struktur, visibilitas, dan brand asset privat di MinIO pada prefix `app-company`
+- [x] Daftar perusahaan menampilkan logo brand dengan lazy loading dan decoding asynchronous melalui endpoint privat
 - [x] CRM memiliki CRUD dasar Account, Lead, Opportunity, dan Activity berbasis Blade
 - [x] Project Management memiliki CRUD dasar Project, Ticket, Epic, Catatan, Status, dan Prioritas
 - [x] Project Management memiliki board ticket dan timeline berbasis route Blade
@@ -80,6 +81,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Vendor management memiliki CRUD Blade, detail, scope multi-perusahaan operasional, filter, pagination, dan soft archive
 - [x] Validasi client-side dan Form Request server-side pada form Company dan Vendor
 - [x] Document type management
+- [x] Daftar tipe dokumen memakai pagination, search, filter, sorting, dan limit server-side yang saling mempertahankan parameter
+- [x] Form tambah/edit tipe dokumen memiliki validasi client-side terpusat selain validasi server-side
 - [x] Typed and optional metadata per document type
 - [x] Metadata Numeric integer dan Numeric Decimal dibedakan, dinormalisasi, divalidasi server, dan disanitasi pada tampilan
 - [x] Metadata Numeric dan Numeric Decimal disanitasi saat input dan tetap divalidasi di server

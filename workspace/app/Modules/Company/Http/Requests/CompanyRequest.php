@@ -41,10 +41,10 @@ class CompanyRequest extends FormRequest
     {
         $validator->after(function ($validator): void {
             $company = $this->route('company');
-            $vendorRelationsLocked = $company && Vendor::query()->where(fn ($query) => $query->where('vendor_company_id', $company->getKey())->orWhere('company_id', $company->getKey()))->exists();
+            $vendorRelationsLocked = $company && Vendor::query()->where('vendor_company_id', $company->getKey())->exists();
 
             if ($vendorRelationsLocked) {
-                foreach (['entity_type', 'classification', 'status'] as $field) {
+                foreach (['entity_type', 'classification'] as $field) {
                     if ((string) $this->input($field) !== (string) $company->{$field}) {
                         $validator->errors()->add($field, 'Field ini tidak dapat diubah karena perusahaan sudah memiliki relasi vendor.');
                     }

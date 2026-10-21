@@ -17,3 +17,5 @@
 Master `Company` dapat diberi peran bisnis `vendor` untuk menandai badan usaha vendor, misalnya PT ABC. Profil pada modul Vendor menyimpan konteks penggunaan dan dapat menghubungkan PT ABC ke Carano sekaligus LTN. Dengan demikian, vendor yang sama tidak perlu dibuat ulang untuk setiap perusahaan operasional.
 
 Data lama yang masih menggunakan `vendors.company_id` tetap dibaca sebagai fallback kompatibilitas. Migration normalisasi menyalin relasi lama ke pivot. Karena kolom legacy tersebut masih wajib pada database saat ini, data baru menyimpan perusahaan operasional pertama sebagai anchor `company_id`, sementara seluruh pilihan perusahaan disimpan pada pivot.
+- Perusahaan yang dikunci karena relasi vendor adalah master client/vendor pada `vendors.vendor_company_id`; perusahaan operasional pada `vendors.company_id` tetap dapat dikelola sesuai aturan perusahaan operasional.
+- Status master vendor tetap dapat diubah. Selama relasi vendor masih ada, yang dilindungi dari perubahan adalah jenis entitas, klasifikasi, dan peran Vendor.

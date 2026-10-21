@@ -10,6 +10,7 @@
 - Upload logo baru menggantikan referensi logo lama dan object lama dihapus setelah referensi baru berhasil disimpan.
 - Input logo berada di bagian paling atas form, rata kanan, berbentuk panel kompak, dan selalu diberi label opsional.
 - Form menampilkan preview logo tersimpan atau inisial kode, lalu menggantinya secara langsung ketika user memilih file baru.
+- Daftar perusahaan menampilkan logo di sebelah nama melalui endpoint privat dengan `loading="lazy"`, `decoding="async"`, ukuran tetap, dan prioritas rendah agar gambar tidak menghambat render tabel.
 
 ## Kriteria penerimaan
 

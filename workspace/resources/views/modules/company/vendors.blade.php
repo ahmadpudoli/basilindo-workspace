@@ -2,12 +2,14 @@
 
 @section('content')
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><div class="text-uppercase text-secondary small fw-semibold mb-2">Company management</div><h1 class="h3 mb-1">Vendor</h1><p class="text-secondary mb-0">Kelola profil vendor dan perusahaan operasional yang menggunakannya.</p></div><a href="{{ route('workspace.company.vendors.create') }}" class="btn btn-primary">Tambah vendor</a></div>
-<form class="mb-3 workspace-company-filter-form" method="GET">
-    <div class="workspace-company-search-field"><input name="q" value="{{ request('q') }}" class="form-control" placeholder="Cari nama atau kode vendor"></div>
-    <select name="company_id" class="form-select" aria-label="Filter perusahaan"><option value="">Semua perusahaan</option>@foreach($companies as $company)<option value="{{ $company->id }}" @selected($companyId === $company->id)>{{ $company->code }}</option>@endforeach</select>
-    <select name="status" class="form-select" aria-label="Filter status"><option value="">Semua status</option><option value="active" @selected($status === 'active')>Aktif</option><option value="inactive" @selected($status === 'inactive')>Nonaktif</option></select>
-    <select name="limit" class="form-select workspace-company-limit" aria-label="Jumlah per halaman"><option value="10" @selected($perPage === 10)>10 / halaman</option><option value="15" @selected($perPage === 15)>15 / halaman</option><option value="25" @selected($perPage === 25)>25 / halaman</option><option value="50" @selected($perPage === 50)>50 / halaman</option></select>
-    <button class="btn btn-outline-primary" type="submit">Cari</button>
+<form method="GET" class="card card-body border-0 shadow-sm mb-3 workspace-list-filter-form">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-5"><label class="form-label">Pencarian</label><input name="q" value="{{ request('q') }}" class="form-control" placeholder="Cari nama atau kode vendor"></div>
+        <div class="col-md-2"><label class="form-label">Perusahaan</label><select name="company_id" class="form-select"><option value="">Semua perusahaan</option>@foreach($companies as $company)<option value="{{ $company->id }}" @selected($companyId === $company->id)>{{ $company->code }}</option>@endforeach</select></div>
+        <div class="col-md-2"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Semua status</option><option value="active" @selected($status === 'active')>Aktif</option><option value="inactive" @selected($status === 'inactive')>Nonaktif</option></select></div>
+        <div class="col-md-2"><label class="form-label">Jumlah</label><select name="limit" class="form-select"><option value="10" @selected($perPage === 10)>10 / halaman</option><option value="15" @selected($perPage === 15)>15 / halaman</option><option value="25" @selected($perPage === 25)>25 / halaman</option><option value="50" @selected($perPage === 50)>50 / halaman</select></div>
+        <div class="col-md-1 d-grid"><button class="btn btn-sm btn-outline-primary" type="submit">Terapkan</button></div>
+    </div>
 </form>
 <div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Nama vendor</th><th>Kode</th><th>Master perusahaan vendor</th><th>Perusahaan operasional</th><th>Tax ID</th><th>Status</th><th><span class="visually-hidden">Aksi</span></th></tr></thead><tbody>
 @forelse($vendors as $vendor)

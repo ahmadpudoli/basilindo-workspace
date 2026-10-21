@@ -41,7 +41,7 @@
                             <div class="workspace-dropdown-options">
                                 <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="operating_company" data-dropdown-item @checked(in_array('operating_company', $selectedRoles, true))><span>Perusahaan operasional</span></label>
                                 <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="client" data-dropdown-item @checked(in_array('client', $selectedRoles, true))><span>Client</span></label>
-                                <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="vendor" data-dropdown-item data-company-vendor-role @disabled($hasVendorRelations) @checked(in_array('vendor', $selectedRoles, true))><span>Vendor</span></label>
+                                <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="vendor" data-dropdown-item data-company-vendor-role @disabled($hasVendorRelations) @checked($hasVendorRelations || in_array('vendor', $selectedRoles, true))><span>Vendor</span></label>
                                 <label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="roles[]" value="partner" data-dropdown-item @checked(in_array('partner', $selectedRoles, true))><span>Partner</span></label>
                             </div>
                         </div>
@@ -79,7 +79,7 @@
                 <div class="form-text">Kosongkan untuk visibilitas global ke semua perusahaan operasional. Jika diisi, hanya kode yang dipilih yang dapat melihat dan menggunakan data ini. Hak akses user tetap berlaku.</div>
                 @error('visibility_company_ids.*')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
             </div>
-            <div class="col-md-6" data-company-status-control><label class="form-label">Status *</label>@if($hasVendorRelations)<input type="hidden" name="status" value="{{ $company->status }}">@endif<select name="status" class="form-select @error('status') is-invalid @enderror" @disabled($hasVendorRelations)><option value="active" @selected(old('status', $company->status ?: 'active') === 'active')>Aktif</option><option value="inactive" @selected(old('status', $company->status) === 'inactive')>Nonaktif</option></select>@error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6" data-company-status-control><label class="form-label">Status *</label><select name="status" class="form-select @error('status') is-invalid @enderror"><option value="active" @selected(old('status', $company->status ?: 'active') === 'active')>Aktif</option><option value="inactive" @selected(old('status', $company->status) === 'inactive')>Nonaktif</option></select>@error('status')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
         </div>
     </div>
     <div class="card-footer bg-white d-flex gap-2"><button class="btn btn-primary">Simpan</button><a href="{{ route('workspace.company.companies') }}" class="btn btn-outline-secondary">Batal</a></div>

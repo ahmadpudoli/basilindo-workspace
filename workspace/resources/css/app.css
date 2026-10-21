@@ -224,6 +224,9 @@ h1, h2, h3, h4, h5, h6 { color: var(--workspace-ink); letter-spacing: -.02em; }
 .workspace-company-role-filter .workspace-dropdown-multiselect { width: 100%; }
 .workspace-company-filter-form .workspace-company-limit { flex-basis: 145px; }
 .workspace-table-actions .btn { font-size: .74rem; line-height: 1.2; min-height: 30px; padding: .32rem .62rem; }
+.workspace-company-table-logo { background: #fff; border: 1px solid var(--workspace-border); border-radius: 8px; display: block; height: 36px; object-fit: contain; width: 36px; }
+.workspace-company-table-logo-placeholder { align-items: center; background: rgba(11,116,201,.08); color: var(--workspace-primary); display: inline-flex; font-size: .72rem; font-weight: 700; justify-content: center; }
+.workspace-company-table-identity { align-items: center; display: flex; gap: 10px; min-width: 190px; }
 .workspace-company-form { position: relative; }
 .workspace-company-form .row.g-3 > [data-company-role-control] { order: 5; }
 .workspace-company-form .row.g-3 > [data-company-visibility-control] { order: 6; }
@@ -688,7 +691,12 @@ html[data-theme="dark"] .workspace-dashboard-module-icon { background: color-mix
 .workspace-content form [class*="col-"] > .form-label:has(+ .form-control),
 .workspace-content form [class*="col-"] > .form-label:has(+ .form-select),
 .workspace-content form [class*="col-"] > .form-label:has(+ .workspace-dropdown-multiselect),
-.workspace-content form .workspace-floating-field > .form-label { left: 1.2rem !important; }
+.workspace-content form .workspace-floating-field > .form-label { left: .8rem !important; }
+.workspace-content form .workspace-floating-field { display: contents; min-height: 0; position: static; }
+.workspace-content form [class*="col-"]:has(> .workspace-floating-field) { position: relative; }
+.workspace-content form .workspace-floating-field > .form-label { left: .8rem !important; }
+.workspace-content form .workspace-floating-field { display: contents; min-height: 0; position: static; }
+.workspace-content form .workspace-floating-field > .form-label { left: .8rem !important; }
 html[data-theme="dark"] .workspace-document-upload-preview { background: #111820; }
 html[data-theme="dark"] .workspace-document-upload-control { background: #111820; }
 html[data-theme="dark"] .workspace-document-readonly-file { background: #111820; }

@@ -30,7 +30,17 @@ class DocumentManagementController extends Controller
     public function typeStore(Request $request): RedirectResponse { Gate::authorize('create', DocumentType::class); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type = DocumentType::create($data); $this->syncDocumentTypeCompanies($type, $companyIds); return redirect()->route('workspace.documents.types')->with('status', 'Tipe dokumen berhasil dibuat.'); }
     public function typeEdit(Request $request, DocumentType $type): View { Gate::authorize('update', $type); return view('modules.documents.type-form', ['type' => $type, 'selectedCompanyIds' => $this->documentTypeCompanyIds($type), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
     public function typeUpdate(Request $request, DocumentType $type): RedirectResponse { Gate::authorize('update', $type); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type->update($data); $this->syncDocumentTypeCompanies($type, $companyIds); return redirect()->route('workspace.documents.types')->with('status', 'Tipe dokumen berhasil diperbarui.'); }
-    public function typeDestroy(DocumentType $type): RedirectResponse { Gate::authorize('delete', $type); abort_if($type->documents()->exists(), 422, 'Tipe dokumen yang masih dipakai tidak dapat dihapus.'); $type->delete(); return back()->with('status', 'Tipe dokumen dihapus.'); }
+    public function typeDestroy(DocumentType $type): RedirectResponse
+    {
+        Gate::authorize('delete', $type);
+        if ($type->documents()->exists()) {
+            return back()->with('error', 'Tipe dokumen tidak dapat dihapus karena sudah digunakan pada upload dokumen.');
+        }
+
+        $type->delete();
+
+        return back()->with('status', 'Tipe dokumen dihapus.');
+    }
 
     private function typeData(Request $request): array
     {
@@ -185,11 +195,46 @@ class DocumentManagementController extends Controller
     public function types(Request $request): View
     {
         Gate::authorize('viewAny', Document::class);
-        $types = DocumentType::query()->with('company')->withCount('documents')->latest()->paginate(15)->withQueryString();
+        $allowedSorts = ['name', 'code', 'is_active', 'created_at'];
+        $sort = in_array($request->input('sort'), $allowedSorts, true) ? $request->input('sort') : 'created_at';
+        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+        $perPage = (int) $request->input('limit', 15);
+        $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 15;
+        $search = trim((string) $request->input('q', ''));
+        $status = in_array($request->input('status'), ['active', 'inactive'], true) ? $request->input('status') : '';
+        $companyIds = array_values(array_unique(array_map('intval', array_filter((array) $request->input('company_ids', []), 'is_numeric'))));
+        $companyIds = Company::query()->operationalFor($request->user())->whereIn('id', $companyIds)->pluck('id')->map(fn ($id): int => (int) $id)->all();
+
+        $query = DocumentType::query()->with('company')->withCount('documents');
+        if ($search !== '') {
+            $matchingCompanyIds = Company::query()
+                ->where(fn ($builder) => $builder->where('name', 'ilike', "%{$search}%")->orWhere('code', 'ilike', "%{$search}%"))
+                ->pluck('id');
+            $matchingLinkedTypeIds = $matchingCompanyIds->isEmpty()
+                ? collect()
+                : DB::connection('documents')->table('document_type_companies')->whereIn('company_id', $matchingCompanyIds)->pluck('document_type_id');
+
+            $query->where(fn ($builder) => $builder
+                ->where('name', 'ilike', "%{$search}%")
+                ->orWhere('code', 'ilike', "%{$search}%")
+                ->orWhereIn('company_id', $matchingCompanyIds)
+                ->orWhereIn('id', $matchingLinkedTypeIds));
+        }
+        if ($status !== '') {
+            $query->where('is_active', $status === 'active');
+        }
+        if ($companyIds !== []) {
+            $matchingLinkedTypeIds = DB::connection('documents')->table('document_type_companies')->whereIn('company_id', $companyIds)->pluck('document_type_id');
+            $query->where(fn ($builder) => $builder->whereIn('company_id', $companyIds)->orWhereIn('id', $matchingLinkedTypeIds));
+        }
+
+        $types = $query->orderBy($sort, $direction)->paginate($perPage)->withQueryString();
         $typeCompanyIds = DB::connection('documents')->table('document_type_companies')->whereIn('document_type_id', $types->getCollection()->pluck('id'))->get()->groupBy('document_type_id');
         $companyNames = Company::query()->whereIn('id', $typeCompanyIds->flatten()->pluck('company_id')->unique())->pluck('name', 'id');
 
-        return view('modules.documents.types', compact('types', 'typeCompanyIds', 'companyNames'));
+        $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get(['id', 'name', 'code']);
+
+        return view('modules.documents.types', compact('types', 'typeCompanyIds', 'companyNames', 'companies', 'companyIds', 'search', 'status', 'sort', 'direction', 'perPage'));
     }
 
     public function verification(Request $request): View
