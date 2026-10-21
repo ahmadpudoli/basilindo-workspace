@@ -1,8 +1,8 @@
 <?php
 
 use Core\Models\Company;
-use App\Models\Document;
-use App\Models\DocumentType;
+use App\Modules\DocumentManagement\Domain\Models\Document;
+use App\Modules\DocumentManagement\Domain\Models\DocumentType;
 use Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;

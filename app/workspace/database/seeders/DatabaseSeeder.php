@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Core\Models\Company;
+use Core\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        // Create/update the local administrator account used to access Filament.
+        // Create/update the local administrator account used to access Workspace.
         $this->call(RoleSeeder::class);
 
         $admin = User::updateOrCreate(

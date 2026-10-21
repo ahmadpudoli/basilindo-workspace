@@ -1,0 +1,9 @@
+@extends('layouts.app', ['title' => 'Pengaturan'])
+@section('content')
+<div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Administrasi Workspace</div><h1 class="h3 mb-1">Pengaturan</h1><p class="text-secondary mb-0">Kelola modul aktif, akun pengguna, role, permission, dan scope data.</p></div>
+<div class="row g-4">
+    <div class="col-md-6 col-xl-4"><a href="{{ route('workspace.settings.modules') }}" class="workspace-dashboard-module workspace-dashboard-module--company"><div class="workspace-dashboard-module-body"><span class="workspace-dashboard-module-kicker">Platform</span><h2>Modul aktif</h2><p>Atur modul mana yang tampil pada launcher dan halaman utama Workspace.</p><span class="workspace-dashboard-module-link">Kelola modul <span>↗</span></span></div></a></div>
+    <div class="col-md-6 col-xl-4"><a href="{{ route('workspace.core.users') }}" class="workspace-dashboard-module workspace-dashboard-module--crm"><div class="workspace-dashboard-module-body"><span class="workspace-dashboard-module-kicker">Identity</span><h2>Pengguna & akses</h2><p>Kelola akun, perusahaan yang dapat diakses, role, dan permission tambahan.</p><span class="workspace-dashboard-module-link">Kelola pengguna <span>↗</span></span></div></a></div>
+    <div class="col-md-6 col-xl-4"><a href="{{ route('workspace.core.roles') }}" class="workspace-dashboard-module workspace-dashboard-module--project-management"><div class="workspace-dashboard-module-body"><span class="workspace-dashboard-module-kicker">Authorization</span><h2>Role & permission</h2><p>Atur group role dan hak akses lintas modul sesuai tanggung jawab pengguna.</p><span class="workspace-dashboard-module-link">Kelola role <span>↗</span></span></div></a></div>
+</div>
+@endsection

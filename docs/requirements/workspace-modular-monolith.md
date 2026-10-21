@@ -2,13 +2,13 @@
 
 ## Tujuan
 
-Mengembangkan `app/file-organizer` menjadi satu Basilindo Workspace yang memuat lima modul bisnis dengan UI/UX File Organizer sebagai baseline visual dan interaksi.
+Mengembangkan `app/workspace` menjadi satu Basilindo Workspace yang memuat empat modul bisnis aktif dengan platform Core/Identity bersama. UI menggunakan Laravel Blade + Bootstrap dan Livewire secara selektif; Filament tidak digunakan.
 
 ## Modul dan tanggung jawab
 
 ### 1. Core / Identity
 
-- Login lokal Laravel/Filament sebagai metode utama; adapter OIDC/SSO bersifat opsional.
+- Login lokal Laravel sebagai satu-satunya metode runtime; adapter OIDC/SSO bersifat opsional dan tidak menjadi dependency runtime.
 - User, role, permission, session, audit login, dan application entitlement.
 - Tidak membuat identitas user duplikat di modul lain.
 
@@ -42,15 +42,16 @@ Mengembangkan `app/file-organizer` menjadi satu Basilindo Workspace yang memuat 
 - User dan Company tidak dibuat ulang oleh modul bisnis.
 - Transaksi lintas modul wajib memakai service orchestration dan database transaction jika perubahan harus atomik.
 - Integrasi yang tidak perlu atomik menggunakan event/job yang idempotent.
-- UI mengikuti layout, warna, tabel, filter, status, empty state, dan pola navigasi File Organizer.
+- UI mengikuti pola visual yang sudah disetujui, tetapi diimplementasikan sebagai Blade/Bootstrap. Livewire hanya untuk interaksi dinamis yang memberi nilai nyata.
 - `app/project-sso/` tidak menjadi dependency runtime Workspace dan dapat dipertahankan sebagai adapter/future federation.
+- HRIS dapat ditambahkan sebagai modul baru tanpa mengubah boundary modul yang sudah ada.
 
 ## Acceptance criteria fase fondasi
 
 - `app/file-organizer` ditetapkan sebagai Basilindo Workspace.
-- Struktur lima boundary domain terdokumentasi dan tersedia di source tree.
+- Struktur platform Core dan empat boundary modul bisnis terdokumentasi dan tersedia di source tree.
 - Menu global identity/company tidak diduplikasi di setiap modul bisnis.
-- Existing Document Management tetap dapat dijalankan tanpa perubahan perilaku yang tidak terkait.
+- Existing Document Management tetap dapat dijalankan tanpa perubahan perilaku yang tidak terkait setelah migrasi UI bertahap dari Filament ke Blade/Bootstrap/Livewire.
 - Setiap modul memiliki daftar fitur awal dan owner data yang jelas.
 - Role module CRM/Project diprovision secara additive pada existing install; migration tidak mencabut permission atau membuat company membership otomatis.
 

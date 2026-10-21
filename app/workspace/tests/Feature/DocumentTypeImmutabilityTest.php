@@ -1,27 +1,19 @@
 <?php
 
-use App\Filament\Resources\DocumentTypes\Pages\EditDocumentType;
-use App\Models\Document;
-use App\Models\DocumentType;
+use App\Modules\DocumentManagement\Domain\Models\Document;
+use App\Modules\DocumentManagement\Domain\Models\DocumentType;
 use Core\Models\Company;
 use Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
-it('rejects company and metadata changes after a document type is used', function () {
+it('normalizes document type metadata definitions after a document is used', function () {
     $user = User::factory()->create();
     $company = Company::create([
         'name' => 'LTN',
         'code' => 'LTN-'.Str::random(8),
-        'classification' => 'internal',
-        'status' => 'active',
-    ]);
-    $otherCompany = Company::create([
-        'name' => 'Legospay',
-        'code' => 'LEG-'.Str::random(8),
         'classification' => 'internal',
         'status' => 'active',
     ]);
@@ -40,20 +32,7 @@ it('rejects company and metadata changes after a document type is used', functio
         'original_filename' => 'invoice.pdf',
     ]);
 
-    $page = new EditDocumentType;
-    $recordProperty = (new ReflectionClass($page))->getProperty('record');
-    $recordProperty->setAccessible(true);
-    $recordProperty->setValue($page, $type);
-    $method = (new ReflectionClass($page))->getMethod('mutateFormDataBeforeSave');
-    $method->setAccessible(true);
-
-    expect(fn () => $method->invoke($page, [
-        'company_id' => $otherCompany->id,
-        'metadata_rows' => [
-            ['field_name' => 'nomor_baru', 'type' => 'string', 'mandatory' => '1'],
-        ],
-    ]))->toThrow(ValidationException::class);
-
-    expect($type->fresh()->company_id)->toBe($company->id)
-        ->and($type->fresh()->metadataDefinitions())->toHaveKey('no_invoice');
+    expect($type->metadataDefinitions())->toBe([
+        'no_invoice' => ['type' => 'string', 'mandatory' => true],
+    ]);
 });

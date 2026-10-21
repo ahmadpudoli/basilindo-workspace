@@ -3,8 +3,6 @@
 namespace Core\Models;
 
 use Core\Database\Factories\UserFactory;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +12,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, HasRoles, MustVerifyEmailTrait, Notifiable;
 
@@ -116,8 +114,4 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         return $this->unreadNotifications()->count();
     }
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->hasVerifiedEmail() && $this->roles()->exists();
-    }
 }

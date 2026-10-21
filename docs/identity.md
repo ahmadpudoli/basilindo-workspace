@@ -1,6 +1,6 @@
 # Identitas Workspace
 
-Workspace menggunakan login lokal Laravel/Filament pada `/login`.
+Workspace menggunakan login lokal Laravel pada `/login`.
 User, password, role, permission, company membership, session, dan audit login
 disimpan dan dikelola oleh modul Core dalam aplikasi yang sama.
 

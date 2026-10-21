@@ -1,0 +1,4 @@
+@extends('layouts.app', ['title' => 'Board Ticket'])
+@section('content')
+<h1 class="h3 mb-1">Board ticket</h1><p class="text-secondary mb-4">Ringkasan ticket berdasarkan status.</p><div class="row g-3">@forelse($tickets as $status => $items)<div class="col-md-4"><div class="card border-0 shadow-sm h-100"><div class="card-header bg-white fw-semibold">{{ $status }} <span class="badge text-bg-light">{{ $items->count() }}</span></div><div class="card-body d-flex flex-column gap-2">@foreach($items as $ticket)<div class="border rounded p-3"><div class="fw-semibold">{{ $ticket->name }}</div><small class="text-secondary">{{ $ticket->project?->name ?: 'Tanpa project' }} · {{ $ticket->priority?->name ?: 'Tanpa prioritas' }}</small></div>@endforeach</div></div></div>@empty<div class="col-12"><div class="alert alert-info">Belum ada ticket.</div></div>@endforelse</div>
+@endsection

@@ -6,8 +6,8 @@
 
 ## Keputusan
 
-`app/file-organizer` menjadi satu-satunya aplikasi aktif untuk lima modul dan
-memakai login lokal Laravel/Filament. `project-sso` tidak diperlukan untuk
+`app/workspace` menjadi satu-satunya aplikasi aktif untuk empat modul bisnis dan
+platform Core, serta memakai login lokal Laravel. `project-sso` tidak diperlukan untuk
 operasi internal single-app. OIDC tetap dapat dipertahankan sebagai adapter
 opsional bila kelak ada aplikasi eksternal atau federation perusahaan.
 

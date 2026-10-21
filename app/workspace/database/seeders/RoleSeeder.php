@@ -10,7 +10,7 @@ class RoleSeeder extends Seeder
 {
     public function run()
     {
-        // Daftar resource Filament
+        // Daftar permission aplikasi Workspace
         $resources = [
             'company',
             'project',
@@ -39,6 +39,7 @@ class RoleSeeder extends Seeder
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
+        Permission::firstOrCreate(['name' => 'access_settings', 'guard_name' => 'web']);
 
         // Buat role super_admin, admin, member
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);

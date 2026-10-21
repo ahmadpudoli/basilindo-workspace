@@ -22,7 +22,8 @@ Semua modul berjalan dalam satu lifecycle deployment dan satu session authentica
 
 - PHP 8.2+
 - Laravel 12
-- Filament 4
+- Laravel Blade + Bootstrap
+- Livewire selektif untuk komponen interaktif
 - PostgreSQL
 - Redis
 - MinIO/S3-compatible private storage
@@ -47,3 +48,18 @@ Jangan menyimpan dokumen bisnis pada public/local disk. Disk bisnis harus tetap
 mengarah ke object storage private.
 
 URL development utama: `http://localhost:8080`.
+
+## Boundary modul
+
+Source code modul berada di `app/Modules/`:
+
+- `Core`: login lokal, user, role, permission, session, dan audit security.
+- `Company`: master company, membership, dan company scope.
+- `CRM`: account, contact, lead, opportunity, dan activity.
+- `ProjectManagement`: project, member, ticket, notes, dan timeline.
+- `DocumentManagement`: dokumen, storage, search, verification, dan bundle.
+- `HRIS`: placeholder untuk modul HRIS berikutnya.
+
+Semua modul berbagi satu aplikasi Laravel, satu login/session, satu database,
+Redis, MinIO, dan deployment. Modul tidak boleh membuat authentication guard,
+database, atau aplikasi terpisah.

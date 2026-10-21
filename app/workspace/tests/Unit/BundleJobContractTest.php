@@ -1,6 +1,6 @@
 <?php
 
-use App\Jobs\GenerateDocumentBundle;
+use App\Modules\DocumentManagement\Application\Jobs\GenerateDocumentBundle;
 
 it('defines bounded retry and deterministic idempotency for bundle generation', function () {
     $job = new GenerateDocumentBundle('bundle-id');

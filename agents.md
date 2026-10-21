@@ -11,18 +11,20 @@ Bangun aplikasi manajemen dokumen perusahaan untuk membantu tim Finance dan admi
 - mengunduh kumpulan dokumen sebagai bundel ZIP;
 - menyediakan audit trail dan kontrol akses yang dapat dipertanggungjawabkan.
 
-Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace adalah satu aplikasi Laravel Filament modular monolith yang memuat Core, Company, CRM, Project Management, dan Document Management. Dokumentasi, keputusan arsitektur, log pekerjaan, dan checklist berada di `docs/`. `app/file-organizer/`, `app/project-management/`, dan `app/project-sso/` adalah sumber legacy selama migrasi dan tidak boleh dijalankan sebagai runtime.
+Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace adalah satu aplikasi Laravel modular monolith berbasis Blade + Bootstrap dengan Livewire selektif yang memuat Core, Company, CRM, Project Management, dan Document Management. Dokumentasi, keputusan arsitektur, log pekerjaan, dan checklist berada di `docs/`. `app/file-organizer/`, `app/project-management/`, dan `app/project-sso/` adalah sumber legacy selama migrasi dan tidak boleh dijalankan sebagai runtime.
 
 ## Kontrak teknologi
 
 - PHP 8.2+ dan Laravel 12.
-- Filament 4 sebagai admin application/UI.
+- Laravel Blade + Bootstrap sebagai UI dasar.
+- Livewire hanya untuk komponen yang membutuhkan interaksi dinamis.
 - PostgreSQL sebagai database utama.
 - Redis sebagai cache, queue, lock, dan rate limiting jika sesuai kebutuhan.
 - MinIO sebagai object storage S3-compatible untuk file dokumen dan hasil bundling sementara.
 - Docker Compose untuk lingkungan pengembangan lokal.
-- Filament Shield atau mekanisme permission setara untuk role dan permission.
+- Spatie Laravel Permission atau mekanisme permission setara untuk role dan permission.
 - Gunakan pola, kualitas UI, warna, dan pengalaman pengguna dari `project-management`, tetapi buat domain model dan navigasi khusus untuk document management.
+- Gunakan `pos-laravel-admin/` sebagai template/acuan UI/UX sesuai `docs/ui-reference-pos-laravel-admin.md`. Adaptasikan layout, warna, tabel, pagination, modal, dan interaksi ke kebutuhan Basilindo; jangan menyalin domain POS, route, migration, payment flow, kredensial, atau konfigurasi. Blade + Bootstrap menjadi fondasi dan Livewire digunakan secara selektif.
 
 ## Aturan kerja agen
 
@@ -34,10 +36,10 @@ Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace ad
 6. Jangan menaruh isi file sensitif di log. Log hanya boleh memuat ID, tipe aktivitas, status, dan metadata non-rahasia.
 7. Semua query yang menampilkan atau mengunduh dokumen wajib melewati authorization policy dan scope organisasi/perusahaan.
 8. Jangan menghapus dokumen secara permanen tanpa kebijakan retensi, permission khusus, audit event, dan mekanisme soft delete/quarantine.
-9. Validasi input di boundary, gunakan Form Request/Filament validation, service class untuk proses domain, dan job untuk pekerjaan berat.
+9. Validasi input di boundary, gunakan Form Request/Laravel validation, service class untuk proses domain, dan job untuk pekerjaan berat.
 10. Hindari query N+1, akses object storage yang tidak perlu, dan pemuatan file penuh ke memory untuk proses bundling.
 11. Tambahkan test untuk rule bisnis, authorization, upload, pencarian, matching, download bundle, dan failure path.
-12. Jangan menambahkan library baru sebelum memeriksa apakah Laravel/Filament atau package yang sudah tersedia dapat menyelesaikan kebutuhan.
+12. Jangan menambahkan library baru sebelum memeriksa apakah Laravel atau package yang sudah tersedia dapat menyelesaikan kebutuhan.
 13. Gunakan Bahasa Indonesia untuk label antarmuka bisnis, tetapi gunakan nama class, table, enum, dan kode internal dalam Bahasa Inggris yang konsisten.
 14. Bila ada keputusan yang belum pasti, catat asumsi dan alternatifnya di `docs/decisions.md`; jangan menyembunyikan keputusan di dalam kode.
 
@@ -46,7 +48,7 @@ Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace ad
 ### Agent 0 — Discovery dan baseline
 
 - Audit isi `app/workspace/` dan sumber legacy hanya sebagai referensi migrasi.
-- Pastikan versi Laravel, Filament, PHP, dan paket yang dipakai terdokumentasi.
+- Pastikan versi Laravel, Livewire, PHP, dan paket yang dipakai terdokumentasi.
 - Buat `.env.example`, Docker Compose, health checks, dan README setup tanpa secret.
 - Output: baseline yang dapat dijalankan, dokumentasi setup, dan log.
 
@@ -59,7 +61,7 @@ Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace ad
 
 ### Agent 2 — Identity, SSO internal, dan authorization
 
-- Bangun login lokal Laravel/Filament pada `app/workspace/` sebagai satu-satunya authentication runtime.
+- Bangun login lokal Laravel pada `app/workspace/` sebagai satu-satunya authentication runtime.
 - Jangan menambahkan SSO, OIDC, Google login, atau login lintas aplikasi tanpa ADR baru dan persetujuan arsitektur.
 - Terapkan role, permission, company/project scope, session security, dan audit login.
 - Output: policy, role matrix, session security, audit login, dan test authorization.
@@ -95,7 +97,7 @@ Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace ad
 
 ### Agent 7 — Dashboard, reporting, dan UX
 
-- Ikuti gaya visual `app/project-management`: sidebar Filament, cards, tables, filters, status colors, dan responsive layout.
+- Ikuti gaya visual `app/project-management`: sidebar, cards, tables, filters, status colors, dan responsive layout yang dibangun dengan Bootstrap.
 - Prioritaskan dashboard: dokumen masuk, belum lengkap, perlu review, mismatch, dan aktivitas terbaru.
 - Sediakan empty state, error state, confirmation, dan bahasa yang mudah dipahami admin.
 - Output: dashboard dan resource/page lengkap untuk MVP.

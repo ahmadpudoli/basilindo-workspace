@@ -1,52 +1,29 @@
-<div class="h-screen overflow-hidden bg-gray-50 flex items-center justify-center">
-    <div class="w-full max-w-md">
-        <!-- Logo/Brand -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ config('app.name') }}</h1>
-            <p class="text-gray-600">Client Portal Access</p>
+<div class="row justify-content-center py-5">
+    <div class="col-12 col-sm-9 col-md-6 col-lg-4">
+        <div class="text-center mb-4">
+            <span class="workspace-brand-mark mb-3">B</span>
+            <h1 class="h4 mb-1">{{ config('app.name') }}</h1>
+            <p class="text-secondary mb-0">Akses portal eksternal</p>
         </div>
-
-        <!-- Login Card -->
-        <div class="bg-white rounded-lg shadow-sm border p-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6 text-center">Enter Access Code</h2>
-            
-            <form wire:submit.prevent="authenticate" class="space-y-6">
-                <!-- Password Input -->
-                <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                        Access Password
-                    </label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        wire:model="password" 
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        placeholder="Enter your access password"
-                        required
-                    >
-                </div>
-
-                <!-- Error Message -->
-                @if($error)
-                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                        {{ $error }}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-lg-5">
+                <h2 class="h5 mb-1">Masukkan kode akses</h2>
+                <p class="text-secondary small mb-4">Gunakan kode yang diberikan oleh admin Basilindo.</p>
+                <form wire:submit="authenticate">
+                    <div class="mb-3">
+                        <label class="form-label" for="external-password">Kode akses</label>
+                        <input class="form-control @error('password') is-invalid @enderror" type="password" id="external-password" wire:model="password" required autofocus>
+                        @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
-                @endif
-
-                <!-- Submit Button -->
-                <button 
-                    type="submit" 
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                    Access Portal
-                </button>
-            </form>
-            
-            <!-- Footer -->
-            <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">
-                    Powered by {{ config('app.name') }}
-                </p>
+                    @if($error)
+                        <div class="alert alert-danger py-2 small">{{ $error }}</div>
+                    @endif
+                    <button class="btn btn-primary w-100" type="submit" wire:loading.attr="disabled">
+                        <span wire:loading.remove>Masuk ke portal</span>
+                        <span wire:loading>Memeriksa...</span>
+                    </button>
+                </form>
+                <p class="text-center text-secondary small mt-4 mb-0">Powered by {{ config('app.name') }}</p>
             </div>
         </div>
     </div>

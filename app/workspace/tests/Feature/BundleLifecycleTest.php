@@ -1,7 +1,7 @@
 <?php
 
-use App\Jobs\PurgeExpiredBundles;
-use App\Models\Bundle;
+use App\Modules\DocumentManagement\Application\Jobs\PurgeExpiredBundles;
+use App\Modules\DocumentManagement\Domain\Models\Bundle;
 use Core\Models\Company;
 use Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

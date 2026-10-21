@@ -16,3 +16,4 @@
 
 # Abaikan file logs
 **/*.log
+/pos-laravel-admin

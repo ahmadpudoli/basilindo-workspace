@@ -1,0 +1,77 @@
+.company-dashboard-hero { background: linear-gradient(120deg, #075b9e 0%, #0b74c9 55%, #159bd7 100%); border-radius: 22px; box-shadow: 0 18px 40px rgba(11,116,201,.18); color: #fff; min-height: 285px; overflow: hidden; padding: 34px 38px; position: relative; }
+.company-dashboard-hero-content { max-width: 650px; position: relative; z-index: 2; }
+.company-dashboard-eyebrow { align-items: center; color: rgba(255,255,255,.72); display: flex; font-size: .68rem; font-weight: 800; gap: 8px; letter-spacing: .13em; }
+.company-dashboard-eyebrow-dot { background: #7dd3fc; border-radius: 50%; box-shadow: 0 0 0 5px rgba(125,211,252,.15); height: 7px; width: 7px; }
+.company-dashboard-hero h1 { color: #fff; font-size: clamp(1.9rem, 3.5vw, 2.8rem); font-weight: 800; letter-spacing: -.04em; line-height: 1.12; margin: 16px 0 12px; }
+.company-dashboard-hero h1 span { color: #bfe9ff; }
+.company-dashboard-hero p { color: rgba(255,255,255,.77); font-size: .91rem; line-height: 1.65; margin: 0; max-width: 570px; }
+.company-dashboard-hero .btn-light { color: #075b9e; font-weight: 700; }
+.company-dashboard-hero .btn-outline-light { border-color: rgba(255,255,255,.45); color: #fff; }
+.company-dashboard-hero-art { height: 250px; position: absolute; right: 5%; top: 18px; width: 320px; }
+.company-dashboard-orbit { border: 1px solid rgba(191,233,255,.32); border-radius: 50%; height: 245px; position: absolute; right: 10px; top: 4px; transform: rotate(-26deg); width: 245px; }
+.company-dashboard-orbit-two { height: 190px; right: 38px; top: 32px; transform: rotate(34deg); }
+.company-dashboard-building { align-items: flex-end; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.35); border-radius: 16px 16px 7px 7px; bottom: 39px; box-shadow: 0 15px 30px rgba(2,39,75,.18); display: flex; gap: 10px; height: 126px; justify-content: center; padding: 20px 17px 15px; position: absolute; right: 85px; transform: skewY(-4deg); width: 130px; }
+.company-dashboard-building span { background: #bfe9ff; border-radius: 2px; height: 17px; opacity: .86; width: 12px; }
+.company-dashboard-building span:nth-child(2) { height: 29px; }.company-dashboard-building span:nth-child(3) { height: 23px; }.company-dashboard-building span:nth-child(4) { height: 34px; }
+.company-dashboard-building i { background: #fff; bottom: 0; height: 34px; position: absolute; width: 20px; }
+.company-dashboard-art-label { background: rgba(255,255,255,.94); border-radius: 10px; bottom: 18px; box-shadow: 0 10px 20px rgba(2,39,75,.15); color: #075b9e; display: flex; flex-direction: column; padding: 8px 12px; position: absolute; right: 0; }
+.company-dashboard-art-label strong { font-size: 1.12rem; line-height: 1; }.company-dashboard-art-label small { color: #667085; font-size: .61rem; margin-top: 4px; }
+.company-dashboard-stat { align-items: center; background: var(--workspace-surface); border: 1px solid var(--workspace-border); border-radius: 15px; box-shadow: 0 5px 16px rgba(16,24,40,.05); display: flex; gap: 12px; min-height: 100px; overflow: hidden; padding: 17px; position: relative; }
+.company-dashboard-stat-icon { align-items: center; background: #eaf6ff; border-radius: 11px; color: var(--workspace-primary); display: inline-flex; flex: 0 0 42px; height: 42px; justify-content: center; }.company-dashboard-stat-icon svg { height: 22px; stroke: currentColor; width: 22px; }
+.company-dashboard-stat--green .company-dashboard-stat-icon { background: #ecfdf3; color: #15803d; }.company-dashboard-stat--cyan .company-dashboard-stat-icon { background: #e6faff; color: #0891b2; }.company-dashboard-stat--purple .company-dashboard-stat-icon { background: #f3edff; color: #7b4acb; }
+.company-dashboard-stat-label { color: var(--workspace-muted); font-size: .72rem; }.company-dashboard-stat-value { color: var(--workspace-ink); font-size: 1.55rem; font-weight: 800; line-height: 1.15; margin-top: 3px; }.company-dashboard-stat-dot { background: var(--workspace-primary); border-radius: 50%; height: 70px; opacity: .06; position: absolute; right: -18px; top: -18px; width: 70px; }.company-dashboard-stat--green .company-dashboard-stat-dot { background: #15803d; }.company-dashboard-stat--cyan .company-dashboard-stat-dot { background: #0891b2; }.company-dashboard-stat--purple .company-dashboard-stat-dot { background: #7b4acb; }
+.company-dashboard-card { border-radius: 17px !important; }.company-dashboard-card-header { align-items: center; display: flex; justify-content: space-between; padding: 19px 20px 15px; }.company-dashboard-card-header h2, .company-dashboard-actions h2 { font-size: 1.03rem; font-weight: 800; margin: 4px 0 3px; }.company-dashboard-card-header p { color: var(--workspace-muted); font-size: .74rem; margin: 0; }.company-dashboard-section-kicker { color: var(--workspace-primary); font-size: .65rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.company-dashboard-table > :not(caption) > * > * { padding: 10px 16px; }.company-dashboard-table thead th { font-size: .64rem; }.company-dashboard-company-name { display: block; font-size: .8rem; font-weight: 750; text-decoration: none; }.company-dashboard-table td small { color: var(--workspace-muted); display: block; font-size: .67rem; margin-top: 3px; }.company-dashboard-table .badge { font-size: .63rem; padding: .35em .55em; }
+.company-dashboard-actions .card-body { padding: 20px; }.company-dashboard-actions p { font-size: .78rem; line-height: 1.6; }.company-dashboard-action { align-items: center; border: 1px solid var(--workspace-border); border-radius: 11px; color: var(--workspace-ink); display: flex; gap: 11px; margin-top: 10px; padding: 11px; text-decoration: none; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }.company-dashboard-action:hover { border-color: #8dc7ed; box-shadow: 0 8px 18px rgba(11,116,201,.1); color: var(--workspace-ink); transform: translateX(3px); }.company-dashboard-action-icon { align-items: center; border-radius: 9px; display: inline-flex; flex: 0 0 32px; font-size: 1.05rem; height: 32px; justify-content: center; }.company-dashboard-action-icon--blue { background: #eaf6ff; color: #0b74c9; }.company-dashboard-action-icon--green { background: #ecfdf3; color: #15803d; }.company-dashboard-action-icon--purple { background: #f3edff; color: #7b4acb; }.company-dashboard-action strong, .company-dashboard-action small { display: block; }.company-dashboard-action strong { font-size: .76rem; }.company-dashboard-action small { color: var(--workspace-muted); font-size: .68rem; margin-top: 2px; }
+@media (max-width: 900px) { .company-dashboard-hero-art { opacity: .35; right: -45px; }.company-dashboard-hero-content { max-width: 75%; } }
+@media (max-width: 576px) { .company-dashboard-hero { padding: 25px 22px; }.company-dashboard-hero-art { display: none; }.company-dashboard-hero-content { max-width: none; }.company-dashboard-card-header { align-items: flex-start; flex-direction: column; gap: 12px; } }
+
+/* Compact dashboard density */
+.company-dashboard-hero { border-radius: 18px; min-height: 220px; padding: 25px 32px; }
+.company-dashboard-hero-art { height: 195px; top: 12px; width: 280px; }
+.company-dashboard-orbit { height: 190px; width: 190px; }
+.company-dashboard-orbit-two { height: 145px; width: 145px; }
+.company-dashboard-stat { border-radius: 12px; gap: 9px; min-height: 76px; padding: 11px; }
+.company-dashboard-stat-icon { border-radius: 9px; flex-basis: 34px; height: 34px; }
+.company-dashboard-stat-icon svg { height: 18px; width: 18px; }
+.company-dashboard-stat-label { font-size: .65rem; }
+.company-dashboard-stat-value { font-size: 1.25rem; margin-top: 2px; }
+.company-dashboard-stat--orange .company-dashboard-stat-icon { background: #fff4e5; color: #c56a00; }
+.company-dashboard-stat--orange .company-dashboard-stat-dot { background: #c56a00; }
+.company-dashboard-card-header { padding: 13px 16px 10px; }
+.company-dashboard-table > :not(caption) > * > * { padding: 7px 12px; }
+.company-dashboard-table thead th { font-size: .61rem; }
+.company-dashboard-company-name { font-size: .76rem; }
+.company-dashboard-table td small { font-size: .64rem; margin-top: 2px; }
+.company-dashboard-table .badge { font-size: .6rem; padding: .3em .5em; }
+.company-dashboard-actions .card-body { padding: 14px 16px; }
+.company-dashboard-actions p { font-size: .72rem; line-height: 1.4; }
+.company-dashboard-action { border-radius: 9px; gap: 9px; padding: 8px; }
+.company-dashboard-compact-list { padding: 0 16px 8px; }
+.company-dashboard-vendor-item { align-items: center; border-bottom: 1px solid var(--workspace-border); color: var(--workspace-ink); display: flex; gap: 9px; padding: 8px 0; text-decoration: none; }
+.company-dashboard-vendor-item:last-child { border-bottom: 0; }
+.company-dashboard-vendor-item > span:nth-child(2) { flex: 1 1 auto; min-width: 0; }
+.company-dashboard-vendor-item strong, .company-dashboard-vendor-item small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.company-dashboard-vendor-item strong { font-size: .76rem; }
+.company-dashboard-vendor-item small { color: var(--workspace-muted); font-size: .63rem; margin-top: 2px; }
+.company-dashboard-vendor-avatar { align-items: center; background: #ecfdf3; border-radius: 8px; color: #15803d; display: inline-flex; flex: 0 0 30px; font-size: .65rem; font-weight: 800; height: 30px; justify-content: center; }
+.company-dashboard-vendor-item .badge { font-size: .58rem; }
+.company-dashboard-action-icon--orange { background: #fff4e5; color: #c56a00; }
+.company-dashboard-hero .btn-outline-light:hover, .company-dashboard-hero .btn-outline-light:focus-visible { background: #fff; border-color: #fff; color: #075b9e; }
+
+/* Extra compact hero */
+.company-dashboard-hero { min-height: 170px; padding: 20px 28px; }
+.company-dashboard-eyebrow { font-size: .61rem; }
+.company-dashboard-hero h1 { font-size: clamp(1.55rem, 2.8vw, 2.2rem); line-height: 1.05; margin: 9px 0 7px; }
+.company-dashboard-hero p { font-size: .78rem; line-height: 1.4; max-width: 520px; }
+.company-dashboard-hero-art { height: 155px; right: 4%; top: 7px; transform: scale(.82); transform-origin: right center; }
+.company-dashboard-hero .btn { font-size: .75rem; padding: .38rem .7rem; }
+.company-dashboard-hero { min-height: 130px; padding: 16px 24px; }
+.company-dashboard-hero h1 { font-size: clamp(1.35rem, 2.35vw, 1.85rem); line-height: 1.08; margin: 7px 0 5px; }
+.company-dashboard-hero p { font-size: .72rem; line-height: 1.3; }
+.company-dashboard-hero .d-flex { margin-top: .65rem !important; }
+.company-dashboard-hero-art { height: 130px; right: 3%; top: 0; transform: scale(.68); }
+.company-dashboard-hero .btn { font-size: .7rem; padding: .3rem .58rem; }
+@media (min-width: 768px) {
+    .company-dashboard-hero h1 { font-size: clamp(1.15rem, 2vw, 1.55rem); white-space: nowrap; }
+}

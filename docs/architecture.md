@@ -2,14 +2,16 @@
 
 ## Prinsip
 
-`app/workspace` menjadi Basilindo Workspace modular monolith yang memuat Core/Identity, Company, CRM, Project Management, dan Document Management. Domain dipisahkan melalui service, policy, job, event, dan permission, tetapi seluruh modul berjalan dalam satu aplikasi Laravel Filament, satu session, satu database, dan satu deployment pada `http://localhost:8080` untuk development.
+`app/workspace` menjadi Basilindo Workspace modular monolith yang memuat Core/Identity, Company, CRM, Project Management, dan Document Management. Domain dipisahkan melalui service, policy, job, event, dan permission, tetapi seluruh modul berjalan dalam satu aplikasi Laravel, satu session, satu database, dan satu deployment pada `http://localhost:8080` untuk development.
+
+Filament tidak digunakan sebagai runtime maupun dependency aplikasi. UI menggunakan pola visual dari template `pos-laravel-admin`, diadaptasi dengan Blade dan Bootstrap sebagai fondasi, dengan Livewire hanya pada komponen yang membutuhkan interaksi dinamis. Template tetap hanya menjadi acuan dan bukan runtime/domain source. HRIS disiapkan sebagai modul bisnis berikutnya tanpa membuat aplikasi, database, atau login baru.
 
 ## Komponen
 
 ```text
 Browser
   -> Nginx/TLS
-  -> app/workspace: Laravel + Filament 4
+  -> app/workspace: Laravel + Blade + Bootstrap + Livewire selektif (mengikuti pedoman UI template)
        -> PostgreSQL terpusat `db_basilindo_workspace` (tabel shared `core_` dan tabel Workspace `ws_`)
        -> Redis       (cache, queue, lock, rate limit)
        -> MinIO/S3    (binary file, preview, bundle ZIP)
@@ -17,7 +19,7 @@ Browser
 
 - **Identity**: Core/Identity mengelola user, password lokal, role, permission, company membership, session, dan audit login. Tidak ada SSO pada runtime.
 - **core/**: shared code untuk model general, migration, factory, dan library. Core bukan aplikasi terpisah.
-- **Laravel/Filament**: UI admin, local authentication, policies, validation, orchestration, dan domain services untuk seluruh modul Workspace.
+- **Laravel UI**: Blade + Bootstrap untuk layout, navigation, halaman, form, dan tabel dasar. Livewire hanya menjadi adapter presentasi untuk pencarian dinamis, wizard, review interaktif, dan status progress. Controller/Form Request/Policy serta service domain tetap berada di Laravel.
 - **PostgreSQL**: source of truth terpusat untuk metadata dan status bisnis. Binary tidak disimpan di database. Modul Workspace memakai prefix `ws_`, sedangkan model shared memakai koneksi `core` dengan prefix `core_`.
 - **Redis**: cache hasil yang aman, queue backend, distributed lock, dan throttling. Redis bukan source of truth.
 - **MinIO**: bucket private dengan object key yang tidak berasal langsung dari nama file pengguna.
@@ -46,7 +48,29 @@ Ownership perubahan data harus mengikuti pemilik domain. Aplikasi lain menyimpan
 - `Bundles`: selection snapshot, ZIP generation, expiry, download log.
 - `Audit`: append-oriented activity and security events.
 
-Gunakan `core/src` untuk shared general code dan `app/Domain` atau struktur service yang konsisten untuk domain aplikasi; jangan menaruh seluruh logic bisnis di Resource Filament atau controller.
+Gunakan `core/src` untuk shared general code dan `app/Modules` untuk boundary modul aplikasi. Setiap modul memiliki `Domain`, `Application`, `Http`, `Livewire`, `Resources`, dan `Views` sesuai kebutuhan. Jangan menaruh aturan bisnis di Blade, Livewire component, atau controller.
+
+### Boundary kode modul
+
+```text
+app/workspace/app/Modules/
+├── Core/                 # login, user, role, permission, session, audit security
+├── Company/              # master company, membership, company scope
+├── CRM/                  # account, contact, lead, opportunity, activity
+├── ProjectManagement/    # project, member, ticket, notes, timeline
+├── DocumentManagement/   # document, storage, search, verification, bundle
+└── HRIS/                 # future: employee, organization, attendance, payroll
+```
+
+Core adalah platform bersama, sedangkan Company, CRM, ProjectManagement, dan DocumentManagement adalah empat modul bisnis aktif. HRIS akan mengikuti kontrak yang sama. Model shared di `core/src` tetap menjadi source of truth untuk entitas lintas modul; modul tidak membuat salinan User, Company, atau Project.
+
+Aturan boundary:
+
+- Modul boleh memakai kontrak/service publik modul lain, bukan mengakses implementasi internalnya.
+- Cross-module write wajib melalui application service/orchestrator dan transaction bila atomik.
+- Cross-module event/job harus idempotent dan tidak membawa data sensitif.
+- Route, controller, request, policy, Livewire component, dan view diberi namespace/module ownership yang jelas.
+- Modul baru tidak boleh menambah guard, login, database, atau deployment sendiri.
 
 ## Aliran upload
 

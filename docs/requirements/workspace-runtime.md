@@ -2,14 +2,18 @@
 
 ## Keputusan
 
-`app/workspace` adalah satu-satunya aplikasi runtime Basilindo. Lima boundary
-modul berjalan dalam satu Laravel Filament application:
+`app/workspace` adalah satu-satunya aplikasi runtime Basilindo. Platform Core dan
+empat boundary modul bisnis berjalan dalam satu aplikasi Laravel:
 
-1. Core / Identity
+1. Core / Identity (platform)
 2. Company
 3. CRM
 4. Project Management
 5. Document Management
+
+UI runtime memakai Blade + Bootstrap. Livewire hanya digunakan pada komponen
+interaktif dan tidak boleh menjadi tempat aturan bisnis. Filament dilarang sebagai
+dependency, provider, route, view component, atau namespace runtime.
 
 ## Acceptance criteria
 

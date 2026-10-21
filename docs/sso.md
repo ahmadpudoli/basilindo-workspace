@@ -5,7 +5,7 @@
 
 ## Arah yang dipilih
 
-Runtime utama Basilindo Workspace menggunakan login lokal Laravel/Filament dalam satu aplikasi modular monolith. `app/project-sso/` dipertahankan sebagai adapter/future identity federation, bukan dependency login normal.
+Runtime utama Basilindo Workspace menggunakan login lokal Laravel dalam satu aplikasi modular monolith. `app/project-sso/` dipertahankan sebagai adapter/future identity federation, bukan dependency login normal.
 
 OIDC menjadi protokol utama karena cocok untuk aplikasi web internal. SAML hanya dipertimbangkan sebagai integrasi tambahan jika ada kebutuhan legacy atau federation eksternal.
 

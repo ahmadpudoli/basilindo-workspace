@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Health\HealthCheckService;
+use App\Modules\Core\Application\Services\Health\HealthCheckService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 

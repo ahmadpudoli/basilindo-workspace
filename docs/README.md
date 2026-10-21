@@ -5,6 +5,7 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 ## Peta dokumen
 
 - [Arsitektur](architecture.md)
+- [Pedoman UI/UX template `pos-laravel-admin`](ui-reference-pos-laravel-admin.md)
 - [Domain model](domain-model.md)
 - [Keamanan](security.md)
 - [Identitas dan login lokal](identity.md)
@@ -18,6 +19,11 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Panduan provisioning akun (Markdown canonical)](panduan-provisioning-akun.md)
 - `panduan-provisioning-akun.docx` adalah artefak versi sebelumnya dan perlu diregenerasi sebelum dibagikan.
 - [Requirement shared core](requirements/shared-core-architecture.md)
+- [Requirement modul Pengaturan Workspace](requirements/workspace-settings.md)
+- [Requirement company visibility scope](requirements/company-visibility-scope.md)
+- [Requirement company detail dan brand asset](requirements/company-detail-and-brand-assets.md)
+- [Requirement company vendor management](requirements/company-vendor-management.md)
+- [Standard pagination Workspace](requirements/workspace-ui-pagination.md)
 - [Log pekerjaan](logs/)
 - [Runbook backup dan restore](operations/backup-restore.md)
 - [Monitoring](operations/monitoring.md)

@@ -1,12 +1,11 @@
 <?php
 
-use App\Models\CrmAccount;
-use App\Models\CrmLead;
-use App\Models\Ticket;
-use App\Policies\CrmAccountPolicy;
-use App\Policies\CrmLeadPolicy;
-use App\Policies\TicketPolicy;
-use App\Filament\Pages\CrmOverview;
+use App\Modules\CRM\Domain\Models\CrmAccount;
+use App\Modules\CRM\Domain\Models\CrmLead;
+use App\Modules\ProjectManagement\Domain\Models\Ticket;
+use App\Modules\CRM\Policies\CrmAccountPolicy;
+use App\Modules\CRM\Policies\CrmLeadPolicy;
+use App\Modules\ProjectManagement\Policies\TicketPolicy;
 use Core\Models\Company;
 use Core\Models\Project;
 use Core\Models\Role;
@@ -57,13 +56,13 @@ it('limits project tickets to project members', function () {
         ->and($policy->view($otherUser, $ticket))->toBeFalse();
 });
 
-it('shows a safe CRM hub to a CRM role before company assignment', function () {
+it('allows a CRM role to enter the shared workspace before company assignment', function () {
     $member = User::factory()->create();
     $role = Role::firstOrCreate(['name' => 'crm_member', 'guard_name' => 'web']);
     $member->assignRole($role);
 
     $this->actingAs($member);
 
-    expect(CrmOverview::canAccess())->toBeTrue()
-        ->and($member->companies()->exists())->toBeFalse();
+    expect($member->companies()->exists())->toBeFalse()
+        ->and($this->get('/dashboard')->assertOk());
 });

@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Document;
-use App\Models\DocumentType;
-use App\Services\Documents\DocumentLifecycleService;
+use App\Modules\DocumentManagement\Domain\Models\Document;
+use App\Modules\DocumentManagement\Domain\Models\DocumentType;
+use App\Modules\DocumentManagement\Application\Services\Documents\DocumentLifecycleService;
 use Core\Models\Company;
 use Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

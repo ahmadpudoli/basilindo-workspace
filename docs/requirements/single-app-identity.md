@@ -4,7 +4,7 @@
 
 Untuk fase internal saat ini, seluruh modul berjalan sebagai satu aplikasi
 Laravel: Core/Identity, Company, CRM, Project Management, dan Document
-Management. Login utama memakai session authentication Laravel/Filament pada
+Management. Login utama memakai session authentication Laravel pada
 database Core yang sama.
 
 `project-sso` tidak lagi menjadi dependency runtime Workspace. Kode OIDC boleh

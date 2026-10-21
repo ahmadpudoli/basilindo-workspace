@@ -7,7 +7,8 @@
 ## Keputusan
 
 Runtime dipindahkan dari `app/file-organizer` ke aplikasi baru `app/workspace`.
-Workspace adalah satu Laravel Filament modular monolith yang memuat Core,
+Workspace adalah satu Laravel modular monolith berbasis Blade + Bootstrap dan
+Livewire selektif yang memuat Core,
 Company, CRM, Project Management, dan Document Management. `project-sso`
 dihapus dan login eksternal tidak menjadi bagian dari runtime.
 

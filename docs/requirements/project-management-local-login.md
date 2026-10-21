@@ -4,7 +4,7 @@
 
 Project Management tidak boleh mengarahkan pengguna ke Identity Provider SSO
 yang sudah tidak menjadi runtime aktif. Halaman login harus mengikuti pola
-File Organizer: form login lokal Filament menggunakan guard aplikasi.
+File Organizer: form login lokal Laravel menggunakan guard aplikasi.
 
 ## Acceptance criteria
 

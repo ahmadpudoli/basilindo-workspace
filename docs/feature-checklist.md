@@ -12,7 +12,26 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Seluruh migration aktif dipusatkan di `core/database/migrations`
 - [x] Ownership data lima modul Workspace terdokumentasi
 - [x] PostgreSQL terpusat dengan prefix tabel `core_` dan `ws_`
-- [x] Laravel 12 + Filament 4 baseline
+- [x] Laravel 12 modular monolith baseline
+- [x] Keputusan UI: Blade + Bootstrap dengan Livewire selektif; Filament dilarang
+- [x] Boundary platform Core dan modul Company, CRM, Project Management, Document Management, serta placeholder HRIS
+- [x] Namespace runtime, policy, service, job, command, dan controller dipisahkan ke boundary `app/Modules/`
+- [x] Card modul membuka dashboard Blade masing-masing untuk Company, CRM, Project Management, dan Document Management
+- [x] Document Management memiliki halaman Blade nyata untuk daftar dokumen, tipe dokumen, verifikasi, dan bundel
+- [x] Company memiliki CRUD perusahaan berbasis Blade dengan policy dan validasi boundary modul
+- [x] Detail perusahaan lengkap dengan struktur, visibilitas, dan brand asset privat di MinIO pada prefix `app-company`
+- [x] CRM memiliki CRUD dasar Account, Lead, Opportunity, dan Activity berbasis Blade
+- [x] Project Management memiliki CRUD dasar Project, Ticket, Epic, Catatan, Status, dan Prioritas
+- [x] Project Management memiliki board ticket dan timeline berbasis route Blade
+- [x] Core memiliki halaman pengguna dan role dengan policy authorization dan pembuatan user tervalidasi
+- [x] Core User CRUD memiliki edit, update, role assignment, dan safe archive untuk non-system account
+- [x] Core Role CRUD memiliki create, edit, update, delete terproteksi, dan larangan menghapus super_admin
+- [x] Company memiliki CRUD Vendor dengan scope company, policy, validasi, dan soft delete
+- [x] Document Management memiliki form upload private storage dengan validasi file dan metadata dasar
+- [x] Document Management memiliki halaman detail kasus verifikasi, review item, release, dan reject lifecycle
+- [x] Document Management memiliki form request bundel berbasis filter dan dispatch queued job
+- [x] Document Management memiliki edit/update metadata dokumen dengan policy dan validasi
+- [x] Migrasi seluruh UI Filament yang dipertahankan ke Blade/Bootstrap/Livewire selektif
 - [x] PostgreSQL connection dan migrations
 - [x] Redis cache/queue/lock/rate limit
 - [x] MinIO private S3 disk dan bucket lifecycle
@@ -24,7 +43,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Perusahaan memiliki `storage_key` ULID immutable untuk object storage; data lama di-backfill melalui migration
 - [x] Docker Compose health checks untuk PostgreSQL, Redis, dan MinIO
 - [x] `.env.example` tanpa secret
-- [x] Local development command Windows-safe (Pail dipisah dari `composer run dev`)
+- [x] Local development command Windows-safe dengan queue worker yang berjalan terus (Pail dipisah dari `composer run dev`)
 - [x] CI test/build baseline
 - [x] Single deployment target `http://localhost:8080`
 
@@ -49,14 +68,17 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Company management (Group, anak perusahaan, client/vendor sebagai role)
 - [x] Project management
 - [x] Master perusahaan menyatukan internal, client, vendor, dan partner
+- [x] Visibilitas perusahaan kosong berarti global; visibilitas terisi dibatasi pada perusahaan operasional terpilih dan tetap tunduk pada scope user
 - [x] Assignment multi-company pada user dengan scope role
-- [x] Project list dan bulk actions kompatibel dengan Filament 4
+- [ ] Project list dan bulk actions tersedia pada UI Laravel non-Filament
 - [-] Workspace Project Management: project, member, ticket, status, priority, assignee, epic, notes, comments, board, timeline, dan reporting
 - [x] Workspace Project Management domain baseline: Epic, Project Notes, Ticket Comments, dan Notification model/migration
-- [ ] Workspace Project Management UI parity: board, timeline, leaderboard, user contributions, dan notification resource
+- [x] Workspace Project Management UI parity: board, timeline, leaderboard, user contributions, dan notification resource
 - [x] Project creation dibatasi pada company scope user
 - [x] Detail project menampilkan members, tickets, dan dokumen terkait
-- [x] Vendor management (legacy view; canonical entity tetap `companies`)
+- [x] Vendor management memakai master `Company` berperan `vendor` sebagai identitas vendor
+- [x] Vendor management memiliki CRUD Blade, detail, scope multi-perusahaan operasional, filter, pagination, dan soft archive
+- [x] Validasi client-side dan Form Request server-side pada form Company dan Vendor
 - [x] Document type management
 - [x] Typed and optional metadata per document type
 - [x] Metadata Numeric integer dan Numeric Decimal dibedakan, dinormalisasi, divalidasi server, dan disanitasi pada tampilan
@@ -65,10 +87,10 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Nominal menggunakan format tampilan Indonesia dengan desimal dan dinormalisasi sebelum disimpan
 - [x] Locale/format angka dan timezone tampilan dikonfigurasi melalui environment; timezone storage ditetapkan UTC
 - [x] Jenis dokumen yang sudah digunakan menjaga scope perusahaan dan struktur metadata tetap immutable
-- [x] Form dokumen reactive terhadap perusahaan internal dan jenis dokumen, dengan loading state serta panel metadata dinamis
+- [x] Form dokumen reactive terhadap perusahaan internal dan jenis dokumen, dengan panel metadata dinamis (Livewire selektif)
 - [x] Form dokumen memiliki tanggal wajib, client/vendor opsional, mata uang opsional berbentuk dropdown IDR/USD/SGD, dan deskripsi WYSIWYG
 - [x] Pesan validasi input tersedia dalam Bahasa Indonesia dan menjelaskan tindakan perbaikan
-- [x] Form dokumen menonaktifkan native browser validation agar pesan validasi Filament/Livewire tampil konsisten
+- [x] Form dokumen memiliki validation state server-side yang konsisten dengan panel Livewire
 - [x] Pilihan proyek pada dokumen mengikuti perusahaan internal dan relasinya divalidasi di server
 - [x] Pilihan jenis dokumen pada dokumen mengikuti perusahaan internal dan relasinya divalidasi di server
 - [x] Form dokumen memiliki tanggal wajib, mata uang opsional berbentuk dropdown IDR/USD/SGD, dan deskripsi WYSIWYG
@@ -134,19 +156,27 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Quality dan operations
 
-- [x] Stabilitas lifecycle Filament pada assignment perusahaan dan bulk selection
+- [ ] Stabilitas lifecycle assignment perusahaan dan bulk selection pada UI baru
 - [x] Tooltip perbedaan role aplikasi dan peran user di perusahaan
 - [x] Project Management memiliki assignment perusahaan dan launcher aplikasi yang konsisten dengan File Organizer
 - [x] Hanya satu akun sistem dengan role `super_admin`
 
 ## Dashboard dan branding
 
+- [x] `pos-laravel-admin` diaudit dan ditetapkan sebagai referensi UI/UX; template bukan runtime/domain source
+- [x] Shared Workspace UI shell mengikuti acuan template: topbar, sidebar modul, account menu, theme toggle, responsive offcanvas, cards, tables, forms, modal, badge, dan Bootstrap pagination
+- [x] Sidebar desktop dapat diminimize/dibuka kembali dan menyimpan preferensi pengguna
+- [x] Header memiliki module launcher/dropdown bergaya Google Workspace untuk berpindah antar modul
+- [x] Seluruh input text, email, password, select, dan textarea Workspace memakai floating-label compact yang konsisten dengan template
+- [x] Dashboard Company, CRM, Project Management, dan Document Management memakai pola page header, action, summary cards, dan table template
+- [x] Ringkasan Company memiliki hero dashboard, metrik berbasis scope, daftar perusahaan informatif, dan akses cepat
+
 - [x] Project Management memakai branding Basilindo dan landing page publik tanpa DewaKoding
 - [x] Project Management memakai layout panel konsisten dengan File Organizer
 - [x] Project Management memiliki konsep visual berbeda: gradien terang dan tata letak weekly pulse
 - [x] Project Management login lokal pada Workspace; SSO legacy tidak dipindahkan
 - [x] Project Management notification memakai koneksi shared `core` dan tabel `core_notifications`
-- [x] Landing page publik khusus manajemen dokumen Basilindo
+- [x] Landing page publik Basilindo Workspace lintas modul dengan CTA login
 - [x] Dashboard Finance dengan metrik dokumen, review, dan aktivitas audit
 - [x] Dashboard Workspace dengan ringkasan CRM account, opportunity, dan ticket sesuai scope user
 - [x] Referensi model lintas boundary memakai Core Models untuk Company, Project, dan User
@@ -178,6 +208,14 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Administrasi akun sistem dan kebersihan schema
 
+## Modul Pengaturan Workspace
+
+- [x] Modul Pengaturan hanya terlihat untuk `super_admin` atau permission `access_settings`
+- [x] Pengaturan modul aktif global dengan dashboard/launcher filtering
+- [x] Pengguna dapat dikelola dengan role dan direct permission tambahan
+- [x] Pengguna dapat diberi scope akses ke beberapa perusahaan internal
+- [ ] Relasi employee satu-perusahaan menunggu implementasi modul HRIS
+
 - [x] Consumer dan tabel legacy project-management dipensiunkan dari File Organizer
 
 - [x] Akun `admin@example.com` dibuat sebagai `super_admin` dan ditandai sebagai system account
@@ -188,7 +226,19 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Administrasi SSO
 
-- [x] Project Management menampilkan login lokal Filament dan tidak mengarahkan pengguna ke SSO legacy.
+## Parity migrasi Blade/Bootstrap
+
+- [x] CRM Account, Contact, Lead, Opportunity, dan Activity memiliki CRUD dengan field relasi yang sesuai model.
+- [x] Project Management memiliki CRUD komentar ticket dan notifikasi selain project, ticket, epic, catatan, status, dan prioritas.
+- [x] Project Management memiliki halaman kontribusi pengguna dan leaderboard.
+- [x] Document Type memiliki CRUD, definisi metadata JSON, policy, dan proteksi penghapusan ketika masih dipakai.
+- [x] Project memiliki halaman detail dengan daftar/tambah/hapus anggota, ticket, epic, dan catatan.
+- [x] Ticket memiliki status, prioritas, assignee multi-pilih, dan sinkronisasi assignment.
+- [x] Ticket memiliki import CSV tervalidasi dan export CSV dengan authorization project scope.
+- [x] Komponen Livewire selektif untuk memilih tipe dokumen dan merender metadata wajib sesuai definisi tipe.
+- [x] Detail project dan account menampilkan dokumen terkait serta shortcut upload dengan scope relasi.
+
+- [ ] Workspace menampilkan login lokal Laravel dan tidak mengarahkan pengguna ke SSO legacy.
 - [x] Project Management mempertahankan board, timeline, epic, notes, comments,
   status/priority, import/export ticket template, dashboard widgets, dan
   relation managers di Workspace.

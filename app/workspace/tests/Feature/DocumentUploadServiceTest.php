@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\DocumentType;
-use App\Services\Documents\DocumentUploadService;
+use App\Modules\DocumentManagement\Domain\Models\DocumentType;
+use App\Modules\DocumentManagement\Application\Services\Documents\DocumentUploadService;
 use Core\Models\Company;
 use Core\Models\Project;
 use Core\Models\User;

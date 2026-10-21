@@ -27,9 +27,9 @@ Installation
 
     php artisan storage:link
 
-    6. Create a Filament admin user:
+    6. Seed the local Workspace administrator:
 
-    php artisan make:filament-user
+    php artisan db:seed
 
     7.  Activate Role & Permission:
 
@@ -47,8 +47,8 @@ Installation
 
 Usage
 
-    Access the Filament admin panel at http://localhost:8080/admin
-    Log in with the Filament user credentials you created
+    Access the Workspace at http://localhost:8080/login
+    Log in with the local Workspace credentials from your environment
     Create a new project with custom ticket prefix
     Add team members to the project
     Create and customize ticket statuses
