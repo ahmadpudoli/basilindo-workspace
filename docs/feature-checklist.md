@@ -4,8 +4,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Platform
 
-- [x] Basilindo Workspace modular monolith berbasis `app/workspace`
-- [x] Migrasi penuh fitur bisnis yang dipertahankan dari legacy app ke `app/workspace`
+- [x] Basilindo Workspace modular monolith berbasis `workspace`
+- [x] Migrasi penuh fitur bisnis yang dipertahankan dari legacy app ke `workspace`
 - [x] Menghapus folder legacy `app/file-organizer` dan `app/project-management` setelah parity dan smoke test Workspace
 - [x] Boundary Core/Identity, Company, CRM, Project Management, dan Document Management diimplementasikan
 - [x] Shared core (`core/`) untuk model, migration, factory, dan library general
@@ -208,6 +208,12 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Administrasi akun sistem dan kebersihan schema
 
+- [x] Laravel memiliki konfigurasi compiled view dan placeholder cache framework agar Composer package discovery berjalan pada instalasi baru
+
+- [x] Laravel memiliki konfigurasi compiled view dan placeholder cache framework agar Composer package discovery berjalan pada instalasi baru
+
+- [x] Root `resources/` legacy diverifikasi tidak digunakan dan dihapus; resource runtime tetap berada di `workspace/resources/`
+
 ## Modul Pengaturan Workspace
 
 - [x] Modul Pengaturan hanya terlihat untuk `super_admin` atau permission `access_settings`
@@ -250,3 +256,5 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Application access dapat diedit, dihapus, dan diaktif/nonaktifkan
 - [x] Unique constraint user–application–role dan identifier record untuk Filament
 - [x] Audit metadata perubahan application access
+- [x] Lokasi runtime Workspace dicatat konsisten pada `workspace/`; CI dan dokumentasi aktif tidak lagi menunjuk `app/workspace/`
+- [x] Development server Laravel tidak menetapkan `PHP_CLI_SERVER_WORKERS` saat memakai mode reload

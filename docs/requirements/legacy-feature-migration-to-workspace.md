@@ -3,12 +3,12 @@
 ## Tujuan
 
 Memindahkan seluruh fitur bisnis yang masih diperlukan dari `app/file-organizer`
-dan `app/project-management` ke `app/workspace` sebagai satu aplikasi Laravel
+dan `app/project-management` ke `workspace` sebagai satu aplikasi Laravel
 Filament modular monolith.
 
 ## Batasan
 
-- `app/workspace` menjadi satu-satunya runtime.
++ `workspace` menjadi satu-satunya runtime.
 - Fitur bisnis Document Management dari File Organizer harus tersedia pada
   modul `Document Management`.
 - Fitur bisnis Project Management dari Project Management harus tersedia pada

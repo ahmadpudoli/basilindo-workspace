@@ -2,7 +2,7 @@
 
 ## Keputusan
 
-`app/workspace` adalah satu-satunya aplikasi runtime Basilindo. Platform Core dan
+`workspace` adalah satu-satunya aplikasi runtime Basilindo. Platform Core dan
 empat boundary modul bisnis berjalan dalam satu aplikasi Laravel:
 
 1. Core / Identity (platform)

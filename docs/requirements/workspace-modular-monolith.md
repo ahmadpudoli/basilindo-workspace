@@ -2,7 +2,7 @@
 
 ## Tujuan
 
-Mengembangkan `app/workspace` menjadi satu Basilindo Workspace yang memuat empat modul bisnis aktif dengan platform Core/Identity bersama. UI menggunakan Laravel Blade + Bootstrap dan Livewire secara selektif; Filament tidak digunakan.
+Mengembangkan `workspace` menjadi satu Basilindo Workspace yang memuat empat modul bisnis aktif dengan platform Core/Identity bersama. UI menggunakan Laravel Blade + Bootstrap dan Livewire secara selektif; Filament tidak digunakan.
 
 ## Modul dan tanggung jawab
 

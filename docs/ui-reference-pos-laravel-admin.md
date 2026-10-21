@@ -4,7 +4,7 @@
 
 Dokumen ini menetapkan `pos-laravel-admin/` sebagai **template/acuan UI/UX** untuk Basilindo Workspace. Folder tersebut bukan runtime, bukan sumber domain bisnis, dan bukan tempat menyalin konfigurasi aplikasi secara mentah.
 
-Template harus dikonversi ke kebutuhan Basilindo Workspace: Bahasa Indonesia, domain Finance/document management, company/project scope, permission, audit trail, private object storage, serta modular monolith pada `app/workspace/`.
+Template harus dikonversi ke kebutuhan Basilindo Workspace: Bahasa Indonesia, domain Finance/document management, company/project scope, permission, audit trail, private object storage, serta modular monolith pada `workspace/`.
 
 ## Temuan audit template
 

@@ -3,13 +3,13 @@ name: Basilindo Workspace CI
 on:
   push:
     paths:
-      - 'app/workspace/**'
+      - 'workspace/**'
       - 'core/**'
       - 'docs/**'
       - '.github/workflows/workspace-ci.yml'
   pull_request:
     paths:
-      - 'app/workspace/**'
+      - 'workspace/**'
       - 'core/**'
       - 'docs/**'
       - '.github/workflows/workspace-ci.yml'
@@ -35,7 +35,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: app/workspace
+        working-directory: workspace
 
     steps:
       - name: Checkout

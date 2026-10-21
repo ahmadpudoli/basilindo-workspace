@@ -11,7 +11,7 @@ Bangun aplikasi manajemen dokumen perusahaan untuk membantu tim Finance dan admi
 - mengunduh kumpulan dokumen sebagai bundel ZIP;
 - menyediakan audit trail dan kontrol akses yang dapat dipertanggungjawabkan.
 
-Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace adalah satu aplikasi Laravel modular monolith berbasis Blade + Bootstrap dengan Livewire selektif yang memuat Core, Company, CRM, Project Management, dan Document Management. Dokumentasi, keputusan arsitektur, log pekerjaan, dan checklist berada di `docs/`. `app/file-organizer/`, `app/project-management/`, dan `app/project-sso/` adalah sumber legacy selama migrasi dan tidak boleh dijalankan sebagai runtime.
+Implementasi runtime aplikasi berada di `workspace/`. Basilindo Workspace adalah satu aplikasi Laravel modular monolith berbasis Blade + Bootstrap dengan Livewire selektif yang memuat Core, Company, CRM, Project Management, dan Document Management. Dokumentasi, keputusan arsitektur, log pekerjaan, dan checklist berada di `docs/`. `app/file-organizer/`, `app/project-management/`, dan `app/project-sso/` adalah sumber legacy selama migrasi dan tidak boleh dijalankan sebagai runtime.
 
 ## Kontrak teknologi
 
@@ -47,7 +47,7 @@ Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace ad
 
 ### Agent 0 — Discovery dan baseline
 
-- Audit isi `app/workspace/` dan sumber legacy hanya sebagai referensi migrasi.
+- Audit isi `workspace/` dan sumber legacy hanya sebagai referensi migrasi.
 - Pastikan versi Laravel, Livewire, PHP, dan paket yang dipakai terdokumentasi.
 - Buat `.env.example`, Docker Compose, health checks, dan README setup tanpa secret.
 - Output: baseline yang dapat dijalankan, dokumentasi setup, dan log.
@@ -61,7 +61,7 @@ Implementasi runtime aplikasi berada di `app/workspace/`. Basilindo Workspace ad
 
 ### Agent 2 — Identity, SSO internal, dan authorization
 
-- Bangun login lokal Laravel pada `app/workspace/` sebagai satu-satunya authentication runtime.
+- Bangun login lokal Laravel pada `workspace/` sebagai satu-satunya authentication runtime.
 - Jangan menambahkan SSO, OIDC, Google login, atau login lintas aplikasi tanpa ADR baru dan persetujuan arsitektur.
 - Terapkan role, permission, company/project scope, session security, dan audit login.
 - Output: policy, role matrix, session security, audit login, dan test authorization.
@@ -124,7 +124,7 @@ Fitur dianggap selesai apabila:
 
 ## Perintah verifikasi minimum
 
-Sesuaikan dengan isi `app/workspace/`, tetapi target akhirnya adalah:
+Sesuaikan dengan isi `workspace/`, tetapi target akhirnya adalah:
 
 ```bash
 php artisan test

@@ -2,7 +2,7 @@
 
 ## Prinsip
 
-`app/workspace` menjadi Basilindo Workspace modular monolith yang memuat Core/Identity, Company, CRM, Project Management, dan Document Management. Domain dipisahkan melalui service, policy, job, event, dan permission, tetapi seluruh modul berjalan dalam satu aplikasi Laravel, satu session, satu database, dan satu deployment pada `http://localhost:8080` untuk development.
+`workspace` menjadi Basilindo Workspace modular monolith yang memuat Core/Identity, Company, CRM, Project Management, dan Document Management. Domain dipisahkan melalui service, policy, job, event, dan permission, tetapi seluruh modul berjalan dalam satu aplikasi Laravel, satu session, satu database, dan satu deployment pada `http://localhost:8080` untuk development.
 
 Filament tidak digunakan sebagai runtime maupun dependency aplikasi. UI menggunakan pola visual dari template `pos-laravel-admin`, diadaptasi dengan Blade dan Bootstrap sebagai fondasi, dengan Livewire hanya pada komponen yang membutuhkan interaksi dinamis. Template tetap hanya menjadi acuan dan bukan runtime/domain source. HRIS disiapkan sebagai modul bisnis berikutnya tanpa membuat aplikasi, database, atau login baru.
 
@@ -11,7 +11,7 @@ Filament tidak digunakan sebagai runtime maupun dependency aplikasi. UI mengguna
 ```text
 Browser
   -> Nginx/TLS
-  -> app/workspace: Laravel + Blade + Bootstrap + Livewire selektif (mengikuti pedoman UI template)
+  -> workspace: Laravel + Blade + Bootstrap + Livewire selektif (mengikuti pedoman UI template)
        -> PostgreSQL terpusat `db_basilindo_workspace` (tabel shared `core_` dan tabel Workspace `ws_`)
        -> Redis       (cache, queue, lock, rate limit)
        -> MinIO/S3    (binary file, preview, bundle ZIP)
@@ -36,7 +36,7 @@ Browser
 - `Core\\Models\\Setting` dan `Roles`: fungsi general aplikasi.
 - Seluruh file migration aktif berada di `core/database/migrations`, dikelompokkan menjadi `shared/`, `file-organizer/`, dan `project-management/`.
 - Ownership logic tetap mengikuti domain, tetapi `core` menjadi satu-satunya source of truth untuk schema database.
-- Migration `shared/` dan migration Workspace dijalankan oleh `app/workspace` sebagai owner tunggal database.
+- Migration `shared/` dan migration Workspace dijalankan oleh `workspace` sebagai owner tunggal database.
 
 Ownership perubahan data harus mengikuti pemilik domain. Aplikasi lain menyimpan reference ID dan memakai service/API/event ketika boundary dipisahkan; tidak boleh membuat salinan model yang sama dengan aturan bisnis berbeda.
 
@@ -53,7 +53,7 @@ Gunakan `core/src` untuk shared general code dan `app/Modules` untuk boundary mo
 ### Boundary kode modul
 
 ```text
-app/workspace/app/Modules/
+workspace/app/Modules/
 ├── Core/                 # login, user, role, permission, session, audit security
 ├── Company/              # master company, membership, company scope
 ├── CRM/                  # account, contact, lead, opportunity, activity
