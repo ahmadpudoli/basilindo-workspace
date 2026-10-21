@@ -1,10 +1,17 @@
-<div class="workspace-metadata-fields">
+<div class="workspace-metadata-fields" data-document-metadata-fields>
     <div class="col-md-6">
         <label class="form-label">Jenis dokumen *</label>
-        <select name="document_type_id" wire:model.live="documentTypeId" class="form-select" required>
-            <option value="">Pilih jenis dokumen</option>
+        <div class="workspace-document-type-loading position-relative">
+            <select name="document_type_id" wire:model.live="documentTypeId" class="form-select" required @disabled(blank($companyId))>
+                <option value="">{{ blank($companyId) ? 'Pilih perusahaan internal terlebih dahulu' : 'Pilih jenis dokumen' }}</option>
             @foreach($types as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach
-        </select>
+            </select>
+            <span class="workspace-document-loading-indicator" wire:loading aria-label="Memuat">Memuat...</span>
+        </div>
+        @error('document_type_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+    </div>
+    <div wire:loading wire:target="documentTypeId" class="col-12 workspace-metadata-loading" aria-live="polite">
+        <div class="workspace-metadata-panel-inner workspace-metadata-loading-inner"><span class="workspace-loading-spinner" aria-hidden="true"></span><span>Memuat metadata tambahan...</span></div>
     </div>
     @if(count($definitions) > 0)
         <div class="col-12 workspace-metadata-panel">

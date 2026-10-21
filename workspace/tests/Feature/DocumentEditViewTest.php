@@ -21,5 +21,9 @@ it('renders the document edit form with normalized Livewire document types', fun
         ->assertOk()
         ->assertSee('Edit dokumen')
         ->assertSee('Metadata tambahan')
-        ->assertSee('Invoice Number');
+        ->assertSee('Invoice Number')
+        ->assertSee('data-document-company-select', false)
+        ->assertSee('data-tag-input', false)
+        ->assertSee('Perusahaan client/vendor')
+        ->assertDontSee('crm_account_id');
 });

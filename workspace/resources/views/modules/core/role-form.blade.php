@@ -36,12 +36,21 @@
                 <div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Permission role</label><span class="text-secondary small">Kelompokkan berdasarkan modul</span></div>
                 <div class="workspace-permission-groups">
                     @foreach($permissionGroups as $group => $groupPermissions)
+                        @php($permissionPanelId = 'rolePermissionGroup'.$loop->index)
                         <section class="workspace-permission-group">
-                            <div class="workspace-permission-group-header"><div><h2>{{ $group }}</h2><span>{{ $groupPermissions->count() }} permission</span></div><label class="workspace-permission-select-all"><input type="checkbox" data-permission-group-toggle><span>Pilih semua</span></label></div>
-                            <div class="workspace-permission-grid">
-                                @foreach($groupPermissions as $permission)
-                                    <label class="workspace-permission-option"><input type="checkbox" name="permissions[]" value="{{ $permission->name }}" data-permission-item @checked(in_array($permission->name, $selectedPermissions, true))><span>{{ $permission->name }}</span></label>
-                                @endforeach
+                            <div class="workspace-permission-group-header">
+                                <button type="button" class="workspace-permission-collapse-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#{{ $permissionPanelId }}" aria-expanded="false" aria-controls="{{ $permissionPanelId }}">
+                                    <span><strong>{{ $group }}</strong><small>{{ $groupPermissions->count() }} permission</small></span>
+                                    <span class="workspace-permission-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></span>
+                                </button>
+                                <label class="workspace-permission-select-all"><input type="checkbox" data-permission-group-toggle><span>Pilih semua</span></label>
+                            </div>
+                            <div id="{{ $permissionPanelId }}" class="collapse">
+                                <div class="workspace-permission-grid">
+                                    @foreach($groupPermissions as $permission)
+                                        <label class="workspace-permission-option"><input type="checkbox" name="permissions[]" value="{{ $permission->name }}" data-permission-item @checked(in_array($permission->name, $selectedPermissions, true))><span>{{ $permission->name }}</span></label>
+                                    @endforeach
+                                </div>
                             </div>
                         </section>
                     @endforeach

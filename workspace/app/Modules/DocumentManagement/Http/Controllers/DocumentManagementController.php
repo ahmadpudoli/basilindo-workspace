@@ -4,6 +4,7 @@ namespace App\Modules\DocumentManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentQueryService;
+use App\Modules\DocumentManagement\Application\Services\Documents\DocumentMetadataValueNormalizer;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentUploadService;
 use App\Modules\DocumentManagement\Application\Services\Verification\VerificationReviewService;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentLifecycleService;
@@ -40,10 +41,10 @@ class DocumentManagementController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         return $data;
     }
-    public function edit(Request $request, Document $document): View { Gate::authorize('update', $document); $linkedTypeIds = DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'); return view('modules.documents.edit', ['document' => $document->load(['company', 'documentType']), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $document->company_id)->orWhereIn('id', $linkedTypeIds))->orderBy('name')->get()]); }
+    public function edit(Request $request, Document $document): View { Gate::authorize('update', $document); $linkedTypeIds = DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'); return view('modules.documents.edit', ['document' => $document->load(['company', 'documentType']), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'counterpartyCompanies' => $this->counterpartyCompanies($request), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $document->company_id)->orWhereIn('id', $linkedTypeIds))->orderBy('name')->get()]); }
 
     public function update(Request $request, Document $document): RedirectResponse
-    { Gate::authorize('update', $document); $data = $request->validate(['company_id' => 'required|exists:core_companies,id', 'counterparty_company_id' => 'nullable|exists:core_companies,id', 'project_id' => 'nullable|exists:core_projects,id', 'document_type_id' => 'required|exists:document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']); $this->ensureDocumentTypeAppliesToCompany($data['document_type_id'], $data['company_id']); $data['metadata'] = $this->validatedMetadata($data['metadata'] ?? [], DocumentType::findOrFail($data['document_type_id'])); $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags'])))) : []; $document->update($data); return redirect()->route('workspace.documents.list')->with('status', 'Metadata dokumen berhasil diperbarui.'); }
+    { Gate::authorize('update', $document); $this->normalizeAmountInput($request); $data = $request->validate(['company_id' => 'required|exists:core_companies,id', 'counterparty_company_id' => 'nullable|exists:core_companies,id', 'project_id' => 'nullable|exists:core_projects,id', 'document_type_id' => 'required|exists:document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']); $this->ensureCounterpartyCompanyAllowed($data['counterparty_company_id'] ?? null, $request); $this->ensureDocumentTypeAppliesToCompany($data['document_type_id'], $data['company_id']); $data['metadata'] = $this->validatedMetadata($data['metadata'] ?? [], DocumentType::findOrFail($data['document_type_id'])); $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags'])))) : []; $document->update($data); return redirect()->route('workspace.documents.list')->with('status', 'Metadata dokumen berhasil diperbarui.'); }
     public function bundleCreate(Request $request): View { Gate::authorize('create', Bundle::class); return view('modules.documents.bundle-form', ['companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
 
     public function bundleStore(Request $request, DocumentBundleService $bundleService): RedirectResponse
@@ -63,12 +64,14 @@ class DocumentManagementController extends Controller
 
     public function release(Request $request, DocumentLifecycleService $lifecycle, Document $document): RedirectResponse { Gate::authorize('review', $document); $lifecycle->release($document, (int) $request->user()->getKey()); return back()->with('status', 'Dokumen berhasil dirilis.'); }
     public function reject(Request $request, DocumentLifecycleService $lifecycle, Document $document): RedirectResponse { Gate::authorize('review', $document); $data = $request->validate(['reason' => 'required|string|max:2000']); $lifecycle->reject($document, (int) $request->user()->getKey(), $data['reason']); return back()->with('status', 'Dokumen ditolak.'); }
-    public function create(Request $request): View { Gate::authorize('create', Document::class); return view('modules.documents.form', ['companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->orderBy('name')->get(), 'defaults' => $request->only(['project_id', 'crm_account_id', 'crm_opportunity_id', 'company_id'])]); }
+    public function create(Request $request): View { Gate::authorize('create', Document::class); return view('modules.documents.form', ['companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'counterpartyCompanies' => $this->counterpartyCompanies($request), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->orderBy('name')->get(), 'defaults' => $request->only(['project_id', 'company_id'])]); }
 
     public function store(Request $request, DocumentUploadService $uploadService): RedirectResponse
     {
         Gate::authorize('create', Document::class);
-        $data = $request->validate(['upload' => 'required|file|mimes:pdf,jpg,jpeg,png|max:51200', 'company_id' => 'required|exists:core_companies,id', 'counterparty_company_id' => 'nullable|exists:core_companies,id', 'project_id' => 'nullable|exists:core_projects,id', 'crm_account_id' => 'nullable|exists:accounts,id', 'crm_opportunity_id' => 'nullable|exists:opportunities,id', 'document_type_id' => 'required|exists:document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']);
+        $this->normalizeAmountInput($request);
+        $data = $request->validate(['upload' => 'required|file|mimes:pdf,jpg,jpeg,png|max:51200', 'company_id' => 'required|exists:core_companies,id', 'counterparty_company_id' => 'nullable|exists:core_companies,id', 'project_id' => 'nullable|exists:core_projects,id', 'document_type_id' => 'required|exists:document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']);
+        $this->ensureCounterpartyCompanyAllowed($data['counterparty_company_id'] ?? null, $request);
         $this->ensureDocumentTypeAppliesToCompany($data['document_type_id'], $data['company_id']);
         $data['metadata'] = $this->validatedMetadata($data['metadata'] ?? [], DocumentType::findOrFail($data['document_type_id']));
         $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags']))) ) : [];
@@ -84,6 +87,43 @@ class DocumentManagementController extends Controller
             ->latest();
 
         return view('modules.documents.documents', ['documents' => $query->paginate(15)->withQueryString(), 'filters' => $request->only(['q', 'status', 'year', 'from', 'until'])]);
+    }
+
+    private function counterpartyCompanies(Request $request)
+    {
+        return Company::query()
+            ->visibleTo($request->user())
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereJsonContains('roles', 'client')->orWhereJsonContains('roles', 'vendor'))
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'roles']);
+    }
+
+    private function ensureCounterpartyCompanyAllowed(mixed $companyId, Request $request): void
+    {
+        if (blank($companyId)) {
+            return;
+        }
+
+        $allowed = Company::query()
+            ->visibleTo($request->user())
+            ->whereKey($companyId)
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereJsonContains('roles', 'client')->orWhereJsonContains('roles', 'vendor'))
+            ->exists();
+
+        if (! $allowed) {
+            throw ValidationException::withMessages([
+                'counterparty_company_id' => 'Perusahaan client/vendor yang dipilih tidak tersedia dalam scope akses Anda.',
+            ]);
+        }
+    }
+
+    private function normalizeAmountInput(Request $request): void
+    {
+        $request->merge([
+            'amount' => DocumentMetadataValueNormalizer::numeric($request->input('amount'), 'numeric_decimal'),
+        ]);
     }
 
     private function validatedMetadata(array $metadata, DocumentType $type): array

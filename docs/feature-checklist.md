@@ -265,6 +265,9 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Teks dropdown perusahaan tipe dokumen ter-align vertikal tanpa menambah tinggi input
 - [x] Floating label dan animasi fokus diterapkan secara global pada field form Workspace
 - [x] Tinggi kontrol input satu baris Workspace diseragamkan secara global menjadi 40px
+- [x] Jarak vertikal antar field form Workspace diseragamkan secara global menjadi compact (`.75rem`)
 - [x] Form perusahaan memiliki pasangan field dan aturan dependensi peran/parent berdasarkan klasifikasi
 - [x] Searchable dropdown tidak terpotong oleh overflow card pada form Workspace
 - [x] Perusahaan yang memiliki relasi vendor mengunci peran vendor, jenis entitas, klasifikasi, dan status
+- [x] Permission role dikelompokkan per modul dalam panel collapsible dengan kondisi awal tertutup
+- [x] Form tambah/edit dokumen memiliki pasangan field, counterparty searchable, filter tipe dokumen berdasarkan perusahaan, loading metadata, nominal lokal, dan tag chip

@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (label.parentElement?.classList.contains('workspace-floating-field')) return;
 
             const wrapper = document.createElement('div');
-            wrapper.className = 'workspace-floating-field';
+            wrapper.className = 'workspace-floating-field workspace-floating-field--auto';
             label.parentNode.insertBefore(wrapper, label);
             wrapper.append(field, label);
 
@@ -239,6 +239,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const operational = [...form.querySelectorAll('[name="operational_company_ids[]"]:checked')];
             if (!operational.length) addError('operational_company_ids[]', 'Pilih minimal satu perusahaan operasional.', form.querySelector('[data-searchable-dropdown]'));
         }
+        if (type === 'document') {
+            if (!value('title')) addError('title', 'Judul dokumen wajib diisi.');
+            if (!value('company_id')) addError('company_id', 'Perusahaan internal wajib dipilih.');
+            if (!value('document_type_id')) addError('document_type_id', 'Jenis dokumen wajib dipilih.');
+            if (!value('document_date')) addError('document_date', 'Tanggal dokumen wajib diisi.');
+            const upload = field('upload')?.files?.[0];
+            if (field('upload') && !upload) addError('upload', 'File dokumen wajib dipilih.', field('upload'));
+            if (upload && !['application/pdf', 'image/jpeg', 'image/png'].includes(upload.type)) addError('upload', 'File harus berupa PDF, JPG, atau PNG.', field('upload'));
+            if (upload && upload.size > 50 * 1024 * 1024) addError('upload', 'Ukuran file maksimal 50 MB.', field('upload'));
+            const amount = value('amount');
+            if (amount) {
+                const canonical = amount.includes(',') ? amount.replace(/\./g, '').replace(',', '.') : amount;
+                if (!/^\d+(?:\.\d+)?$/.test(canonical)) addError('amount', 'Nominal harus berupa angka desimal yang valid.', field('amount'));
+            }
+            form.querySelectorAll('[name^="metadata["][required]').forEach((metadataField) => {
+                if (!metadataField.value?.trim()) addError(metadataField.name, 'Metadata wajib diisi.', metadataField);
+            });
+        }
         if (errors.length) {
             errors[0].target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             errors[0].target.focus({ preventScroll: true });
@@ -345,8 +363,68 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
         search?.addEventListener('input', update);
-        items.forEach((item) => item.addEventListener('change', update));
+        items.forEach((item) => item.addEventListener('change', () => {
+            if (wrapper.dataset.singleSelect === 'true' && item.checked) {
+                items.forEach((other) => { if (other !== item) other.checked = false; });
+            }
+            update();
+        }));
         update();
+    });
+
+    document.querySelectorAll('[data-document-company-select]').forEach((select) => {
+        select.addEventListener('change', () => {
+            if (window.Livewire) window.Livewire.dispatch('document-company-changed', { companyId: select.value || null });
+        });
+    });
+
+    document.querySelectorAll('[data-local-decimal]').forEach((input) => {
+        input.addEventListener('input', () => { input.value = input.value.replace(/[^\d.,]/g, ''); });
+        input.addEventListener('blur', () => {
+            const value = input.value.trim();
+            if (!value) return;
+            const canonical = value.includes(',') ? value.replace(/\./g, '').replace(',', '.') : value;
+            if (!/^\d+(?:\.\d+)?$/.test(canonical)) return;
+            const [integer, fraction] = canonical.split('.');
+            input.value = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (fraction ? `,${fraction}` : '');
+        });
+    });
+
+    document.querySelectorAll('[data-tag-input]').forEach((wrapper) => {
+        const hidden = wrapper.querySelector('[data-tag-value]');
+        const entry = wrapper.querySelector('[data-tag-entry]');
+        const chips = wrapper.querySelector('[data-tag-chips]');
+        if (!hidden || !entry || !chips) return;
+        let tags = hidden.value.split(',').map((tag) => tag.trim().toLowerCase()).filter(Boolean).filter((tag, index, values) => values.indexOf(tag) === index);
+        const sync = () => {
+            chips.replaceChildren();
+            tags.forEach((tag, index) => {
+                const chip = document.createElement('span');
+                chip.className = 'workspace-tag-chip';
+                chip.textContent = tag;
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'workspace-tag-chip-remove';
+                remove.setAttribute('aria-label', `Hapus tag ${tag}`);
+                remove.textContent = '×';
+                remove.addEventListener('click', () => { tags.splice(index, 1); sync(); });
+                chip.append(remove);
+                chips.append(chip);
+            });
+            hidden.value = tags.join(', ');
+        };
+        const add = () => {
+            const value = entry.value.trim().replace(/,$/, '').toLowerCase();
+            if (value && !tags.includes(value)) tags.push(value);
+            entry.value = '';
+            sync();
+        };
+        entry.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ',') { event.preventDefault(); add(); }
+            if (event.key === 'Backspace' && !entry.value && tags.length) { tags.pop(); sync(); }
+        });
+        entry.addEventListener('blur', add);
+        sync();
     });
 
     const companyEntityType = document.querySelector('select[name="entity_type"]');
