@@ -17,3 +17,10 @@
 ## Data
 
 - Tidak ada migration, reset database, atau penghapusan data.
+
+## Sorting tabel dokumen
+
+- Menambahkan sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status.
+- Link sorting mempertahankan filter, jumlah baris, dan pagination melalui `withQueryString()`.
+- Menambahkan indikator arah sort pada header tabel.
+- Verifikasi: view cache, build frontend, dan pemeriksaan whitespace.

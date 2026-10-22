@@ -5,6 +5,7 @@ namespace App\Modules\DocumentManagement\Application\Services\Documents;
 use App\Modules\DocumentManagement\Domain\Models\Document;
 use Core\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 class DocumentQueryService
 {
@@ -39,5 +40,24 @@ class DocumentQueryService
             ->when($filters['from'] ?? null, fn ($q, $value) => $q->whereDate('document_date', '>=', $value))
             ->when($filters['until'] ?? null, fn ($q, $value) => $q->whereDate('document_date', '<=', $value))
             ->when($filters['tag'] ?? null, fn ($q, $value) => $q->whereJsonContains('tags', $value));
+    }
+
+    public function sort(Builder $query, string $sort, string $direction): Builder
+    {
+        $direction = $direction === 'asc' ? 'asc' : 'desc';
+        $documentTable = $query->getModel()->getTable();
+
+        return match ($sort) {
+            'company' => $query
+                ->leftJoin(DB::connection('core')->getTablePrefix().'companies as sort_companies', 'sort_companies.id', '=', $documentTable.'.company_id')
+                ->select($documentTable.'.*')
+                ->orderBy('sort_companies.name', $direction),
+            'type' => $query
+                ->leftJoin(DB::connection('documents')->getTablePrefix().'document_types as sort_types', 'sort_types.id', '=', $documentTable.'.document_type_id')
+                ->select($documentTable.'.*')
+                ->orderBy('sort_types.name', $direction),
+            'title', 'document_date', 'status' => $query->orderBy($documentTable.'.'.$sort, $direction),
+            default => $query->orderBy($documentTable.'.document_date', 'desc'),
+        };
     }
 }

@@ -57,6 +57,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Policy company scope untuk Account, Lead, Opportunity, Activity, Ticket, dan Document
 - [x] Document Management memakai assignment perusahaan eksplisit sebagai scope, termasuk untuk super admin yang memiliki assignment
 - [x] Daftar dokumen memiliki filter perusahaan operasional yang dibatasi scope akses pengguna
+- [x] Daftar dokumen memiliki sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status yang terhubung dengan filter serta pagination
+- [x] Daftar dokumen memiliki sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status yang terhubung dengan filter serta pagination
 - [x] Audit login dan permission changes
 - [x] Audit trail Core menyimpan konteks request, device, snapshot JSON, filter super admin, dan history edit dokumen
 - [x] Login lokal Workspace sebagai satu-satunya metode authentication runtime

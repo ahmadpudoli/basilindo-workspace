@@ -128,6 +128,9 @@ class DocumentManagementController extends Controller
         ];
         $perPage = $request->integer('per_page', 15);
         $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 15;
+        $allowedSorts = ['title', 'company', 'type', 'document_date', 'status'];
+        $sort = in_array($request->input('sort'), $allowedSorts, true) ? $request->input('sort') : 'document_date';
+        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
         $operationalCompanies = Company::query()
             ->operationalFor($request->user())
             ->orderBy('name')
@@ -145,12 +148,12 @@ class DocumentManagementController extends Controller
             ->map(fn (mixed $year): int => (int) $year)
             ->all();
 
-        $query = $queryService->apply($queryService->visibleTo($request->user()), $filters)
+        $query = $queryService->sort($queryService->apply($queryService->visibleTo($request->user()), $filters), $sort, $direction)
             ->where('status', 'ready')
             ->with(['company', 'documentType'])
-            ->latest();
+            ->orderBy('documents.id');
 
-        return view('modules.documents.documents', ['documents' => $query->paginate($perPage)->withQueryString(), 'filters' => $filters, 'operationalCompanies' => $operationalCompanies, 'availableYears' => $availableYears, 'perPage' => $perPage]);
+        return view('modules.documents.documents', ['documents' => $query->paginate($perPage)->withQueryString(), 'filters' => $filters, 'operationalCompanies' => $operationalCompanies, 'availableYears' => $availableYears, 'perPage' => $perPage, 'sort' => $sort, 'direction' => $direction]);
     }
 
     private function counterpartyCompanies(Request $request)
