@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,7 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AuditLogger $audit): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -26,18 +27,22 @@ class LoginController extends Controller
         ]);
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            $audit->record('auth.login_failed', null, null, ['reason' => 'invalid_credentials']);
+
             return back()
                 ->withInput($request->only('email', 'remember'))
                 ->withErrors(['email' => 'Email atau kata sandi tidak sesuai.']);
         }
 
         $request->session()->regenerate();
+        $audit->record('auth.login_succeeded', $request->user());
 
         return redirect()->intended(route('dashboard'));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, AuditLogger $audit): RedirectResponse
     {
+        $audit->record('auth.logout', $request->user());
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

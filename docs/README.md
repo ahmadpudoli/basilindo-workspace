@@ -24,6 +24,7 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Requirement company detail dan brand asset](requirements/company-detail-and-brand-assets.md)
 - [Requirement company vendor management](requirements/company-vendor-management.md)
 - [Panduan validasi form CRUD](requirements/crud-form-validation.md)
+- [Requirement audit trail Workspace](requirements/audit-trail.md)
 - [Standard pagination Workspace](requirements/workspace-ui-pagination.md)
 - [Log pekerjaan](logs/)
 - [Runbook backup dan restore](operations/backup-restore.md)

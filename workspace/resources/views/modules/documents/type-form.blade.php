@@ -20,6 +20,7 @@
 @endphp
 
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><div class="text-uppercase text-secondary small fw-semibold mb-2">Konfigurasi dokumen</div><h1 class="h3 mb-1">{{ $isEdit ? 'Edit tipe dokumen' : 'Tambah tipe dokumen' }}</h1><p class="text-secondary mb-0">Atur field metadata yang akan muncul saat dokumen diinput.</p></div><a href="{{ route('workspace.documents.types') }}" class="btn btn-outline-secondary">Kembali</a></div>
+@if($isEdit)<div class="workspace-document-edit-layout"><div class="workspace-document-edit-main">@endif
 <form method="POST" action="{{ $isEdit ? route('workspace.documents.types.update', $type) : route('workspace.documents.types.store') }}" class="card border-0 shadow-sm" data-metadata-form data-client-validation="document-type" novalidate>
     <div class="card-body">
         @csrf @if($isEdit) @method('PUT') @endif
@@ -34,4 +35,5 @@
     </div>
     <div class="card-footer bg-white d-flex gap-2"><button class="btn btn-primary">Simpan tipe dokumen</button><a href="{{ route('workspace.documents.types') }}" class="btn btn-outline-secondary">Batal</a></div>
 </form>
+@if($isEdit)</div>@include('modules.partials.subject-audit-sidebar', ['auditEvents' => $auditEvents, 'auditTitle' => 'Riwayat tipe dokumen', 'auditId' => 'document-type-audit-history'])</div>@endif
 @endsection

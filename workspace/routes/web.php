@@ -8,6 +8,7 @@ use App\Modules\Core\Http\Controllers\HealthController;
 use App\Modules\Core\Http\Controllers\Auth\LoginController;
 use App\Modules\Core\Http\Controllers\WorkspaceController;
 use App\Modules\Core\Http\Controllers\AdministrationController;
+use App\Modules\Core\Http\Controllers\AuditController;
 use App\Modules\Company\Http\Controllers\CompanyDashboardController;
 use App\Modules\Company\Http\Controllers\CompanyController;
 use App\Modules\Company\Http\Controllers\VendorController;
@@ -33,6 +34,7 @@ Route::redirect('/admin', '/dashboard');
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [WorkspaceController::class, 'dashboard'])->name('dashboard');
     Route::get('/workspace/settings', [AdministrationController::class, 'settings'])->name('workspace.settings');
+    Route::get('/workspace/core/audit-log', [AuditController::class, 'index'])->name('workspace.core.audit-log');
     Route::get('/workspace/settings/modules', [AdministrationController::class, 'settingsModules'])->name('workspace.settings.modules');
     Route::put('/workspace/settings/modules', [AdministrationController::class, 'settingsModulesUpdate'])->name('workspace.settings.modules.update');
     Route::get('/workspace/company', CompanyDashboardController::class)->name('workspace.company');
@@ -88,9 +90,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/documents/types/{type}/edit', [DocumentManagementController::class, 'typeEdit'])->name('workspace.documents.types.edit');
     Route::put('/workspace/documents/types/{type}', [DocumentManagementController::class, 'typeUpdate'])->name('workspace.documents.types.update');
     Route::delete('/workspace/documents/types/{type}', [DocumentManagementController::class, 'typeDestroy'])->name('workspace.documents.types.destroy');
+    Route::get('/workspace/documents/types/{type}', [DocumentManagementController::class, 'typeShow'])->name('workspace.documents.types.show');
     Route::get('/workspace/documents/bundles', [DocumentManagementController::class, 'bundles'])->name('workspace.documents.bundles');
     Route::get('/workspace/documents/bundles/create', [DocumentManagementController::class, 'bundleCreate'])->name('workspace.documents.bundles.create');
     Route::post('/workspace/documents/bundles', [DocumentManagementController::class, 'bundleStore'])->name('workspace.documents.bundles.store');
+    Route::get('/workspace/documents/{document}', [DocumentManagementController::class, 'show'])->name('workspace.documents.show');
 
     Route::get('/workspace', function () {
         session()->forget('workspace.active_module');

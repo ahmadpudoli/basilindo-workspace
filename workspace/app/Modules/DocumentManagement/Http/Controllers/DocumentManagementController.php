@@ -3,6 +3,7 @@
 namespace App\Modules\DocumentManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentQueryService;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentMetadataValueNormalizer;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentUploadService;
@@ -13,6 +14,7 @@ use App\Modules\DocumentManagement\Application\Jobs\GenerateDocumentBundle;
 use App\Modules\DocumentManagement\Domain\Models\Bundle;
 use App\Modules\DocumentManagement\Domain\Models\Document;
 use App\Modules\DocumentManagement\Domain\Models\DocumentType;
+use App\Modules\DocumentManagement\Domain\Models\AuditEvent;
 use App\Modules\DocumentManagement\Domain\Models\VerificationCase;
 use Core\Models\Company;
 use Core\Models\Project;
@@ -27,17 +29,20 @@ use Illuminate\View\View;
 class DocumentManagementController extends Controller
 {
     public function typeCreate(Request $request): View { Gate::authorize('create', DocumentType::class); return view('modules.documents.type-form', ['companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
-    public function typeStore(Request $request): RedirectResponse { Gate::authorize('create', DocumentType::class); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type = DocumentType::create($data); $this->syncDocumentTypeCompanies($type, $companyIds); return redirect()->route('workspace.documents.types')->with('status', 'Tipe dokumen berhasil dibuat.'); }
-    public function typeEdit(Request $request, DocumentType $type): View { Gate::authorize('update', $type); return view('modules.documents.type-form', ['type' => $type, 'selectedCompanyIds' => $this->documentTypeCompanyIds($type), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
-    public function typeUpdate(Request $request, DocumentType $type): RedirectResponse { Gate::authorize('update', $type); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type->update($data); $this->syncDocumentTypeCompanies($type, $companyIds); return redirect()->route('workspace.documents.types')->with('status', 'Tipe dokumen berhasil diperbarui.'); }
-    public function typeDestroy(DocumentType $type): RedirectResponse
+    public function typeStore(Request $request, AuditLogger $audit): RedirectResponse { Gate::authorize('create', DocumentType::class); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type = DocumentType::create($data); $this->syncDocumentTypeCompanies($type, $companyIds); $audit->record('document_type.created', $type, null, ['company_ids' => $companyIds], null, $this->documentTypeAuditSnapshot($type)); return redirect()->route('workspace.documents.types.show', $type)->with('status', 'Tipe dokumen berhasil dibuat.'); }
+    public function typeEdit(Request $request, DocumentType $type): View { Gate::authorize('update', $type); return view('modules.documents.type-form', ['type' => $type, 'auditEvents' => $this->documentTypeAuditEvents($type), 'selectedCompanyIds' => $this->documentTypeCompanyIds($type), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
+    public function typeShow(DocumentType $type): View { Gate::authorize('view', $type); return view('modules.documents.type-show', ['type' => $type->load('company'), 'auditEvents' => $this->documentTypeAuditEvents($type), 'companies' => $this->documentTypeCompanyNames($type)]); }
+    public function typeUpdate(Request $request, DocumentType $type, AuditLogger $audit): RedirectResponse { Gate::authorize('update', $type); $before = $this->documentTypeAuditSnapshot($type); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type->update($data); $this->syncDocumentTypeCompanies($type, $companyIds); $type->refresh(); $audit->recordChange('document_type.updated', $type, $before, $this->documentTypeAuditSnapshot($type), null, ['company_ids' => $companyIds]); return redirect()->route('workspace.documents.types.show', $type)->with('status', 'Tipe dokumen berhasil diperbarui.'); }
+    public function typeDestroy(DocumentType $type, AuditLogger $audit): RedirectResponse
     {
         Gate::authorize('delete', $type);
         if ($type->documents()->exists()) {
             return back()->with('error', 'Tipe dokumen tidak dapat dihapus karena sudah digunakan pada upload dokumen.');
         }
 
+        $before = $this->documentTypeAuditSnapshot($type);
         $type->delete();
+        $audit->recordChange('document_type.archived', $type, $before, ['deleted_at' => now()->toIso8601String()]);
 
         return back()->with('status', 'Tipe dokumen dihapus.');
     }
@@ -51,10 +56,33 @@ class DocumentManagementController extends Controller
         $data['is_active'] = $request->boolean('is_active');
         return $data;
     }
-    public function edit(Request $request, Document $document): View { Gate::authorize('update', $document); $linkedTypeIds = DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'); return view('modules.documents.edit', ['document' => $document->load(['company', 'documentType']), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'counterpartyCompanies' => $this->counterpartyCompanies($request), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $document->company_id)->orWhereIn('id', $linkedTypeIds))->orderBy('name')->get()]); }
+    private function documentTypeAuditEvents(DocumentType $type)
+    {
+        return AuditEvent::query()->with('actor')->where('subject_type', $type->getMorphClass())->where('subject_id', $type->getKey())->latest('created_at')->limit(30)->get();
+    }
 
-    public function update(Request $request, Document $document): RedirectResponse
-    { Gate::authorize('update', $document); $this->normalizeAmountInput($request); $data = $request->validate(['company_id' => 'required|exists:core.companies,id', 'counterparty_company_id' => 'nullable|exists:core.companies,id', 'project_id' => 'nullable|exists:core.projects,id', 'document_type_id' => 'required|exists:documents.document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']); $this->ensureOperationalCompanyAllowed($data['company_id'], $request); $this->ensureCounterpartyCompanyAllowed($data['counterparty_company_id'] ?? null, $request); $this->ensureDocumentTypeAppliesToCompany($data['document_type_id'], $data['company_id']); $data['metadata'] = $this->validatedMetadata($data['metadata'] ?? [], DocumentType::findOrFail($data['document_type_id'])); $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags'])))) : []; $document->update($data); return redirect()->route('workspace.documents.list')->with('status', 'Dokumen berhasil diperbarui.'); }
+    private function documentTypeAuditSnapshot(DocumentType $type): array
+    {
+        return [
+            'id' => $type->getKey(),
+            'name' => $type->name,
+            'code' => $type->code,
+            'company_id' => $type->company_id,
+            'company_ids' => $this->documentTypeCompanyIds($type),
+            'required_fields' => $type->required_fields,
+            'is_active' => $type->is_active,
+        ];
+    }
+
+    private function documentTypeCompanyNames(DocumentType $type)
+    {
+        return Company::query()->whereIn('id', $this->documentTypeCompanyIds($type))->orderBy('name')->pluck('name', 'id');
+    }
+    public function show(Document $document): View { Gate::authorize('view', $document); $auditEvents = AuditEvent::query()->with('actor')->where('subject_type', $document->getMorphClass())->where('subject_id', $document->getKey())->latest('created_at')->limit(30)->get(); return view('modules.documents.show', ['document' => $document->load(['company', 'counterpartyCompany', 'project', 'documentType', 'currentVersion']), 'auditEvents' => $auditEvents]); }
+    public function edit(Request $request, Document $document): View { Gate::authorize('update', $document); $linkedTypeIds = DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'); $auditEvents = AuditEvent::query()->with('actor')->where('subject_type', $document->getMorphClass())->where('subject_id', $document->getKey())->latest('created_at')->limit(30)->get(); return view('modules.documents.edit', ['document' => $document->load(['company', 'documentType']), 'auditEvents' => $auditEvents, 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'counterpartyCompanies' => $this->counterpartyCompanies($request), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $document->company_id)->orWhereIn('id', $linkedTypeIds))->orderBy('name')->get()]); }
+
+    public function update(Request $request, Document $document, AuditLogger $audit): RedirectResponse
+    { Gate::authorize('update', $document); $before = $this->auditSnapshot($document); $this->normalizeAmountInput($request); $data = $request->validate(['company_id' => 'required|exists:core.companies,id', 'counterparty_company_id' => 'nullable|exists:core.companies,id', 'project_id' => 'nullable|exists:core.projects,id', 'document_type_id' => 'required|exists:documents.document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']); $this->ensureOperationalCompanyAllowed($data['company_id'], $request); $this->ensureCounterpartyCompanyAllowed($data['counterparty_company_id'] ?? null, $request); $this->ensureDocumentTypeAppliesToCompany($data['document_type_id'], $data['company_id']); $data['metadata'] = $this->validatedMetadata($data['metadata'] ?? [], DocumentType::findOrFail($data['document_type_id'])); $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags'])))) : []; $document->update($data); $document->refresh(); $audit->recordChange('document.updated', $document, $before, $this->auditSnapshot($document), $document->company_id); return redirect()->route('workspace.documents.show', $document)->with('status', 'Dokumen berhasil diperbarui.'); }
     public function bundleCreate(Request $request): View { Gate::authorize('create', Bundle::class); return view('modules.documents.bundle-form', ['companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
 
     public function bundleStore(Request $request, DocumentBundleService $bundleService): RedirectResponse
@@ -66,7 +94,7 @@ class DocumentManagementController extends Controller
         return redirect()->route('workspace.documents.bundles')->with('status', 'Request bundel masuk antrean queue.');
     }
 
-    public function destroy(Document $document): RedirectResponse { Gate::authorize('delete', $document); $document->delete(); return redirect()->route('workspace.documents.list')->with('status', 'Dokumen dipindahkan ke quarantine/arsip melalui soft delete.'); }
+    public function destroy(Document $document, AuditLogger $audit): RedirectResponse { Gate::authorize('delete', $document); $before = $this->auditSnapshot($document); $document->delete(); $audit->recordChange('document.archived', $document, $before, ['deleted_at' => now()->toIso8601String()], $document->company_id); return redirect()->route('workspace.documents.list')->with('status', 'Dokumen dipindahkan ke quarantine/arsip melalui soft delete.'); }
     public function verificationCase(VerificationCase $case): View { Gate::authorize('viewAny', Document::class); return view('modules.documents.verification-case', ['case' => $case->load(['items.document'])]); }
 
     public function review(Request $request, VerificationReviewService $reviewService, \App\Modules\DocumentManagement\Domain\Models\VerificationItem $item): RedirectResponse
@@ -88,7 +116,7 @@ class DocumentManagementController extends Controller
         $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags']))) ) : [];
         $file = $data['upload']; unset($data['upload']);
         $document = $uploadService->upload($file, $data, (int) $request->user()->getKey());
-        return redirect()->route('workspace.documents.list')->with('status', "Dokumen {$document->title} berhasil diunggah dan tersedia.");
+        return redirect()->route('workspace.documents.show', $document)->with('status', "Dokumen {$document->title} berhasil diunggah dan tersedia.");
     }
     public function documents(Request $request, DocumentQueryService $queryService): View
     {
@@ -296,5 +324,21 @@ class DocumentManagementController extends Controller
         $bundles = Bundle::query()->with('company')->latest()->paginate(15)->withQueryString();
 
         return view('modules.documents.bundles', compact('bundles'));
+    }
+
+    private function auditSnapshot(Document $document): array
+    {
+        return collect($document->only([
+            'id', 'company_id', 'counterparty_company_id', 'project_id', 'document_type_id',
+            'title', 'description', 'original_filename', 'reference_number', 'document_date',
+            'amount', 'currency', 'status', 'metadata', 'tags', 'legal_hold', 'retention_until',
+            'verified_at', 'quarantined_at', 'released_at', 'rejected_at', 'deleted_at',
+        ]))->map(function (mixed $value): mixed {
+            if ($value instanceof \DateTimeInterface) {
+                return $value->format(DATE_ATOM);
+            }
+
+            return $value;
+        })->all();
     }
 }

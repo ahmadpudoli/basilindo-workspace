@@ -47,26 +47,26 @@ class AdministrationController extends Controller
 
     public function users(): View { Gate::authorize('viewAny', User::class); return view('modules.core.users', ['users' => User::query()->with(['roles', 'companies'])->latest()->paginate(20)]); }
     public function userCreate(): View { Gate::authorize('create', User::class); return view('modules.core.user-form', $this->userFormData()); }
-    public function userStore(Request $request): RedirectResponse
+    public function userStore(Request $request, AuditLogger $audit): RedirectResponse
     {
         Gate::authorize('create', User::class);
         $data = $request->validate(['name' => 'required|string|max:255', 'email' => ['required', 'email', 'max:255', $this->uniqueUserEmail()], 'password' => 'required|string|min:8|confirmed', 'roles' => 'nullable|array', 'roles.*' => $this->modelExistsRule(Role::class, 'name'), 'company_ids' => 'nullable|array', 'company_ids.*' => ['integer', $this->modelExistsRule(Company::class, 'id')->where(fn ($query) => $query->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active'))], 'permissions' => 'nullable|array', 'permissions.*' => $this->modelExistsRule(Permission::class, 'name')]);
         $roles = $data['roles'] ?? []; $companyIds = $data['company_ids'] ?? []; $permissions = $data['permissions'] ?? [];
         unset($data['roles'], $data['company_ids'], $data['permissions']); $data['password'] = Hash::make($data['password']);
-        $user = User::create($data); if ($roles) $user->syncRoles($roles); if ($permissions) $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member']));
+        $user = User::create($data); if ($roles) $user->syncRoles($roles); if ($permissions) $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); $audit->record('user.created', $user, null, ['role_count' => count($roles), 'company_count' => count($companyIds)], null, $this->userSnapshot($user));
         return redirect()->route('workspace.core.users')->with('status', 'Pengguna berhasil dibuat.');
     }
     public function userEdit(User $user): View { Gate::authorize('view', $user); return view('modules.core.user-form', $this->userFormData($user) + ['action' => route('workspace.core.users.update', $user), 'method' => 'PUT']); }
-    public function userUpdate(Request $request, User $user): RedirectResponse
+    public function userUpdate(Request $request, User $user, AuditLogger $audit): RedirectResponse
     {
         Gate::authorize('update', $user);
         $data = $request->validate(['name' => 'required|string|max:255', 'email' => ['required', 'email', 'max:255', $this->uniqueUserEmail($user)], 'password' => 'nullable|string|min:8|confirmed', 'roles' => 'nullable|array', 'roles.*' => $this->modelExistsRule(Role::class, 'name'), 'company_ids' => 'nullable|array', 'company_ids.*' => ['integer', $this->modelExistsRule(Company::class, 'id')->where(fn ($query) => $query->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active'))], 'permissions' => 'nullable|array', 'permissions.*' => $this->modelExistsRule(Permission::class, 'name')]);
         $roles = $data['roles'] ?? []; $companyIds = $data['company_ids'] ?? []; $permissions = $data['permissions'] ?? [];
         unset($data['roles'], $data['company_ids'], $data['permissions']); if (filled($data['password'] ?? null)) $data['password'] = Hash::make($data['password']); else unset($data['password']);
-        $user->update($data); if (! $user->isProtectedSystemAccount()) { $user->syncRoles($roles); $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); }
+        $before = $this->userSnapshot($user); $user->update($data); if (! $user->isProtectedSystemAccount()) { $user->syncRoles($roles); $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); } $user->refresh(); $audit->recordChange('user.updated', $user, $before, $this->userSnapshot($user));
         return redirect()->route('workspace.core.users')->with('status', 'Pengguna berhasil diperbarui.');
     }
-    public function userDestroy(User $user): RedirectResponse { Gate::authorize('delete', $user); $user->delete(); return back()->with('status', 'Pengguna dipindahkan ke arsip.'); }
+    public function userDestroy(User $user, AuditLogger $audit): RedirectResponse { Gate::authorize('delete', $user); $before = $this->userSnapshot($user); $user->delete(); $audit->recordChange('user.archived', $user, $before, ['deleted_at' => now()->toIso8601String()]); return back()->with('status', 'Pengguna dipindahkan ke arsip.'); }
     public function roles(): View { Gate::authorize('viewAny', Role::class); return view('modules.core.roles', ['roles' => Role::query()->withCount('users')->latest()->paginate(20)]); }
     public function roleCreate(): View { Gate::authorize('create', Role::class); return view('modules.core.role-form', ['permissions' => Permission::query()->orderBy('name')->get()]); }
     public function roleStore(Request $request): RedirectResponse { Gate::authorize('create', Role::class); $data = $request->validate(['name' => 'required|string|max:255|unique:roles,name', 'guard_name' => 'required|string|max:50', 'permissions' => 'nullable|array', 'permissions.*' => 'string|exists:permissions,name']); $permissions = $data['permissions'] ?? []; unset($data['permissions']); $role = Role::create($data); if ($permissions) $role->syncPermissions($permissions); return redirect()->route('workspace.core.roles')->with('status', 'Role berhasil dibuat.'); }
@@ -77,6 +77,11 @@ class AdministrationController extends Controller
     private function userFormData(?User $user = null): array
     {
         return ['user' => $user, 'roles' => Role::query()->orderBy('name')->get(), 'permissions' => Permission::query()->orderBy('name')->get(), 'companies' => Company::query()->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active')->orderBy('name')->get()];
+    }
+
+    private function userSnapshot(User $user): array
+    {
+        return $user->only(['id', 'name', 'email', 'email_verified_at', 'deleted_at']);
     }
 
     private function uniqueUserEmail(?User $user = null)

@@ -67,6 +67,7 @@
                 ['label' => 'Modul aktif', 'url' => route('workspace.settings.modules')],
                 ['label' => 'Pengguna & akses', 'url' => route('workspace.core.users')],
                 ['label' => 'Role & permission', 'url' => route('workspace.core.roles')],
+                    ...(auth()->user()?->hasRole('super_admin') ? [['label' => 'Audit trail', 'url' => route('workspace.core.audit-log')]] : []),
             ],
         ];
         $enabledModuleKeys = app(\App\Modules\Core\Application\Services\WorkspaceModuleRegistry::class)->enabledKeys();
@@ -167,9 +168,13 @@
                         <div class="workspace-nav-label">Navigasi</div>
                         @php
                             $currentPath = parse_url(request()->url(), PHP_URL_PATH);
+                            $navigationPath = $currentPath;
+                            if ($activeModule === 'documents' && request()->routeIs('workspace.documents.create', 'workspace.documents.show', 'workspace.documents.edit')) {
+                                $navigationPath = parse_url(route('workspace.documents.list'), PHP_URL_PATH);
+                            }
                             $activeNavPath = collect($activeModuleDefinition['items'])
                                 ->map(fn (array $item) => parse_url($item['url'], PHP_URL_PATH))
-                                ->filter(fn (string $path) => $currentPath === $path || str_starts_with($currentPath, rtrim($path, '/').'/'))
+                                ->filter(fn (string $path) => $navigationPath === $path || str_starts_with($navigationPath, rtrim($path, '/').'/'))
                                 ->sortByDesc(fn (string $path) => strlen($path))
                                 ->first();
                         @endphp

@@ -8,6 +8,8 @@
         </div>
     </div>
 
+    <div class="workspace-document-edit-layout">
+    <div class="workspace-document-edit-main">
     <form method="POST" action="{{ route('workspace.documents.update', $document) }}" class="card border-0 shadow-sm" data-client-validation="document" novalidate>
         @csrf
         @method('PUT')
@@ -74,4 +76,34 @@
             <button class="btn btn-primary" type="submit">Simpan perubahan</button>
         </div>
     </form>
+    </div>
+
+    <aside class="workspace-audit-sidebar is-collapsed" data-subject-audit-panel>
+        <button class="workspace-audit-sidebar-toggle" type="button" data-subject-audit-toggle aria-expanded="false" aria-controls="document-audit-history" title="Buka audit trail">
+            <span class="workspace-audit-sidebar-toggle-icon" aria-hidden="true">‹</span><span class="workspace-audit-sidebar-toggle-label">Audit trail</span>
+        </button>
+        <div id="document-audit-history" class="workspace-audit-sidebar-content">
+            <div class="card border-0 shadow-sm workspace-audit-panel">
+                <div class="card-header bg-white border-0 d-flex align-items-center justify-content-between gap-2 py-3">
+                    <div><span class="workspace-form-kicker">Audit trail</span><strong class="d-block">Riwayat dokumen</strong></div>
+                    <span class="workspace-audit-count">{{ $auditEvents->count() }}</span>
+                </div>
+                <div class="card-body pt-0">
+                    @forelse($auditEvents as $event)
+                        <div class="workspace-audit-entry">
+                            <div class="workspace-audit-entry-dot"></div>
+                            <div class="small"><strong>{{ str($event->action)->headline() }}</strong><span class="d-block text-secondary">{{ $event->actor?->name ?: 'Sistem / anonim' }}</span><span class="d-block text-secondary">{{ $event->created_at?->format('d/m/Y H:i') }} · {{ $event->device ?: 'Perangkat tidak diketahui' }}</span></div>
+                            @if($event->old_values || $event->new_values)
+                                <details class="mt-2"><summary class="small text-primary">Lihat perubahan</summary><pre class="small bg-light rounded p-2 mt-2 mb-0" style="white-space:pre-wrap;max-height:220px;overflow:auto">@json(['old' => $event->old_values, 'new' => $event->new_values], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)</pre></details>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-secondary small mb-0">Belum ada riwayat perubahan untuk dokumen ini.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </aside>
+    </div>
+    </div>
 @endsection

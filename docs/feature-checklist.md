@@ -58,6 +58,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Document Management memakai assignment perusahaan eksplisit sebagai scope, termasuk untuk super admin yang memiliki assignment
 - [x] Daftar dokumen memiliki filter perusahaan operasional yang dibatasi scope akses pengguna
 - [x] Audit login dan permission changes
+- [x] Audit trail Core menyimpan konteks request, device, snapshot JSON, filter super admin, dan history edit dokumen
 - [x] Login lokal Workspace sebagai satu-satunya metode authentication runtime
 - [x] Satu session dan satu deployment untuk seluruh modul
 - [x] Pembuatan user Core dari Workspace Users

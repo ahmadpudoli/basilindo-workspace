@@ -36,6 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     enhanceFloatingFields();
 
+    document.querySelectorAll('[data-subject-audit-toggle]').forEach((toggle) => {
+        const panel = toggle.closest('[data-subject-audit-panel]');
+        if (!panel) return;
+
+        toggle.addEventListener('click', () => {
+            const collapsed = panel.classList.toggle('is-collapsed');
+            toggle.setAttribute('aria-expanded', String(!collapsed));
+            toggle.setAttribute('title', collapsed ? 'Buka audit trail' : 'Tutup audit trail');
+        });
+    });
+
     document.querySelectorAll('[data-document-upload]').forEach((upload) => {
         const input = upload.querySelector('[data-document-upload-input]');
         const preview = upload.querySelector('[data-document-upload-preview]');
