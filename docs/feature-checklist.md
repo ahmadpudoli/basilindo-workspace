@@ -177,6 +177,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Seluruh input text, email, password, select, dan textarea Workspace memakai floating-label compact yang konsisten dengan template
 - [x] Dashboard Company, CRM, Project Management, dan Document Management memakai pola page header, action, summary cards, dan table template
 - [x] Ringkasan Company memiliki hero dashboard, metrik berbasis scope, daftar perusahaan informatif, dan akses cepat
+- [x] Ringkasan Document Management memiliki hero modern, card statistik animatif, dan daftar dokumen terbaru yang responsif
+- [x] Ringkasan Document Management memiliki hero modern, card statistik animatif, dan daftar dokumen terbaru yang responsif
 
 - [x] Project Management memakai branding Basilindo dan landing page publik tanpa DewaKoding
 - [x] Project Management memakai layout panel konsisten dengan File Organizer
