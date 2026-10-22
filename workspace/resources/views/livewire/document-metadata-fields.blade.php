@@ -27,6 +27,7 @@
                 <div class="row g-3 mt-1">
                     @foreach($definitions as $field => $config)
                         @php($metadataType = $config['type'] ?? 'string')
+                        @php($metadataValue = old('metadata.'.$field, $metadata[$field] ?? ''))
                         <div class="col-md-6">
                             <label class="form-label">{{ str($field)->headline() }} @if($config['mandatory'])*@endif</label>
                             @if($metadataType === 'text')
@@ -35,8 +36,9 @@
                                 <input type="hidden" name="metadata[{{ $field }}]" value="0">
                                 <div class="form-check workspace-metadata-boolean"><input type="checkbox" name="metadata[{{ $field }}]" value="1" class="form-check-input" id="metadata-{{ str($field)->slug() }}" @checked((bool) old('metadata.'.$field, $metadata[$field] ?? false))><label class="form-check-label" for="metadata-{{ str($field)->slug() }}">Ya</label></div>
                             @else
-                                <input name="metadata[{{ $field }}]" value="{{ old('metadata.'.$field, $metadata[$field] ?? '') }}" class="form-control" @required($config['mandatory']) @if(in_array($metadataType, ['numeric','numeric_decimal'])) type="number" step="{{ $metadataType === 'numeric' ? '1' : 'any' }}" @elseif($metadataType === 'date') type="date" @elseif($metadataType === 'datetime') type="datetime-local" @else type="text" @endif>
+                                <input name="metadata[{{ $field }}]" value="{{ in_array($metadataType, ['numeric', 'numeric_decimal'], true) ? \App\Modules\DocumentManagement\Application\Services\Documents\DocumentMetadataValueNormalizer::formatIndonesian($metadataValue) : $metadataValue }}" class="form-control" @required($config['mandatory']) @if(in_array($metadataType, ['numeric','numeric_decimal'], true)) type="text" inputmode="decimal" data-local-decimal data-metadata-type="{{ $metadataType }}" @elseif($metadataType === 'date') type="date" @elseif($metadataType === 'datetime') type="datetime-local" @else type="text" @endif>
                             @endif
+                            @error('metadata.'.$field)<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                         </div>
                     @endforeach
                 </div>

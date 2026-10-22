@@ -38,7 +38,7 @@
 - Tanggal dokumen dipisahkan dari `created_at`.
 - Duplicate detection minimum memakai company + document type + normalized reference number + checksum, dengan pengecualian yang terdokumentasi.
 - Penghapusan memakai soft delete/quarantine; hard delete hanya lewat retention job yang terkontrol.
-- Upload dokumen selalu masuk `quarantine`; hanya service lifecycle terotorisasi yang dapat mengubahnya menjadi `ready` atau `rejected`. Penolakan wajib memiliki alasan dan seluruh perubahan dicatat sebagai audit event.
+- Upload dokumen baru langsung berstatus `ready` setelah file, metadata, dan relasi tervalidasi. Status `quarantine` dan `rejected` tetap dibaca untuk kompatibilitas data lama, sedangkan pengarsipan dilakukan dengan soft delete.
 - `DocumentType.required_fields` mendefinisikan metadata wajib dan divalidasi pada boundary upload. Reference number dinormalisasi untuk pencarian/matching dan tag disimpan dalam bentuk lowercase unik.
 - `SavedSearch` dimiliki user dan dibatasi ke company scope; filter disimpan sebagai JSON agar dapat diperluas tanpa mengubah skema dokumen.
 - Semua relation dan verification wajib menyimpan actor serta timestamps.

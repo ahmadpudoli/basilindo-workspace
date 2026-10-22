@@ -26,8 +26,8 @@ class DocumentUploadService
         $document->id = (string) Str::uuid();
         $document->uploaded_by = $userId;
         $document->original_filename = $file->getClientOriginalName();
-        $document->status = 'quarantine';
-        $document->quarantined_at = now();
+        $document->status = 'ready';
+        $document->released_at = now();
         $document->reference_number = filled($document->reference_number) ? trim((string) $document->reference_number) : null;
         $document->normalized_reference_number = $this->normalizeReference($document->reference_number);
         $document->tags = $this->normalizeTags($document->tags);
@@ -127,12 +127,15 @@ class DocumentUploadService
                 'numeric_decimal' => DocumentMetadataValueNormalizer::isValidNumeric(DocumentMetadataValueNormalizer::numeric($value, 'numeric_decimal'), 'numeric_decimal'),
                 'date' => strtotime((string) $value) !== false,
                 'datetime' => strtotime((string) $value) !== false,
+                'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== null,
                 'string' => is_scalar($value) && trim((string) $value) !== '',
                 default => false,
             };
 
             if (! $valid) {
                 $errors["metadata.$field"] = "Format metadata '$field' tidak sesuai tipe $type.";
+            } elseif ($type === 'boolean') {
+                $custom[$field] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
             } elseif (in_array($type, ['numeric', 'numeric_decimal'], true)) {
                 $custom[$field] = DocumentMetadataValueNormalizer::numeric($value, $type);
             }

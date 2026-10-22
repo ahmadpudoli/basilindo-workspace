@@ -88,11 +88,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/documents/types/{type}/edit', [DocumentManagementController::class, 'typeEdit'])->name('workspace.documents.types.edit');
     Route::put('/workspace/documents/types/{type}', [DocumentManagementController::class, 'typeUpdate'])->name('workspace.documents.types.update');
     Route::delete('/workspace/documents/types/{type}', [DocumentManagementController::class, 'typeDestroy'])->name('workspace.documents.types.destroy');
-    Route::get('/workspace/documents/verification', [DocumentManagementController::class, 'verification'])->name('workspace.documents.verification');
-    Route::get('/workspace/documents/verification/{case}', [DocumentManagementController::class, 'verificationCase'])->name('workspace.documents.verification.case');
-    Route::post('/workspace/documents/verification/items/{item}/review', [DocumentManagementController::class, 'review'])->name('workspace.documents.verification.review');
-    Route::post('/documents/{document}/release', [DocumentManagementController::class, 'release'])->name('documents.release');
-    Route::post('/documents/{document}/reject', [DocumentManagementController::class, 'reject'])->name('documents.reject');
     Route::get('/workspace/documents/bundles', [DocumentManagementController::class, 'bundles'])->name('workspace.documents.bundles');
     Route::get('/workspace/documents/bundles/create', [DocumentManagementController::class, 'bundleCreate'])->name('workspace.documents.bundles.create');
     Route::post('/workspace/documents/bundles', [DocumentManagementController::class, 'bundleStore'])->name('workspace.documents.bundles.store');

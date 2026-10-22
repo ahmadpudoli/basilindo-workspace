@@ -691,10 +691,56 @@ html[data-theme="dark"] .workspace-dashboard-module-icon { background: color-mix
 .workspace-content form [class*="col-"] > .form-label:has(+ .form-control),
 .workspace-content form [class*="col-"] > .form-label:has(+ .form-select),
 .workspace-content form [class*="col-"] > .form-label:has(+ .workspace-dropdown-multiselect),
-.workspace-content form .workspace-floating-field > .form-label { left: .8rem !important; }
+.workspace-content form .workspace-floating-field > .form-label { left: 1.2rem !important; }
 .workspace-content form .workspace-floating-field { display: contents; min-height: 0; position: static; }
 .workspace-content form [class*="col-"]:has(> .workspace-floating-field) { position: relative; }
-.workspace-content form .workspace-floating-field > .form-label { left: .8rem !important; }
+.workspace-content form .workspace-floating-field > .form-label { left: 1.2rem !important; }
+.workspace-content form [class*="col-"] > .form-label,
+.workspace-content form .workspace-floating-field > .form-label {
+    left: 1rem !important;
+    padding-left: 0 !important;
+    padding-right: .34rem !important;
+}
+.workspace-content form [class*="col-"] > .form-label,
+.workspace-content form .workspace-floating-field > .form-label {
+    left: 0 !important;
+    margin-left: .75rem !important;
+    padding-left: 0 !important;
+}
+.workspace-content form .workspace-floating-field.workspace-floating-field--auto > .form-label,
+.workspace-content form .workspace-floating-field:not(.workspace-floating-field--auto) > .form-label {
+    left: 0 !important;
+    margin-left: .75rem !important;
+    padding-left: 0 !important;
+    transform: translateX(.625rem) translateY(0) scale(1) !important;
+}
+.workspace-content form [class*="col-"]:focus-within > .form-label,
+.workspace-content form [class*="col-"]:focus-within .workspace-floating-field > .form-label {
+    transform: translateX(.625rem) translateY(-2px) scale(.96) !important;
+}
+.workspace-content form [class*="col-"] > .form-label,
+.workspace-content form .workspace-floating-field > .form-label {
+    left: 0 !important;
+    margin-left: .75rem !important;
+    padding-left: 0 !important;
+}
+.workspace-content form .workspace-floating-field.workspace-floating-field--auto > .form-label,
+.workspace-content form .workspace-floating-field:not(.workspace-floating-field--auto) > .form-label {
+    left: 0 !important;
+    margin-left: .75rem !important;
+    padding-left: 0 !important;
+    transform: translateX(.625rem) translateY(0) scale(1) !important;
+}
+.workspace-content form [class*="col-"]:focus-within > .form-label,
+.workspace-content form [class*="col-"]:focus-within .workspace-floating-field > .form-label {
+    transform: translateX(.625rem) translateY(-2px) scale(.96) !important;
+}
+.workspace-content form [class*="col-"] > .form-label,
+.workspace-content form .workspace-floating-field > .form-label {
+    left: 1rem !important;
+    padding-left: 0 !important;
+    padding-right: .34rem !important;
+}
 .workspace-content form .workspace-floating-field { display: contents; min-height: 0; position: static; }
 .workspace-content form .workspace-floating-field > .form-label { left: .8rem !important; }
 html[data-theme="dark"] .workspace-document-upload-preview { background: #111820; }

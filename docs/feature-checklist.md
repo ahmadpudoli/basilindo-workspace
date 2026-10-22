@@ -17,7 +17,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Boundary platform Core dan modul Company, CRM, Project Management, Document Management, serta placeholder HRIS
 - [x] Namespace runtime, policy, service, job, command, dan controller dipisahkan ke boundary `app/Modules/`
 - [x] Card modul membuka dashboard Blade masing-masing untuk Company, CRM, Project Management, dan Document Management
-- [x] Document Management memiliki halaman Blade nyata untuk daftar dokumen, tipe dokumen, verifikasi, dan bundel
+- [x] Document Management memiliki halaman Blade nyata untuk daftar dokumen, tipe dokumen, dan bundel
 - [x] Company memiliki CRUD perusahaan berbasis Blade dengan policy dan validasi boundary modul
 - [x] Detail perusahaan lengkap dengan struktur, visibilitas, dan brand asset privat di MinIO pada prefix `app-company`
 - [x] Daftar perusahaan menampilkan logo brand dengan lazy loading dan decoding asynchronous melalui endpoint privat
@@ -28,8 +28,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Core User CRUD memiliki edit, update, role assignment, dan safe archive untuk non-system account
 - [x] Core Role CRUD memiliki create, edit, update, delete terproteksi, dan larangan menghapus super_admin
 - [x] Company memiliki CRUD Vendor dengan scope company, policy, validasi, dan soft delete
-- [x] Document Management memiliki form upload private storage dengan validasi file dan metadata dasar
-- [x] Document Management memiliki halaman detail kasus verifikasi, review item, release, dan reject lifecycle
+- [x] Document Management memiliki form upload private storage dengan validasi file dan metadata dasar, termasuk rule database yang memakai koneksi schema pemilik tabel
+- [-] Document Management memiliki halaman detail kasus verifikasi, review item, release, dan reject lifecycle (ditunda dari alur MVP sederhana)
 - [x] Document Management memiliki form request bundel berbasis filter dan dispatch queued job
 - [x] Document Management memiliki edit/update metadata dokumen dengan policy dan validasi
 - [x] Migrasi seluruh UI Filament yang dipertahankan ke Blade/Bootstrap/Livewire selektif
@@ -56,6 +56,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Policy untuk list/view/upload/download/edit/delete
 - [x] Policy company scope untuk Account, Lead, Opportunity, Activity, Ticket, dan Document
 - [x] Document Management memakai assignment perusahaan eksplisit sebagai scope, termasuk untuk super admin yang memiliki assignment
+- [x] Daftar dokumen memiliki filter perusahaan operasional yang dibatasi scope akses pengguna
 - [x] Audit login dan permission changes
 - [x] Login lokal Workspace sebagai satu-satunya metode authentication runtime
 - [x] Satu session dan satu deployment untuk seluruh modul
@@ -119,7 +120,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 ## Document lifecycle
 
 - [x] Secure upload validation
-- [x] Quarantine/ready/rejected status
+- [x] Upload baru langsung berstatus ready; quarantine/rejected tetap dibaca untuk kompatibilitas data lama
 - [x] Private MinIO object
 - [x] Checksum dan file version
 - [x] Detail dan preview inline untuk PDF/image; thumbnail belum diaktifkan

@@ -4,13 +4,23 @@
     <div class="workspace-page-heading">
         <div>
             <h1 class="h3 mb-1">Upload dokumen</h1>
-            <p class="text-secondary mb-0">File disimpan ke object storage private dan masuk proses quarantine.</p>
+            <p class="text-secondary mb-0">File disimpan ke object storage private dan langsung tersedia setelah validasi upload selesai.</p>
         </div>
     </div>
 
     <form method="POST" action="{{ route('workspace.documents.store') }}" enctype="multipart/form-data" class="card border-0 shadow-sm" data-client-validation="document" novalidate>
         @csrf
         <div class="card-body p-4 p-xl-5">
+            @if ($errors->any())
+                <div class="alert alert-danger mb-4" role="alert">
+                    <div class="fw-semibold mb-1">Periksa data berikut:</div>
+                    <ul class="mb-0 ps-3">
+                        @foreach ($errors->all() as $message)
+                            <li>{{ $message }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <div class="row g-4">
                 <div class="col-lg-6">
                     <div class="workspace-document-intake-panel h-100" data-document-upload>
@@ -24,7 +34,8 @@
                         </div>
                         <div class="workspace-document-upload-pair mt-3">
                             <div class="workspace-document-upload-control">
-                                <input id="document-upload" type="file" name="upload" class="form-control" accept="application/pdf,image/jpeg,image/png" data-document-upload-input required>
+                                <input id="document-upload" type="file" name="upload" class="form-control @error('upload') is-invalid @enderror" accept="application/pdf,image/jpeg,image/png" data-document-upload-input required>
+                                @error('upload')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                             </div>
                             <div class="workspace-document-upload-preview" data-document-upload-preview aria-live="polite">
                                 <div class="workspace-document-preview-empty">

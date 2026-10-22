@@ -79,7 +79,7 @@ Aturan boundary:
 3. File masuk ke quarantine/private object key dan checksum dihitung.
 4. Metadata disimpan dalam transaksi PostgreSQL.
 5. Job asynchronous melakukan scan/preview/OCR sesuai konfigurasi.
-6. Dokumen menjadi `ready` atau `rejected`; setiap transisi tercatat di audit.
+6. Dokumen menjadi `ready` setelah upload dan validasi berhasil; arsip menggunakan soft delete dan setiap perubahan tercatat di audit.
 
 ## Aliran pencarian
 

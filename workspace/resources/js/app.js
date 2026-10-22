@@ -12,13 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const enhanceFloatingFields = () => {
         document.querySelectorAll('label.form-label').forEach((label) => {
             const field = label.nextElementSibling;
-            if (!field || !field.matches('input:not([type="file"]).form-control, select.form-select, textarea.form-control')) return;
+            if (!field || !field.matches('input:not([type="file"]).form-control, select.form-select, textarea.form-control, .workspace-dropdown-multiselect')) return;
             if (label.parentElement?.classList.contains('workspace-floating-field')) return;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'workspace-floating-field workspace-floating-field--auto';
             label.parentNode.insertBefore(wrapper, label);
             wrapper.append(field, label);
+
+            if (field.matches('.workspace-dropdown-multiselect')) return;
 
             if (!field.id) {
                 const fieldName = field.name || 'field';
@@ -256,6 +258,13 @@ document.addEventListener('DOMContentLoaded', () => {
             form.querySelectorAll('[name^="metadata["][required]').forEach((metadataField) => {
                 if (!metadataField.value?.trim()) addError(metadataField.name, 'Metadata wajib diisi.', metadataField);
             });
+            form.querySelectorAll('[data-metadata-type="numeric"], [data-metadata-type="numeric_decimal"]').forEach((metadataField) => {
+                const value = metadataField.value.trim();
+                if (!value) return;
+                const canonical = value.replace(/\./g, '').replace(',', '.');
+                const pattern = metadataField.dataset.metadataType === 'numeric' ? /^\d+$/ : /^\d+(?:\.\d+)?$/;
+                if (!pattern.test(canonical)) addError(metadataField.name, metadataField.dataset.metadataType === 'numeric' ? 'Metadata harus berupa angka bulat dengan format Indonesia.' : 'Metadata harus berupa angka desimal dengan format Indonesia.', metadataField);
+            });
         }
         if (type === 'document-type') {
             if (!value('name')) addError('name', 'Nama tipe dokumen wajib diisi.');
@@ -399,17 +408,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelectorAll('[data-local-decimal]').forEach((input) => {
-        input.addEventListener('input', () => { input.value = input.value.replace(/[^\d.,]/g, ''); });
-        input.addEventListener('blur', () => {
-            const value = input.value.trim();
-            if (!value) return;
-            const canonical = value.includes(',') ? value.replace(/\./g, '').replace(',', '.') : value;
-            if (!/^\d+(?:\.\d+)?$/.test(canonical)) return;
-            const [integer, fraction] = canonical.split('.');
-            input.value = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (fraction ? `,${fraction}` : '');
-        });
+    const formatLocalNumberInput = (input) => {
+        const raw = input.value;
+        const cursor = input.selectionStart ?? raw.length;
+        const clean = raw.replace(/[^\d.,]/g, '');
+        const type = input.dataset.metadataType || 'numeric_decimal';
+        const commaIndex = clean.indexOf(',');
+        let integer = commaIndex >= 0 ? clean.slice(0, commaIndex) : clean;
+        const fraction = type === 'numeric_decimal' && commaIndex >= 0 ? clean.slice(commaIndex + 1).replace(/\D/g, '') : null;
+
+        integer = integer.replace(/[.,]/g, '').replace(/^0+(?=\d)/, '') || (clean ? '0' : '');
+        input.value = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (fraction !== null ? `,${fraction}` : '');
+
+        const digitsBeforeCursor = raw.slice(0, cursor).replace(/\D/g, '').length;
+        let nextCursor = 0;
+        let seenDigits = 0;
+        while (nextCursor < input.value.length && seenDigits < digitsBeforeCursor) {
+            if (/\d/.test(input.value[nextCursor])) seenDigits += 1;
+            nextCursor += 1;
+        }
+        if (raw.slice(0, cursor).endsWith(',')) {
+            const commaPosition = input.value.indexOf(',');
+            if (commaPosition >= 0) nextCursor = commaPosition + 1;
+        }
+        input.setSelectionRange(nextCursor, nextCursor);
+    };
+
+    document.addEventListener('input', (event) => {
+        if (event.target.matches?.('[data-local-decimal]')) formatLocalNumberInput(event.target);
     });
+    document.addEventListener('blur', (event) => {
+        if (event.target.matches?.('[data-local-decimal]')) formatLocalNumberInput(event.target);
+    }, true);
 
     document.querySelectorAll('[data-tag-input]').forEach((wrapper) => {
         const hidden = wrapper.querySelector('[data-tag-value]');

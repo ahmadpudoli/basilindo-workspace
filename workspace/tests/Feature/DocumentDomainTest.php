@@ -5,7 +5,6 @@ use App\Modules\DocumentManagement\Domain\Models\Document;
 use App\Modules\DocumentManagement\Domain\Models\DocumentType;
 use Core\Models\Project;
 use Core\Models\User;
-use Core\Models\Vendor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -19,13 +18,13 @@ it('stores a document with its searchable ownership metadata and version', funct
         'name' => 'Project X',
         'description' => 'Finance test project',
     ]);
-    $vendor = Vendor::create(['company_id' => $company->id, 'name' => 'Vendor ABC']);
+    $counterparty = Company::create(['name' => 'Vendor ABC', 'code' => 'VND-'.Str::random(8), 'roles' => ['vendor']]);
     $type = DocumentType::create(['name' => 'Invoice', 'code' => 'invoice']);
 
     $document = Document::create([
         'company_id' => $company->id,
         'project_id' => $project->id,
-        'vendor_id' => $vendor->id,
+        'counterparty_company_id' => $counterparty->id,
         'document_type_id' => $type->id,
         'uploaded_by' => $user->id,
         'title' => 'Invoice Project X',
@@ -49,7 +48,7 @@ it('stores a document with its searchable ownership metadata and version', funct
     expect($document->id)->toBeString()
         ->and($document->company->is($company))->toBeTrue()
         ->and($document->project->is($project))->toBeTrue()
-        ->and($document->vendor->is($vendor))->toBeTrue()
+        ->and($document->counterpartyCompany->is($counterparty))->toBeTrue()
         ->and($document->documentType->is($type))->toBeTrue()
         ->and($document->currentVersion->is($version))->toBeTrue();
 });

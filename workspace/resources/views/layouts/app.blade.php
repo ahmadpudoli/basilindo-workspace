@@ -55,9 +55,7 @@
                 'items' => [
                     ['label' => 'Ringkasan', 'url' => route('workspace.documents')],
                     ['label' => 'Dokumen', 'url' => route('workspace.documents.list')],
-                    ['label' => 'Upload dokumen', 'url' => route('workspace.documents.create')],
                     ['label' => 'Tipe dokumen', 'url' => route('workspace.documents.types')],
-                    ['label' => 'Verifikasi', 'url' => route('workspace.documents.verification')],
                     ['label' => 'Bundel', 'url' => route('workspace.documents.bundles')],
                 ],
             ],

@@ -11,6 +11,10 @@ class DocumentCompanyScope
      */
     public function ids(User $user): ?array
     {
+        if ($user->hasRole('super_admin')) {
+            return null;
+        }
+
         $ids = $user->companies()
             ->pluck('id')
             ->map(fn (mixed $id): int => (int) $id)
@@ -20,7 +24,7 @@ class DocumentCompanyScope
             return $ids;
         }
 
-        return $user->hasRole('super_admin') ? null : [];
+        return [];
     }
 
     public function canAccess(User $user, int $companyId): bool

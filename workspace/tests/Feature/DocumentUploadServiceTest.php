@@ -33,7 +33,8 @@ it('uploads a private document object and persists its version metadata', functi
     expect($document->currentVersion)->not->toBeNull()
         ->and($document->currentVersion->disk)->toBe('s3')
         ->and($document->currentVersion->object_key)->toMatch('/^app-document-management\/[0-9A-HJKMNP-TV-Z]{26}\//')
-        ->and($document->status)->toBe('quarantine')
+        ->and($document->status)->toBe('ready')
+        ->and($document->released_at)->not->toBeNull()
         ->and($document->normalized_reference_number)->toBe('INV001')
         ->and(Storage::disk('s3')->exists($document->currentVersion->object_key))->toBeTrue();
 });
@@ -91,6 +92,30 @@ it('accepts optional typed metadata and validates datetime metadata', function (
     );
 
     expect($document->metadata['approved_at'])->toBe('2026-10-09 10:30:00');
+});
+
+it('stores unchecked boolean metadata as false', function () {
+    Storage::fake('s3');
+    $user = User::factory()->create();
+    $company = Company::create(['name' => 'Basilindo', 'code' => 'BAS-'.Str::random(8)]);
+    $type = DocumentType::create([
+        'name' => 'Invoice Boolean',
+        'code' => 'invoice-boolean',
+        'required_fields' => ['approved' => ['type' => 'boolean', 'mandatory' => false]],
+    ]);
+
+    $document = app(DocumentUploadService::class)->upload(
+        UploadedFile::fake()->createWithContent('invoice.pdf', '%PDF-test-content-boolean%'),
+        [
+            'company_id' => $company->id,
+            'document_type_id' => $type->id,
+            'title' => 'Invoice Boolean',
+            'metadata' => ['approved' => '0'],
+        ],
+        $user->id,
+    );
+
+    expect($document->metadata['approved'])->toBeFalse();
 });
 
 it('normalizes numeric decimal metadata and rejects non-numeric text', function () {

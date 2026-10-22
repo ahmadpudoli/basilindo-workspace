@@ -28,8 +28,4 @@ class Vendor extends Model
         return $this->belongsToMany(Company::class, 'vendor_operational_companies', 'vendor_id', 'company_id')->withTimestamps();
     }
 
-    public function documents()
-    {
-        return $this->hasMany(config('core.models.document'));
-    }
 }
