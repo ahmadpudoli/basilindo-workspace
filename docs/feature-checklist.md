@@ -160,6 +160,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Quality dan operations
 
+- [x] Konfigurasi PDO MySQL kompatibel dengan PHP 8.5 tanpa deprecated constant warning
+- [x] Dependency audit Composer: `maatwebsite/excel` 4.x dan PhpSpreadsheet 5.x kompatibel dengan PHP 8.5 tanpa advisory Composer
 - [ ] Stabilitas lifecycle assignment perusahaan dan bulk selection pada UI baru
 - [x] Tooltip perbedaan role aplikasi dan peran user di perusahaan
 - [x] Project Management memiliki assignment perusahaan dan launcher aplikasi yang konsisten dengan File Organizer
@@ -217,6 +219,12 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Laravel memiliki konfigurasi compiled view dan placeholder cache framework agar Composer package discovery berjalan pada instalasi baru
 
 - [x] Root `resources/` legacy diverifikasi tidak digunakan dan dihapus; resource runtime tetap berada di `workspace/resources/`
+
+- [x] Konfigurasi PDO MySQL kompatibel dengan PHP 8.5 tanpa deprecated constant warning
+- [x] Dependency audit Composer: `maatwebsite/excel` 4.x dan PhpSpreadsheet 5.x kompatibel dengan PHP 8.5 tanpa advisory Composer
+
+- [x] Konfigurasi PDO MySQL kompatibel dengan PHP 8.5 tanpa deprecated constant warning
+- [!] Dependency audit Composer: `maatwebsite/excel` 3.x/PhpSpreadsheet 1.30.0 masih memiliki advisory; upgrade major ke Excel 4.x memerlukan regression test import/export
 
 ## Modul Pengaturan Workspace
 
