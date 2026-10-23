@@ -21,6 +21,7 @@
         <div class="workspace-login-form-wrap">
             <div class="workspace-login-mobile-brand"><span class="workspace-login-brand-mark">B</span><span><strong>Basilindo</strong><small>Workspace</small></span></div>
             <div class="workspace-login-heading"><span class="workspace-login-kicker">Selamat datang kembali</span><h2>Masuk ke Workspace</h2><p>Gunakan akun lokal Basilindo Anda untuk melanjutkan.</p></div>
+            @error('authentication')<div class="workspace-login-feedback" role="alert"><span class="workspace-login-feedback-icon" aria-hidden="true">!</span><div><strong>Gagal masuk</strong><span>{{ $message }}</span></div></div>@enderror
             @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
             <form method="POST" action="{{ route('login.store') }}" class="workspace-login-form">
                 @csrf

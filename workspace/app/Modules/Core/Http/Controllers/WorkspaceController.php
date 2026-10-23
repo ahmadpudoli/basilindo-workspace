@@ -21,8 +21,9 @@ class WorkspaceController extends Controller
         }
 
         $user = auth()->user();
-        $canModule = fn (array $module): bool => $user?->hasRole('super_admin')
-            || ($registry->isEnabled($module['key']) && $user?->can($module['permission']));
+        $canModule = fn (array $module): bool => $module['key'] === 'settings'
+            ? ($user?->hasRole('super_admin') || $user?->can('access_settings'))
+            : ($registry->isEnabled($module['key']) && ($user?->hasRole('super_admin') || $user?->can($module['permission'])));
 
         return view('workspace.dashboard', ['modules' => array_values(array_filter($modules, $canModule))]);
     }

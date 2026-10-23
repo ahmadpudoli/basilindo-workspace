@@ -1,0 +1,1 @@
+@include('errors.illustrated', ['code' => 403, 'title' => 'Aksesnya belum dibuka', 'message' => 'Halaman ini memerlukan izin tertentu. Jika Anda merasa seharusnya bisa masuk, hubungi administrator Workspace.'])

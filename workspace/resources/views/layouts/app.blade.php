@@ -218,7 +218,7 @@
                     @if (session('error'))
                         <div class="alert alert-danger workspace-alert" role="alert">{{ session('error') }}</div>
                     @endif
-                    @if ($errors->any())
+                    @if ($errors->any() && ! request()->routeIs('login'))
                         <div class="alert alert-danger workspace-alert" role="alert">Periksa kembali input yang ditandai pada formulir.</div>
                     @endif
                     @yield('content')

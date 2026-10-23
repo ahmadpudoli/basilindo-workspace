@@ -3,6 +3,8 @@
 use Core\Models\Company;
 use Core\Models\Permission;
 use Core\Models\User;
+use Core\Models\Role;
+use App\Modules\Core\Application\Services\WorkspaceModuleRegistry;
 use App\Modules\DocumentManagement\Domain\Models\Document;
 use App\Modules\DocumentManagement\Domain\Models\DocumentType;
 
@@ -37,6 +39,22 @@ it('does not show a module card when its access permission is missing', function
         ->assertDontSee('CRM')
         ->assertDontSee('Project Management')
         ->assertDontSee('Company');
+});
+
+it('hides disabled modules from the dashboard even for super admin', function () {
+    $user = User::query()->where('is_system_account', true)->first() ?? User::factory()->create(['is_system_account' => true]);
+    if (! $user->hasRole('super_admin')) {
+        $user->assignRole(Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']));
+    }
+    app(WorkspaceModuleRegistry::class)->saveEnabledKeys(['company', 'documents']);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Document Management')
+        ->assertSee('Pengaturan')
+        ->assertDontSee('CRM')
+        ->assertDontSee('Project Management');
 });
 
 it('scopes the document dashboard statistics and latest documents to user companies', function () {

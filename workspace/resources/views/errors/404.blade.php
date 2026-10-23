@@ -1,0 +1,1 @@
+@include('errors.illustrated', ['code' => 404, 'title' => 'Halaman tersesat', 'message' => 'Alamat yang Anda buka tidak ditemukan. Mungkin halaman ini pindah, atau memang sedang bersembunyi sebentar.'])

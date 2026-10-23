@@ -31,7 +31,7 @@ class LoginController extends Controller
 
             return back()
                 ->withInput($request->only('email', 'remember'))
-                ->withErrors(['email' => 'Email atau kata sandi tidak sesuai.']);
+                ->withErrors(['authentication' => 'Email atau kata sandi tidak ditemukan.']);
         }
 
         $request->session()->regenerate();
