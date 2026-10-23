@@ -291,5 +291,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Searchable dropdown tidak terpotong oleh overflow card pada form Workspace
 - [x] Perusahaan yang memiliki relasi vendor mengunci peran vendor, jenis entitas, klasifikasi, dan status
 - [x] Permission role dikelompokkan per modul dalam panel collapsible dengan kondisi awal tertutup
+- [x] Daftar pengguna memiliki filter nama/email, role, status, pagination 10/25/50/100, dan aturan tombol berbasis permission
+- [x] Daftar pengguna memiliki sorting server-side pada kolom nama, email, dan status
 - [x] Akses tingkat modul (`access_company`, `access_crm`, `access_project_management`, `access_documents`) menyaring kartu, launcher, sidebar, dan halaman ringkasan
 - [x] Form tambah/edit dokumen memiliki pasangan field, counterparty searchable, filter tipe dokumen berdasarkan perusahaan, loading metadata, nominal lokal, dan tag chip

@@ -45,7 +45,25 @@ class AdministrationController extends Controller
         abort_unless(auth()->user()?->hasRole('super_admin') || auth()->user()?->can('access_settings'), 403);
     }
 
-    public function users(): View { Gate::authorize('viewAny', User::class); return view('modules.core.users', ['users' => User::query()->with(['roles', 'companies'])->latest()->paginate(20)]); }
+    public function users(Request $request): View
+    {
+        Gate::authorize('viewAny', User::class);
+        $search = $request->string('q')->trim()->toString();
+        $selectedRoles = array_values(array_unique(array_filter((array) $request->input('role', []), 'is_string')));
+        $status = in_array($request->string('status')->toString(), ['active', 'system'], true) ? $request->string('status')->toString() : null;
+        $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
+        $sort = in_array($request->string('sort')->toString(), ['name', 'email', 'status'], true) ? $request->string('sort')->toString() : 'name';
+        $direction = $request->string('direction')->toString() === 'desc' ? 'desc' : 'asc';
+        $users = User::query()->with(['roles', 'companies'])
+            ->when($search, fn ($query) => $query->where(fn ($nested) => $nested->where('name', 'ilike', '%'.$search.'%')->orWhere('email', 'ilike', '%'.$search.'%')))
+            ->when($selectedRoles, fn ($query) => $query->whereHas('roles', fn ($roles) => $roles->whereIn('name', $selectedRoles)))
+            ->when($status === 'system', fn ($query) => $query->where('is_system_account', true))
+            ->when($status === 'active', fn ($query) => $query->where('is_system_account', false))
+            ->orderBy($sort === 'status' ? 'is_system_account' : $sort, $direction)
+            ->orderBy('name')->paginate($perPage)->withQueryString();
+
+        return view('modules.core.users', compact('users', 'search', 'selectedRoles', 'status', 'perPage', 'sort', 'direction') + ['roles' => Role::query()->orderBy('name')->get(['name'])]);
+    }
     public function userCreate(): View { Gate::authorize('create', User::class); return view('modules.core.user-form', $this->userFormData()); }
     public function userStore(Request $request, AuditLogger $audit): RedirectResponse
     {
