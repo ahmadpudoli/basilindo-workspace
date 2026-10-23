@@ -215,6 +215,8 @@ h1, h2, h3, h4, h5, h6 { color: var(--workspace-ink); letter-spacing: -.02em; }
 .workspace-content form .form-control, .workspace-content form .form-select { box-sizing: border-box; width: 100%; }
 .workspace-search-form { align-items: stretch; display: flex; flex-direction: row; gap: 0; width: 100%; }
 .workspace-search-form > .form-control { border-radius: 8px 0 0 8px; flex: 1 1 auto; min-width: 0; width: auto !important; }
+.workspace-filter-actions .workspace-filter-apply { background-color: var(--workspace-primary); border-color: var(--workspace-primary); color: #fff; min-width: 88px; }
+.workspace-filter-actions .workspace-filter-apply:hover { background-color: var(--workspace-primary-dark, #095fa8); border-color: var(--workspace-primary-dark, #095fa8); color: #fff; }
 .workspace-search-form > .btn { border-radius: 0 8px 8px 0; flex: 0 0 auto; min-width: 84px; }
 .workspace-company-filter-form { align-items: stretch; display: flex; flex-wrap: wrap; gap: 8px; }
 .workspace-company-search-field { flex: 1 1 280px; min-width: 220px; }
