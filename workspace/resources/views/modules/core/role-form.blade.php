@@ -3,15 +3,24 @@
 @section('content')
 @php
     $selectedPermissions = old('permissions', isset($role) ? $role->permissions->pluck('name')->all() : []);
-    $permissionGroups = $permissions->groupBy(function ($permission) {
+    $isProtectedSuperAdminRole = isset($role) && $role->name === 'super_admin';
+    $modulePermissionGroups = [
+        'access_company' => 'Company & Vendor',
+        'access_crm' => 'CRM',
+        'access_project_management' => 'Project Management',
+        'access_documents' => 'Document Management',
+        'access_settings' => 'Core & Pengaturan',
+    ];
+    $permissionGroups = $permissions->groupBy(function ($permission) use ($modulePermissionGroups) {
         $name = $permission->name;
 
         return match (true) {
+            isset($modulePermissionGroups[$name]) => $modulePermissionGroups[$name],
             str_contains($name, 'company') || str_contains($name, 'vendor') => 'Company & Vendor',
             str_contains($name, 'crm_') => 'CRM',
             str_contains($name, 'document') => 'Document Management',
             str_contains($name, 'project') || str_contains($name, 'ticket') => 'Project Management',
-            str_contains($name, 'user') || str_contains($name, 'role') || $name === 'access_settings' => 'Core & Pengaturan',
+            str_contains($name, 'user') || str_contains($name, 'role') || str_contains($name, 'audit') || $name === 'access_settings' => 'Core & Pengaturan',
             default => 'Lainnya',
         };
     });
@@ -48,14 +57,14 @@
                             <div id="{{ $permissionPanelId }}" class="collapse">
                                 <div class="workspace-permission-grid">
                                     @foreach($groupPermissions as $permission)
-                                        <label class="workspace-permission-option"><input type="checkbox" name="permissions[]" value="{{ $permission->name }}" data-permission-item @checked(in_array($permission->name, $selectedPermissions, true))><span>{{ $permission->name }}</span></label>
+                                        <label class="workspace-permission-option"><input type="checkbox" name="permissions[]" value="{{ $permission->name }}" data-permission-item @checked($isProtectedSuperAdminRole || in_array($permission->name, $selectedPermissions, true)) @disabled($isProtectedSuperAdminRole)><span>{{ $permission->name }}</span></label>
                                     @endforeach
                                 </div>
                             </div>
                         </section>
                     @endforeach
                 </div>
-                <div class="form-text mt-3">Role <code>super_admin</code> selalu dipulihkan ke seluruh permission.</div>
+                <div class="form-text mt-3">Role <code>super_admin</code> selalu dipulihkan ke seluruh permission.@if($isProtectedSuperAdminRole) Permission role ini dikunci dan tidak dapat dikurangi.@endif</div>
             </div>
         </div>
     </div>

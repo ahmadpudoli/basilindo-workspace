@@ -67,11 +67,31 @@ class AdministrationController extends Controller
         return redirect()->route('workspace.core.users')->with('status', 'Pengguna berhasil diperbarui.');
     }
     public function userDestroy(User $user, AuditLogger $audit): RedirectResponse { Gate::authorize('delete', $user); $before = $this->userSnapshot($user); $user->delete(); $audit->recordChange('user.archived', $user, $before, ['deleted_at' => now()->toIso8601String()]); return back()->with('status', 'Pengguna dipindahkan ke arsip.'); }
-    public function roles(): View { Gate::authorize('viewAny', Role::class); return view('modules.core.roles', ['roles' => Role::query()->withCount('users')->latest()->paginate(20)]); }
+    public function roles(Request $request): View
+    {
+        Gate::authorize('viewAny', Role::class);
+
+        $guard = in_array($request->string('guard')->toString(), ['web'], true)
+            ? $request->string('guard')->toString()
+            : null;
+        $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true)
+            ? $request->integer('limit')
+            : 10;
+
+        $roles = Role::query()
+            ->withCount('users')
+            ->when($request->filled('q'), fn ($query) => $query->where('name', 'ilike', '%'.$request->string('q')->toString().'%'))
+            ->when($guard, fn ($query) => $query->where('guard_name', $guard))
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('modules.core.roles', compact('roles', 'guard', 'perPage'));
+    }
     public function roleCreate(): View { Gate::authorize('create', Role::class); return view('modules.core.role-form', ['permissions' => Permission::query()->orderBy('name')->get()]); }
-    public function roleStore(Request $request): RedirectResponse { Gate::authorize('create', Role::class); $data = $request->validate(['name' => 'required|string|max:255|unique:roles,name', 'guard_name' => 'required|string|max:50', 'permissions' => 'nullable|array', 'permissions.*' => 'string|exists:permissions,name']); $permissions = $data['permissions'] ?? []; unset($data['permissions']); $role = Role::create($data); if ($permissions) $role->syncPermissions($permissions); return redirect()->route('workspace.core.roles')->with('status', 'Role berhasil dibuat.'); }
+    public function roleStore(Request $request): RedirectResponse { Gate::authorize('create', Role::class); $data = $request->validate(['name' => ['required', 'string', 'max:255', $this->uniqueRoleName()], 'guard_name' => 'required|string|max:50', 'permissions' => 'nullable|array', 'permissions.*' => ['string', $this->modelExistsRule(Permission::class, 'name')]]); $permissions = $data['permissions'] ?? []; unset($data['permissions']); $role = Role::create($data); if ($permissions) $role->syncPermissions($permissions); return redirect()->route('workspace.core.roles')->with('status', 'Role berhasil dibuat.'); }
     public function roleEdit(Role $role): View { Gate::authorize('view', $role); return view('modules.core.role-form', ['role' => $role, 'permissions' => Permission::query()->orderBy('name')->get()]); }
-    public function roleUpdate(Request $request, Role $role): RedirectResponse { Gate::authorize('update', $role); $data = $request->validate(['name' => 'required|string|max:255|unique:roles,name,'.$role->getKey(), 'guard_name' => 'required|string|max:50', 'permissions' => 'nullable|array', 'permissions.*' => 'string|exists:permissions,name']); $permissions = $data['permissions'] ?? []; unset($data['permissions']); $role->update($data); if ($role->name === 'super_admin') $role->syncPermissions(Permission::all()); else $role->syncPermissions($permissions); return redirect()->route('workspace.core.roles')->with('status', 'Role berhasil diperbarui.'); }
+    public function roleUpdate(Request $request, Role $role): RedirectResponse { Gate::authorize('update', $role); $data = $request->validate(['name' => ['required', 'string', 'max:255', $this->uniqueRoleName($role)], 'guard_name' => 'required|string|max:50', 'permissions' => 'nullable|array', 'permissions.*' => ['string', $this->modelExistsRule(Permission::class, 'name')]]); $permissions = $data['permissions'] ?? []; unset($data['permissions']); if ($role->name === 'super_admin') { $data['name'] = 'super_admin'; $data['guard_name'] = 'web'; } $role->update($data); if ($role->name === 'super_admin') $role->syncPermissions(Permission::all()); else $role->syncPermissions($permissions); return redirect()->route('workspace.core.roles')->with('status', 'Role berhasil diperbarui.'); }
     public function roleDestroy(Role $role): RedirectResponse { Gate::authorize('delete', $role); abort_if($role->name === 'super_admin', 403, 'Role super_admin tidak dapat dihapus.'); $role->delete(); return back()->with('status', 'Role berhasil dihapus.'); }
 
     private function userFormData(?User $user = null): array
@@ -90,6 +110,14 @@ class AdministrationController extends Controller
         $rule = Rule::unique($model->getConnectionName().'.'.$model->getTable(), 'email');
 
         return $user ? $rule->ignore($user->getKey()) : $rule;
+    }
+
+    private function uniqueRoleName(?Role $role = null)
+    {
+        $model = $role ?: new Role;
+        $rule = Rule::unique($model->getConnectionName().'.'.$model->getTable(), 'name');
+
+        return $role ? $rule->ignore($role->getKey()) : $rule;
     }
 
     private function modelExistsRule(string $modelClass, string $column)

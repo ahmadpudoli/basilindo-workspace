@@ -40,6 +40,13 @@ class RoleSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
         Permission::firstOrCreate(['name' => 'access_settings', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'view_document_audit_trail', 'guard_name' => 'web']);
+        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        foreach (['view_role', 'view_any_role', 'create_role', 'update_role', 'delete_role', 'view_audit_trail'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
 
         // Buat role super_admin, admin, member
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
@@ -52,6 +59,7 @@ class RoleSeeder extends Seeder
         $projectAdmin = Role::firstOrCreate(['name' => 'project_admin', 'guard_name' => 'web']);
         $crmMember = Role::firstOrCreate(['name' => 'crm_member', 'guard_name' => 'web']);
         $projectMember = Role::firstOrCreate(['name' => 'project_member', 'guard_name' => 'web']);
+        $auditor = Role::firstOrCreate(['name' => 'auditor', 'guard_name' => 'web']);
 
         // super_admin: semua permission
         $superAdmin->syncPermissions(Permission::all());
@@ -71,6 +79,11 @@ class RoleSeeder extends Seeder
         $documentAdmin->syncPermissions($documentPermissions);
         $financeAdmin->syncPermissions($documentPermissions);
         $financeReviewer->syncPermissions($documentPermissions->filter(fn ($permission) => str_starts_with($permission->name, 'view')));
+        $documentAuditPermission = Permission::firstOrCreate(['name' => 'view_document_audit_trail', 'guard_name' => 'web']);
+        $documentAdmin->givePermissionTo($documentAuditPermission);
+        $financeAdmin->givePermissionTo($documentAuditPermission);
+        $financeReviewer->givePermissionTo($documentAuditPermission);
+        $auditor->syncPermissions([$documentAuditPermission]);
 
         $crmPermissions = Permission::whereIn('name', [
             'view_company', 'view_any_company',
@@ -100,6 +113,23 @@ class RoleSeeder extends Seeder
             ]);
         })->get();
         $member->syncPermissions($memberPermissions);
+
+        // Akses modul dipisahkan dari permission resource agar kartu dan menu
+        // modul dapat disembunyikan tanpa mengubah kontrol CRUD per resource.
+        $moduleAccess = [
+            'access_company' => ['view_any_company', 'view_any_vendor'],
+            'access_crm' => ['view_any_crm_account', 'view_any_crm_lead', 'view_any_crm_opportunity', 'view_any_crm_activity'],
+            'access_project_management' => ['view_any_project', 'view_any_ticket'],
+            'access_documents' => ['view_any_document', 'view_any_document_type'],
+        ];
+        foreach ([$admin, $member, $financeAdmin, $financeReviewer, $documentAdmin, $crmAdmin, $projectAdmin, $crmMember, $projectMember] as $role) {
+            foreach ($moduleAccess as $modulePermission => $signals) {
+                if ($role->hasAnyPermission($signals)) {
+                    $role->givePermissionTo($modulePermission);
+                }
+            }
+        }
+        $superAdmin->givePermissionTo(array_keys($moduleAccess));
 
         // Otomatis assign role member ke user baru (hanya contoh, implementasi production sebaiknya di observer User::created)
         // User::whereDoesntHave('roles')->update(['role_id' => $member->id]);

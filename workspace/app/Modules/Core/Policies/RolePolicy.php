@@ -14,7 +14,7 @@ class RolePolicy
 
     private function canManageSettings(AuthUser $authUser): bool
     {
-        return $authUser->hasRole('super_admin') || $authUser->can('access_settings');
+        return $authUser->hasRole('super_admin');
     }
     
     public function viewAny(AuthUser $authUser): bool

@@ -21,7 +21,7 @@
             <div><label class="form-label" for="audit-from">Dari tanggal</label><input id="audit-from" type="date" name="from" value="{{ $filters['from'] }}" class="form-control"></div>
             <div><label class="form-label" for="audit-until">Sampai tanggal</label><input id="audit-until" type="date" name="until" value="{{ $filters['until'] }}" class="form-control"></div>
             <div><label class="form-label" for="audit-per-page">Baris per halaman</label><select id="audit-per-page" name="per_page" class="form-select"><option value="10" @selected($perPage === 10)>10</option><option value="25" @selected($perPage === 25)>25</option><option value="50" @selected($perPage === 50)>50</option><option value="100" @selected($perPage === 100)>100</option></select></div>
-            <div class="workspace-audit-filter-submit"><div class="workspace-audit-filter-actions"><a href="{{ route('workspace.core.audit-log') }}" class="btn btn-sm btn-outline-secondary">Reset</a><button class="btn btn-primary btn-sm" type="submit">Terapkan</button></div></div>
+            <div class="workspace-audit-filter-submit"><div class="workspace-filter-actions workspace-audit-filter-actions"><a href="{{ route('workspace.core.audit-log') }}" class="btn btn-sm btn-outline-secondary">Reset</a><button class="btn btn-primary btn-sm" type="submit">Terapkan</button></div></div>
         </div>
     </div>
 </form>

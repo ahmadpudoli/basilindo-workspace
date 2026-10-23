@@ -7,11 +7,13 @@ use App\Modules\ProjectManagement\Domain\Models\Epic;
 use App\Modules\ProjectManagement\Domain\Models\Ticket;
 use Core\Models\Project;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Gate;
 
 class ProjectManagementDashboardController extends Controller
 {
     public function __invoke(): View
     {
+        Gate::authorize('viewAny', Project::class);
         return view('modules.project-management.dashboard', [
             'stats' => [
                 ['label' => 'Project', 'value' => Project::query()->count()],

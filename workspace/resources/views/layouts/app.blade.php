@@ -15,48 +15,48 @@
     @php
         $moduleDefinitions = [
             'company' => [
-                'label' => 'Company', 'icon' => 'company', 'url' => route('workspace.company'),
+                'label' => 'Company', 'icon' => 'company', 'url' => route('workspace.company'), 'permission' => 'access_company',
                 'items' => [
-                    ['label' => 'Ringkasan', 'url' => route('workspace.company')],
-                    ['label' => 'Perusahaan', 'url' => route('workspace.company.companies')],
-                    ['label' => 'Vendor', 'url' => route('workspace.company.vendors')],
+                    ['label' => 'Ringkasan', 'url' => route('workspace.company'), 'permission' => 'view_any_company'],
+                    ['label' => 'Perusahaan', 'url' => route('workspace.company.companies'), 'permission' => 'view_any_company'],
+                    ['label' => 'Vendor', 'url' => route('workspace.company.vendors'), 'permission' => 'view_any_vendor'],
                 ],
             ],
             'crm' => [
-                'label' => 'CRM', 'icon' => 'crm', 'url' => route('workspace.crm'),
+                'label' => 'CRM', 'icon' => 'crm', 'url' => route('workspace.crm'), 'permission' => 'access_crm',
                 'items' => [
-                    ['label' => 'Ringkasan', 'url' => route('workspace.crm')],
-                    ['label' => 'Account', 'url' => route('workspace.crm.resource', 'accounts')],
-                    ['label' => 'Contact', 'url' => route('workspace.crm.resource', 'contacts')],
-                    ['label' => 'Lead', 'url' => route('workspace.crm.resource', 'leads')],
-                    ['label' => 'Opportunity', 'url' => route('workspace.crm.resource', 'opportunities')],
-                    ['label' => 'Aktivitas', 'url' => route('workspace.crm.resource', 'activities')],
+                    ['label' => 'Ringkasan', 'url' => route('workspace.crm'), 'permission' => 'view_any_crm_account'],
+                    ['label' => 'Account', 'url' => route('workspace.crm.resource', 'accounts'), 'permission' => 'view_any_crm_account'],
+                    ['label' => 'Contact', 'url' => route('workspace.crm.resource', 'contacts'), 'permission' => 'view_any_crm_account'],
+                    ['label' => 'Lead', 'url' => route('workspace.crm.resource', 'leads'), 'permission' => 'view_any_crm_lead'],
+                    ['label' => 'Opportunity', 'url' => route('workspace.crm.resource', 'opportunities'), 'permission' => 'view_any_crm_opportunity'],
+                    ['label' => 'Aktivitas', 'url' => route('workspace.crm.resource', 'activities'), 'permission' => 'view_any_crm_activity'],
                 ],
             ],
             'project-management' => [
-                'label' => 'Project Management', 'icon' => 'project', 'url' => route('workspace.project-management'),
+                'label' => 'Project Management', 'icon' => 'project', 'url' => route('workspace.project-management'), 'permission' => 'access_project_management',
                 'items' => [
-                    ['label' => 'Ringkasan', 'url' => route('workspace.project-management')],
-                    ['label' => 'Project', 'url' => route('workspace.pm.resource', 'projects')],
-                    ['label' => 'Ticket', 'url' => route('workspace.pm.resource', 'tickets')],
-                    ['label' => 'Board ticket', 'url' => route('workspace.pm.board')],
-                    ['label' => 'Timeline', 'url' => route('workspace.pm.timeline')],
-                    ['label' => 'Epic', 'url' => route('workspace.pm.resource', 'epics')],
-                    ['label' => 'Catatan', 'url' => route('workspace.pm.resource', 'notes')],
-                    ['label' => 'Komentar', 'url' => route('workspace.pm.resource', 'comments')],
-                    ['label' => 'Notifikasi', 'url' => route('workspace.pm.resource', 'notifications')],
-                    ['label' => 'Kontribusi pengguna', 'url' => route('workspace.pm.contributions')],
-                    ['label' => 'Leaderboard', 'url' => route('workspace.pm.leaderboard')],
-                    ['label' => 'Status & prioritas', 'url' => route('workspace.pm.resource', 'statuses')],
+                    ['label' => 'Ringkasan', 'url' => route('workspace.project-management'), 'permission' => 'view_any_project'],
+                    ['label' => 'Project', 'url' => route('workspace.pm.resource', 'projects'), 'permission' => 'view_any_project'],
+                    ['label' => 'Ticket', 'url' => route('workspace.pm.resource', 'tickets'), 'permission' => 'view_any_ticket'],
+                    ['label' => 'Board ticket', 'url' => route('workspace.pm.board'), 'permission' => 'view_any_ticket'],
+                    ['label' => 'Timeline', 'url' => route('workspace.pm.timeline'), 'permission' => 'view_any_ticket'],
+                    ['label' => 'Epic', 'url' => route('workspace.pm.resource', 'epics'), 'permission' => 'view_any_project'],
+                    ['label' => 'Catatan', 'url' => route('workspace.pm.resource', 'notes'), 'permission' => 'view_any_project'],
+                    ['label' => 'Komentar', 'url' => route('workspace.pm.resource', 'comments'), 'permission' => 'view_any_ticket'],
+                    ['label' => 'Notifikasi', 'url' => route('workspace.pm.resource', 'notifications'), 'permission' => 'view_any_ticket'],
+                    ['label' => 'Kontribusi pengguna', 'url' => route('workspace.pm.contributions'), 'permission' => 'view_any_project'],
+                    ['label' => 'Leaderboard', 'url' => route('workspace.pm.leaderboard'), 'permission' => 'view_any_project'],
+                    ['label' => 'Status & prioritas', 'url' => route('workspace.pm.resource', 'statuses'), 'permission' => 'view_any_ticket'],
                 ],
             ],
             'documents' => [
-                'label' => 'Document Management', 'icon' => 'documents', 'url' => route('workspace.documents'),
+                'label' => 'Document Management', 'icon' => 'documents', 'url' => route('workspace.documents'), 'permission' => 'access_documents',
                 'items' => [
-                    ['label' => 'Ringkasan', 'url' => route('workspace.documents')],
-                    ['label' => 'Dokumen', 'url' => route('workspace.documents.list')],
-                    ['label' => 'Tipe dokumen', 'url' => route('workspace.documents.types')],
-                    ['label' => 'Bundel', 'url' => route('workspace.documents.bundles')],
+                    ['label' => 'Ringkasan', 'url' => route('workspace.documents'), 'permission' => 'view_any_document'],
+                    ['label' => 'Dokumen', 'url' => route('workspace.documents.list'), 'permission' => 'view_any_document'],
+                    ['label' => 'Tipe dokumen', 'url' => route('workspace.documents.types'), 'permission' => 'view_any_document_type'],
+                    ['label' => 'Bundel', 'url' => route('workspace.documents.bundles'), 'permission' => 'view_any_document'],
                 ],
             ],
         ];
@@ -65,15 +65,32 @@
             'items' => [
                 ['label' => 'Ringkasan pengaturan', 'url' => route('workspace.settings')],
                 ['label' => 'Modul aktif', 'url' => route('workspace.settings.modules')],
-                ['label' => 'Pengguna & akses', 'url' => route('workspace.core.users')],
-                ['label' => 'Role & permission', 'url' => route('workspace.core.roles')],
-                    ...(auth()->user()?->hasRole('super_admin') ? [['label' => 'Audit trail', 'url' => route('workspace.core.audit-log')]] : []),
+                ...(auth()->user()?->can('view_any_user') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengguna & akses', 'url' => route('workspace.core.users')]] : []),
+                ...(auth()->user()?->can('view_any_role') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Role & permission', 'url' => route('workspace.core.roles')]] : []),
+                ...(auth()->user()?->can('view_audit_trail') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Audit trail', 'url' => route('workspace.core.audit-log')]] : []),
             ],
         ];
+        $canModulePermission = fn (?string $permission): bool => blank($permission)
+            || auth()->user()?->hasRole('super_admin')
+            || auth()->user()?->can($permission);
+        foreach (array_keys($moduleDefinitions) as $moduleKey) {
+            if ($moduleKey === 'settings') {
+                continue;
+            }
+
+            $moduleDefinitions[$moduleKey]['items'] = array_values(array_filter(
+                $moduleDefinitions[$moduleKey]['items'],
+                fn (array $item): bool => $canModulePermission($item['permission'] ?? null),
+            ));
+            if ($moduleDefinitions[$moduleKey]['items'] === []) {
+                unset($moduleDefinitions[$moduleKey]);
+            }
+        }
         $enabledModuleKeys = app(\App\Modules\Core\Application\Services\WorkspaceModuleRegistry::class)->enabledKeys();
         $moduleDefinitions = array_filter($moduleDefinitions, function (array $module, string $key) use ($enabledModuleKeys): bool {
             if ($key === 'settings') return auth()->user()?->hasRole('super_admin') || auth()->user()?->can('access_settings');
-            return $key === 'core' || in_array($key, $enabledModuleKeys, true);
+            return ($key === 'core' || in_array($key, $enabledModuleKeys, true))
+                && (auth()->user()?->hasRole('super_admin') || auth()->user()?->can($module['permission'] ?? ''));
         }, ARRAY_FILTER_USE_BOTH);
         $activeModule = collect(array_keys($moduleDefinitions))->first(fn ($module) => request()->is('workspace/'.$module.'*'));
         if (! $activeModule && request()->is('workspace/core/*') && isset($moduleDefinitions['settings'])) {

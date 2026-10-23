@@ -35,5 +35,5 @@
     </div>
     <div class="card-footer bg-white d-flex gap-2"><button class="btn btn-primary">Simpan tipe dokumen</button><a href="{{ route('workspace.documents.types') }}" class="btn btn-outline-secondary">Batal</a></div>
 </form>
-@if($isEdit)</div>@include('modules.partials.subject-audit-sidebar', ['auditEvents' => $auditEvents, 'auditTitle' => 'Riwayat tipe dokumen', 'auditId' => 'document-type-audit-history'])</div>@endif
+@if($isEdit)</div>@can('viewAudit', $type) @include('modules.partials.subject-audit-sidebar', ['auditEvents' => $auditEvents, 'auditTitle' => 'Riwayat tipe dokumen', 'auditId' => 'document-type-audit-history']) @endcan</div>@endif
 @endsection

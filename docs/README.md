@@ -26,6 +26,7 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Panduan validasi form CRUD](requirements/crud-form-validation.md)
 - [Requirement audit trail Workspace](requirements/audit-trail.md)
 - [Standard pagination Workspace](requirements/workspace-ui-pagination.md)
+- [Requirement daftar Role Core](requirements/core-role-list.md)
 - [Log pekerjaan](logs/)
 - [Runbook backup dan restore](operations/backup-restore.md)
 - [Monitoring](operations/monitoring.md)

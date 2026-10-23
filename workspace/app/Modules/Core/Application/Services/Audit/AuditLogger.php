@@ -2,7 +2,7 @@
 
 namespace App\Modules\Core\Application\Services\Audit;
 
-use App\Modules\DocumentManagement\Domain\Models\AuditEvent;
+use Core\Models\AuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 
 class AuditLogger
 {
-    public function record(string $action, ?Model $subject = null, ?int $companyId = null, array $metadata = [], ?array $oldValues = null, ?array $newValues = null): AuditEvent
+    public function record(string $action, ?Model $subject = null, ?int $companyId = null, array $metadata = [], ?array $oldValues = null, ?array $newValues = null): AuditLog
     {
         $request = Request::instance();
         $userAgent = Str::limit((string) $request->userAgent(), 1000, '');
@@ -34,17 +34,14 @@ class AuditLogger
             'created_at' => now(),
         ];
 
-        // Permission seeders can run before the final document table prefix
-        // migration. Keep bootstrapping idempotent without losing runtime audit
-        // events once the audit table is available.
-        if (! Schema::connection('documents')->hasTable('audit_events')) {
-            return new AuditEvent($attributes);
+        if (! Schema::connection('core')->hasTable('audit_logs')) {
+            return new AuditLog($attributes);
         }
 
-        return AuditEvent::create($attributes);
+        return AuditLog::create($attributes);
     }
 
-    public function recordChange(string $action, Model $subject, array $oldValues, array $newValues, ?int $companyId = null, array $metadata = []): AuditEvent
+    public function recordChange(string $action, Model $subject, array $oldValues, array $newValues, ?int $companyId = null, array $metadata = []): AuditLog
     {
         return $this->record($action, $subject, $companyId, $metadata, $oldValues, $newValues);
     }

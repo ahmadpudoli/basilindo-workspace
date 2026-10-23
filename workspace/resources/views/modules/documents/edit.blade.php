@@ -78,6 +78,7 @@
     </form>
     </div>
 
+    @can('viewAudit', $document)
     <aside class="workspace-audit-sidebar is-collapsed" data-subject-audit-panel>
         <button class="workspace-audit-sidebar-toggle" type="button" data-subject-audit-toggle aria-expanded="false" aria-controls="document-audit-history" title="Buka audit trail">
             <span class="workspace-audit-sidebar-toggle-icon" aria-hidden="true">‹</span><span class="workspace-audit-sidebar-toggle-label">Audit trail</span>
@@ -104,6 +105,7 @@
             </div>
         </div>
     </aside>
+    @endcan
     </div>
     </div>
 @endsection

@@ -22,7 +22,7 @@
 - `verification_cases`: kasus review dengan status open/in_review/approved/rejected.
 - `verification_items`: hasil rule, discrepancy, evidence, dan keputusan reviewer.
 - `bundles`: snapshot filter/IDs, status job, object key, expiry, dan requester.
-- `audit_events`: actor, action, subject, scope, request ID, metadata aman, timestamp.
+- `core_audit_logs`: actor, action, subject, scope, request ID, IP, device, metadata aman, snapshot perubahan, dan timestamp. Event lama dari `doc_audit_events` dibackfill ke tabel Core melalui migration incremental.
 - `crm_accounts`: extension CRM untuk company, status prospect/customer, segment, owner, dan estimated value.
 - `crm_contacts`: contact person eksternal milik account; bukan user login workspace.
 - `crm_leads`: lead dengan source, status, owner, dan optional account.

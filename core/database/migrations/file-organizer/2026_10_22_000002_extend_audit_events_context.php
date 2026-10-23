@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -40,11 +41,11 @@ return new class extends Migration {
             }
         });
 
-        $schema->table('audit_events', function (Blueprint $table): void {
-            $table->index(['module', 'created_at']);
-            $table->index(['actor_id', 'created_at']);
-            $table->index(['ip_address', 'created_at']);
-        });
+        $connection = DB::connection('documents');
+        $table = $connection->getTablePrefix().'audit_events';
+        $connection->statement('CREATE INDEX IF NOT EXISTS "'.$table.'_module_created_at_index" ON "'.$table.'" ("module", "created_at")');
+        $connection->statement('CREATE INDEX IF NOT EXISTS "'.$table.'_actor_id_created_at_index" ON "'.$table.'" ("actor_id", "created_at")');
+        $connection->statement('CREATE INDEX IF NOT EXISTS "'.$table.'_ip_address_created_at_index" ON "'.$table.'" ("ip_address", "created_at")');
     }
 
     public function down(): void

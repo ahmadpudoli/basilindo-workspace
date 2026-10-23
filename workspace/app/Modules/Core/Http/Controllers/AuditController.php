@@ -3,7 +3,7 @@
 namespace App\Modules\Core\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\DocumentManagement\Domain\Models\AuditEvent;
+use Core\Models\AuditLog;
 use Core\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,10 +21,10 @@ class AuditController extends Controller
             'from' => trim((string) $request->input('from', '')),
             'until' => trim((string) $request->input('until', '')),
         ];
-        $perPage = $request->integer('per_page', 25);
-        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 25;
+        $perPage = $request->integer('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
 
-        $query = AuditEvent::query()->with('actor')->latest('created_at');
+        $query = AuditLog::query()->with('actor')->latest('created_at');
         if ($filters['q'] !== '') {
             $query->where(fn ($builder) => $builder
                 ->where('action', 'ilike', '%'.$filters['q'].'%')
@@ -41,13 +41,13 @@ class AuditController extends Controller
             'events' => $query->paginate($perPage)->withQueryString(),
             'filters' => $filters,
             'perPage' => $perPage,
-            'modules' => AuditEvent::query()->whereNotNull('module')->distinct()->orderBy('module')->pluck('module'),
+            'modules' => AuditLog::query()->whereNotNull('module')->distinct()->orderBy('module')->pluck('module'),
             'users' => User::query()->orderBy('name')->get(['id', 'name', 'email']),
         ]);
     }
 
     private function authorizeAuditAccess(): void
     {
-        abort_unless(auth()->user()?->hasRole('super_admin'), 403);
+        abort_unless(auth()->user()?->hasRole('super_admin') || auth()->user()?->can('view_audit_trail'), 403);
     }
 }

@@ -18,19 +18,26 @@ class VendorController extends Controller
     public function index(Request $request): View
     {
         Gate::authorize('viewAny', Vendor::class);
+        $sortColumns = ['name', 'code', 'vendor_company_id', 'company_id', 'tax_identifier', 'status', 'created_at'];
+        $sort = in_array($request->string('sort')->toString(), $sortColumns, true) ? $request->string('sort')->toString() : 'created_at';
+        $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $status = in_array($request->string('status')->toString(), ['active', 'inactive'], true) ? $request->string('status')->toString() : null;
-        $companyId = $request->integer('company_id') ?: null;
-        $perPage = in_array($request->integer('limit'), [10, 15, 25, 50], true) ? $request->integer('limit') : 10;
+        $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
+        $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get(['id', 'name', 'code']);
+        $companyIds = array_values(array_intersect(
+            collect((array) $request->input('company_ids', []))->map(fn ($id) => (int) $id)->filter(fn (int $id) => $id > 0)->all(),
+            $companies->modelKeys(),
+        ));
         $vendors = $this->scopedQuery($request->user())
             ->when($request->q, fn (Builder $query, $value) => $query->where(fn (Builder $nested) => $nested->where('vendors.name', 'ilike', "%{$value}%")->orWhere('vendors.code', 'ilike', "%{$value}%")))
             ->when($status, fn (Builder $query) => $query->where('vendors.status', $status))
-            ->when($companyId, fn (Builder $query) => $query->where(function (Builder $nested) use ($companyId): void { $nested->whereHas('operationalCompanies', fn (Builder $companies) => $companies->whereKey($companyId))->orWhere('vendors.company_id', $companyId); }))
-            ->latest('vendors.created_at')
+            ->when($companyIds, fn (Builder $query) => $query->where(function (Builder $nested) use ($companyIds): void { $nested->whereHas('operationalCompanies', fn (Builder $companies) => $companies->whereIn('companies.id', $companyIds))->orWhereIn('vendors.company_id', $companyIds); }))
+            ->orderBy($sort, $direction)
+            ->orderBy('vendors.id')
             ->paginate($perPage)
             ->withQueryString();
-        $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get(['id', 'name', 'code']);
 
-        return view('modules.company.vendors', compact('vendors', 'companies', 'status', 'companyId', 'perPage'));
+        return view('modules.company.vendors', compact('vendors', 'companies', 'companyIds', 'status', 'perPage', 'sort', 'direction'));
     }
 
     public function create(Request $request): View

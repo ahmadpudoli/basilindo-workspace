@@ -5,6 +5,7 @@ namespace App\Modules\Company\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Core\Models\Company;
 use Core\Models\Vendor;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,6 +13,7 @@ class CompanyDashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        Gate::authorize('viewAny', Company::class);
         $visibleCompanies = Company::query()->visibleTo($request->user());
         $vendors = Vendor::query()->with(['vendorCompany', 'operationalCompanies']);
         if (! $request->user()->hasRole('super_admin')) {

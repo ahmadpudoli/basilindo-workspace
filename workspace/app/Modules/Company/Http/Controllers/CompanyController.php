@@ -27,7 +27,7 @@ class CompanyController extends Controller
         $classification = in_array($request->string('classification')->toString(), ['internal', 'external'], true) ? $request->string('classification')->toString() : null;
         $status = in_array($request->string('status')->toString(), ['active', 'inactive'], true) ? $request->string('status')->toString() : null;
         $roles = array_values(array_intersect((array) $request->input('roles', []), ['operating_company', 'client', 'vendor', 'partner']));
-        $perPage = in_array($request->integer('limit'), [10, 15, 25, 50], true) ? $request->integer('limit') : 10;
+        $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
         $companies = Company::query()
             ->visibleTo($request->user())
             ->when($request->q, fn ($q, $value) => $q->where(fn ($query) => $query->where('name', 'ilike', "%{$value}%")->orWhere('code', 'ilike', "%{$value}%")))

@@ -27,6 +27,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Core memiliki halaman pengguna dan role dengan policy authorization dan pembuatan user tervalidasi
 - [x] Core User CRUD memiliki edit, update, role assignment, dan safe archive untuk non-system account
 - [x] Core Role CRUD memiliki create, edit, update, delete terproteksi, dan larangan menghapus super_admin
+- [x] Core Role list memiliki filter server-side, tabel responsif, pagination, dan aturan tombol aksi
 - [x] Company memiliki CRUD Vendor dengan scope company, policy, validasi, dan soft delete
 - [x] Document Management memiliki form upload private storage dengan validasi file dan metadata dasar, termasuk rule database yang memakai koneksi schema pemilik tabel
 - [-] Document Management memiliki halaman detail kasus verifikasi, review item, release, dan reject lifecycle (ditunda dari alur MVP sederhana)
@@ -57,6 +58,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Policy company scope untuk Account, Lead, Opportunity, Activity, Ticket, dan Document
 - [x] Document Management memakai assignment perusahaan eksplisit sebagai scope, termasuk untuk super admin yang memiliki assignment
 - [x] Daftar dokumen memiliki filter perusahaan operasional yang dibatasi scope akses pengguna
+- [x] Panel filter daftar dokumen dan modul terkait memakai kontrol seragam serta grup tombol Reset/Terapkan
 - [x] Daftar dokumen memiliki sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status yang terhubung dengan filter serta pagination
 - [x] Daftar dokumen memiliki sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status yang terhubung dengan filter serta pagination
 - [x] Audit login dan permission changes
@@ -82,7 +84,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Project creation dibatasi pada company scope user
 - [x] Detail project menampilkan members, tickets, dan dokumen terkait
 - [x] Vendor management memakai master `Company` berperan `vendor` sebagai identitas vendor
-- [x] Vendor management memiliki CRUD Blade, detail, scope multi-perusahaan operasional, filter, pagination, dan soft archive
+- [x] Vendor management memiliki CRUD Blade, detail, scope multi-perusahaan operasional, filter multiselect, sorting, pagination, dan soft archive
 - [x] Validasi client-side dan Form Request server-side pada form Company dan Vendor
 - [x] Document type management
 - [x] Daftar tipe dokumen memakai pagination, search, filter, sorting, dan limit server-side yang saling mempertahankan parameter
@@ -150,6 +152,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Review/approve/reject workflow
 - [x] Evidence dan reviewer comments
 - [x] Verification audit trail
+- [x] Panel audit subject memakai permission `view_audit_trail` dengan subject scope; member tidak melihat panel secara default
 
 ## Bundling
 
@@ -170,6 +173,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Tooltip perbedaan role aplikasi dan peran user di perusahaan
 - [x] Project Management memiliki assignment perusahaan dan launcher aplikasi yang konsisten dengan File Organizer
 - [x] Hanya satu akun sistem dengan role `super_admin`
+- [x] Master data Basilindo, role/permission baseline, dan akun `admin@basilindo.co.id` diprovision melalui migration incremental
 
 ## Dashboard dan branding
 
@@ -287,4 +291,5 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Searchable dropdown tidak terpotong oleh overflow card pada form Workspace
 - [x] Perusahaan yang memiliki relasi vendor mengunci peran vendor, jenis entitas, klasifikasi, dan status
 - [x] Permission role dikelompokkan per modul dalam panel collapsible dengan kondisi awal tertutup
+- [x] Akses tingkat modul (`access_company`, `access_crm`, `access_project_management`, `access_documents`) menyaring kartu, launcher, sidebar, dan halaman ringkasan
 - [x] Form tambah/edit dokumen memiliki pasangan field, counterparty searchable, filter tipe dokumen berdasarkan perusahaan, loading metadata, nominal lokal, dan tag chip

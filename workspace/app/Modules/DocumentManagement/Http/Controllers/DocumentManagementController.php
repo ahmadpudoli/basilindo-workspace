@@ -5,6 +5,7 @@ namespace App\Modules\DocumentManagement\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentQueryService;
+use App\Modules\DocumentManagement\Application\Services\Documents\DocumentCompanyScope;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentMetadataValueNormalizer;
 use App\Modules\DocumentManagement\Application\Services\Documents\DocumentUploadService;
 use App\Modules\DocumentManagement\Application\Services\Verification\VerificationReviewService;
@@ -14,7 +15,7 @@ use App\Modules\DocumentManagement\Application\Jobs\GenerateDocumentBundle;
 use App\Modules\DocumentManagement\Domain\Models\Bundle;
 use App\Modules\DocumentManagement\Domain\Models\Document;
 use App\Modules\DocumentManagement\Domain\Models\DocumentType;
-use App\Modules\DocumentManagement\Domain\Models\AuditEvent;
+use Core\Models\AuditLog;
 use App\Modules\DocumentManagement\Domain\Models\VerificationCase;
 use Core\Models\Company;
 use Core\Models\Project;
@@ -30,8 +31,8 @@ class DocumentManagementController extends Controller
 {
     public function typeCreate(Request $request): View { Gate::authorize('create', DocumentType::class); return view('modules.documents.type-form', ['companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
     public function typeStore(Request $request, AuditLogger $audit): RedirectResponse { Gate::authorize('create', DocumentType::class); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type = DocumentType::create($data); $this->syncDocumentTypeCompanies($type, $companyIds); $audit->record('document_type.created', $type, null, ['company_ids' => $companyIds], null, $this->documentTypeAuditSnapshot($type)); return redirect()->route('workspace.documents.types.show', $type)->with('status', 'Tipe dokumen berhasil dibuat.'); }
-    public function typeEdit(Request $request, DocumentType $type): View { Gate::authorize('update', $type); return view('modules.documents.type-form', ['type' => $type, 'auditEvents' => $this->documentTypeAuditEvents($type), 'selectedCompanyIds' => $this->documentTypeCompanyIds($type), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
-    public function typeShow(DocumentType $type): View { Gate::authorize('view', $type); return view('modules.documents.type-show', ['type' => $type->load('company'), 'auditEvents' => $this->documentTypeAuditEvents($type), 'companies' => $this->documentTypeCompanyNames($type)]); }
+    public function typeEdit(Request $request, DocumentType $type): View { Gate::authorize('update', $type); return view('modules.documents.type-form', ['type' => $type, 'auditEvents' => Gate::allows('viewAudit', $type) ? $this->documentTypeAuditEvents($type) : collect(), 'selectedCompanyIds' => $this->documentTypeCompanyIds($type), 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id')]); }
+    public function typeShow(DocumentType $type): View { Gate::authorize('view', $type); return view('modules.documents.type-show', ['type' => $type->load('company'), 'auditEvents' => Gate::allows('viewAudit', $type) ? $this->documentTypeAuditEvents($type) : collect(), 'companies' => $this->documentTypeCompanyNames($type)]); }
     public function typeUpdate(Request $request, DocumentType $type, AuditLogger $audit): RedirectResponse { Gate::authorize('update', $type); $before = $this->documentTypeAuditSnapshot($type); $data = $this->typeData($request); $companyIds = $data['company_ids']; unset($data['company_ids']); $type->update($data); $this->syncDocumentTypeCompanies($type, $companyIds); $type->refresh(); $audit->recordChange('document_type.updated', $type, $before, $this->documentTypeAuditSnapshot($type), null, ['company_ids' => $companyIds]); return redirect()->route('workspace.documents.types.show', $type)->with('status', 'Tipe dokumen berhasil diperbarui.'); }
     public function typeDestroy(DocumentType $type, AuditLogger $audit): RedirectResponse
     {
@@ -58,7 +59,7 @@ class DocumentManagementController extends Controller
     }
     private function documentTypeAuditEvents(DocumentType $type)
     {
-        return AuditEvent::query()->with('actor')->where('subject_type', $type->getMorphClass())->where('subject_id', $type->getKey())->latest('created_at')->limit(30)->get();
+        return AuditLog::query()->with('actor')->where('subject_type', $type->getMorphClass())->where('subject_id', $type->getKey())->latest('created_at')->limit(30)->get();
     }
 
     private function documentTypeAuditSnapshot(DocumentType $type): array
@@ -78,8 +79,8 @@ class DocumentManagementController extends Controller
     {
         return Company::query()->whereIn('id', $this->documentTypeCompanyIds($type))->orderBy('name')->pluck('name', 'id');
     }
-    public function show(Document $document): View { Gate::authorize('view', $document); $auditEvents = AuditEvent::query()->with('actor')->where('subject_type', $document->getMorphClass())->where('subject_id', $document->getKey())->latest('created_at')->limit(30)->get(); return view('modules.documents.show', ['document' => $document->load(['company', 'counterpartyCompany', 'project', 'documentType', 'currentVersion']), 'auditEvents' => $auditEvents]); }
-    public function edit(Request $request, Document $document): View { Gate::authorize('update', $document); $linkedTypeIds = DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'); $auditEvents = AuditEvent::query()->with('actor')->where('subject_type', $document->getMorphClass())->where('subject_id', $document->getKey())->latest('created_at')->limit(30)->get(); return view('modules.documents.edit', ['document' => $document->load(['company', 'documentType']), 'auditEvents' => $auditEvents, 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'counterpartyCompanies' => $this->counterpartyCompanies($request), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $document->company_id)->orWhereIn('id', $linkedTypeIds))->orderBy('name')->get()]); }
+    public function show(Document $document): View { Gate::authorize('view', $document); $auditEvents = Gate::allows('viewAudit', $document) ? AuditLog::query()->with('actor')->where('subject_type', $document->getMorphClass())->where('subject_id', $document->getKey())->latest('created_at')->limit(30)->get() : collect(); return view('modules.documents.show', ['document' => $document->load(['company', 'counterpartyCompany', 'project', 'documentType', 'currentVersion']), 'auditEvents' => $auditEvents]); }
+    public function edit(Request $request, Document $document): View { Gate::authorize('update', $document); $linkedTypeIds = DB::connection('documents')->table('document_type_companies')->where('company_id', $document->company_id)->pluck('document_type_id'); $auditEvents = Gate::allows('viewAudit', $document) ? AuditLog::query()->with('actor')->where('subject_type', $document->getMorphClass())->where('subject_id', $document->getKey())->latest('created_at')->limit(30)->get() : collect(); return view('modules.documents.edit', ['document' => $document->load(['company', 'documentType']), 'auditEvents' => $auditEvents, 'companies' => Company::query()->operationalFor($request->user())->orderBy('name')->pluck('name', 'id'), 'counterpartyCompanies' => $this->counterpartyCompanies($request), 'projects' => Project::query()->orderBy('name')->pluck('name', 'id'), 'types' => DocumentType::query()->where('is_active', true)->where(fn ($query) => $query->whereNull('company_id')->orWhere('company_id', $document->company_id)->orWhereIn('id', $linkedTypeIds))->orderBy('name')->get()]); }
 
     public function update(Request $request, Document $document, AuditLogger $audit): RedirectResponse
     { Gate::authorize('update', $document); $before = $this->auditSnapshot($document); $this->normalizeAmountInput($request); $data = $request->validate(['company_id' => 'required|exists:core.companies,id', 'counterparty_company_id' => 'nullable|exists:core.companies,id', 'project_id' => 'nullable|exists:core.projects,id', 'document_type_id' => 'required|exists:documents.document_types,id', 'title' => 'required|string|max:255', 'description' => 'nullable|string', 'document_date' => 'required|date', 'reference_number' => 'nullable|string|max:255', 'amount' => 'nullable|numeric|min:0', 'currency' => 'nullable|string|max:10', 'tags' => 'nullable|string', 'metadata' => 'nullable|array']); $this->ensureOperationalCompanyAllowed($data['company_id'], $request); $this->ensureCounterpartyCompanyAllowed($data['counterparty_company_id'] ?? null, $request); $this->ensureDocumentTypeAppliesToCompany($data['document_type_id'], $data['company_id']); $data['metadata'] = $this->validatedMetadata($data['metadata'] ?? [], DocumentType::findOrFail($data['document_type_id'])); $data['tags'] = filled($data['tags'] ?? null) ? array_values(array_filter(array_map('trim', explode(',', $data['tags'])))) : []; $document->update($data); $document->refresh(); $audit->recordChange('document.updated', $document, $before, $this->auditSnapshot($document), $document->company_id); return redirect()->route('workspace.documents.show', $document)->with('status', 'Dokumen berhasil diperbarui.'); }
@@ -126,8 +127,8 @@ class DocumentManagementController extends Controller
             'company_ids' => array_values(array_unique(array_map('intval', array_filter((array) $request->input('company_ids', []), 'is_numeric')))),
             'year' => $request->integer('year') ?: null,
         ];
-        $perPage = $request->integer('per_page', 15);
-        $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 15;
+        $perPage = $request->integer('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
         $allowedSorts = ['title', 'company', 'type', 'document_date', 'status'];
         $sort = in_array($request->input('sort'), $allowedSorts, true) ? $request->input('sort') : 'document_date';
         $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
@@ -268,20 +269,34 @@ class DocumentManagementController extends Controller
         }
     }
 
-    public function types(Request $request): View
+    public function types(Request $request, DocumentCompanyScope $companyScope): View
     {
         Gate::authorize('viewAny', Document::class);
         $allowedSorts = ['name', 'code', 'is_active', 'created_at'];
         $sort = in_array($request->input('sort'), $allowedSorts, true) ? $request->input('sort') : 'created_at';
         $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
-        $perPage = (int) $request->input('limit', 15);
-        $perPage = in_array($perPage, [10, 15, 25, 50], true) ? $perPage : 15;
+        $perPage = (int) $request->input('limit', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
         $search = trim((string) $request->input('q', ''));
         $status = in_array($request->input('status'), ['active', 'inactive'], true) ? $request->input('status') : '';
         $companyIds = array_values(array_unique(array_map('intval', array_filter((array) $request->input('company_ids', []), 'is_numeric'))));
         $companyIds = Company::query()->operationalFor($request->user())->whereIn('id', $companyIds)->pluck('id')->map(fn ($id): int => (int) $id)->all();
 
         $query = DocumentType::query()->with('company')->withCount('documents');
+        $allowedCompanyIds = $companyScope->ids($request->user());
+        if ($allowedCompanyIds !== null) {
+            $linkedAllowedTypeIds = DB::connection('documents')
+                ->table('document_type_companies')
+                ->whereIn('company_id', $allowedCompanyIds)
+                ->pluck('document_type_id');
+
+            $query->where(function ($builder) use ($allowedCompanyIds, $linkedAllowedTypeIds): void {
+                $builder
+                    ->whereNull('company_id')
+                    ->orWhereIn('company_id', $allowedCompanyIds)
+                    ->orWhereIn('id', $linkedAllowedTypeIds);
+            });
+        }
         if ($search !== '') {
             $matchingCompanyIds = Company::query()
                 ->where(fn ($builder) => $builder->where('name', 'ilike', "%{$search}%")->orWhere('code', 'ilike', "%{$search}%"))

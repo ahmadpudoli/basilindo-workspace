@@ -27,27 +27,27 @@ class ProjectPolicy
 
     public function viewAny(AuthUser $authUser): bool
     {
-        return $authUser->can('view_any_project');
+        return $authUser->hasRole('super_admin') || $authUser->can('access_project_management');
     }
 
     public function view(AuthUser $authUser, Project $project): bool
     {
-        return $authUser->can('view_project') && $this->hasAccessToProject($authUser, $project);
+        return ($authUser->hasRole('super_admin') || $authUser->can('view_project')) && $this->hasAccessToProject($authUser, $project);
     }
 
     public function create(AuthUser $authUser): bool
     {
-        return $authUser->can('create_project');
+        return $authUser->hasRole('super_admin') || $authUser->can('create_project');
     }
 
     public function update(AuthUser $authUser, Project $project): bool
     {
-        return $authUser->can('update_project') && $this->hasAccessToProject($authUser, $project);
+        return ($authUser->hasRole('super_admin') || $authUser->can('update_project')) && $this->hasAccessToProject($authUser, $project);
     }
 
     public function delete(AuthUser $authUser, Project $project): bool
     {
-        return $authUser->can('delete_project') && $this->hasAccessToProject($authUser, $project);
+        return ($authUser->hasRole('super_admin') || $authUser->can('delete_project')) && $this->hasAccessToProject($authUser, $project);
     }
 
     public function restore(AuthUser $authUser, Project $project): bool
