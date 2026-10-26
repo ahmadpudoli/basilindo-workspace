@@ -1,7 +1,7 @@
 <div class="row justify-content-center py-5">
     <div class="col-12 col-sm-9 col-md-6 col-lg-4">
         <div class="text-center mb-4">
-            <span class="workspace-brand-mark mb-3">B</span>
+            <img class="workspace-brand-logo mb-3" src="{{ asset('images/logo-basilindo.png') }}" alt="Logo Basilindo" width="38" height="38">
             <h1 class="h4 mb-1">{{ config('app.name') }}</h1>
             <p class="text-secondary mb-0">Akses portal eksternal</p>
         </div>

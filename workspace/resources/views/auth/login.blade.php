@@ -6,7 +6,7 @@
         <div class="workspace-login-orbit workspace-login-orbit-one"></div>
         <div class="workspace-login-orbit workspace-login-orbit-two"></div>
         <div class="workspace-login-showcase-content">
-            <a class="workspace-login-brand" href="{{ route('login') }}"><span class="workspace-login-brand-mark">B</span><span><strong>Basilindo</strong><small>Workspace</small></span></a>
+            <a class="workspace-login-brand" href="{{ route('login') }}"><img class="workspace-login-logo" src="{{ asset('images/logo-basilindo.png') }}" alt="Logo Basilindo" width="46" height="46"><span><strong>Basilindo</strong><small>Workspace</small></span></a>
             <div class="workspace-login-copy">
                 <span class="workspace-login-eyebrow">BASILINDO WORKSPACE</span>
                 <h1>Satu workspace untuk <em>seluruh bisnis.</em></h1>
@@ -19,7 +19,7 @@
 
     <section class="workspace-login-panel">
         <div class="workspace-login-form-wrap">
-            <div class="workspace-login-mobile-brand"><span class="workspace-login-brand-mark">B</span><span><strong>Basilindo</strong><small>Workspace</small></span></div>
+            <div class="workspace-login-mobile-brand"><img class="workspace-login-logo" src="{{ asset('images/logo-basilindo.png') }}" alt="Logo Basilindo" width="46" height="46"><span><strong>Basilindo</strong><small>Workspace</small></span></div>
             <div class="workspace-login-heading"><span class="workspace-login-kicker">Selamat datang kembali</span><h2>Masuk ke Workspace</h2><p>Gunakan akun lokal Basilindo Anda untuk melanjutkan.</p></div>
             @error('authentication')<div class="workspace-login-feedback" role="alert"><span class="workspace-login-feedback-icon" aria-hidden="true">!</span><div><strong>Gagal masuk</strong><span>{{ $message }}</span></div></div>@enderror
             @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif

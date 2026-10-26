@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'Basilindo Workspace') }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo-favicon.png') }}">
     <link rel="stylesheet" href="{{ asset('vendor/summernote/summernote-lite.css') }}">
     <script src="{{ asset('vendor/summernote/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('vendor/summernote/summernote-lite.js') }}"></script>
@@ -118,7 +120,7 @@
                     </button>
                 @endif
                 <a class="workspace-brand" href="{{ route('dashboard') }}">
-                    <span class="workspace-brand-mark">B</span>
+                    <img class="workspace-brand-logo" src="{{ asset('images/logo-basilindo.png') }}" alt="Logo Basilindo" width="38" height="38">
                     <span><strong>Basilindo</strong><small>Workspace</small></span>
                 </a>
                 @if ($activeModuleDefinition)

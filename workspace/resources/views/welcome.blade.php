@@ -4,7 +4,7 @@
 <div class="workspace-landing">
     <header class="workspace-landing-nav">
         <a class="workspace-landing-brand" href="{{ route('home') }}" aria-label="Basilindo Workspace">
-            <span class="workspace-landing-brand-mark">B</span>
+            <img class="workspace-landing-brand-logo" src="{{ asset('images/logo-basilindo.png') }}" alt="Logo Basilindo" width="42" height="42">
             <span><strong>Basilindo</strong><small>WORKSPACE</small></span>
         </a>
         <nav class="workspace-landing-links d-none d-md-flex" aria-label="Navigasi landing page">

@@ -295,6 +295,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Daftar pengguna memiliki sorting server-side pada kolom nama, email, dan status
 - [x] Feedback login kredensial invalid tampil inline dekat form dengan pesan generik yang jelas
 - [x] Halaman error HTTP utama memiliki template modern, responsif, dan animasi CSS ringan
+- [x] Logo Basilindo digunakan pada identitas aplikasi dan favicon multi-resolusi tersedia
 - [x] Feedback login kredensial invalid tampil inline dekat form dengan pesan generik yang jelas
 - [x] Akses tingkat modul (`access_company`, `access_crm`, `access_project_management`, `access_documents`) menyaring kartu, launcher, sidebar, dan halaman ringkasan
 - [x] Form tambah/edit dokumen memiliki pasangan field, counterparty searchable, filter tipe dokumen berdasarkan perusahaan, loading metadata, nominal lokal, dan tag chip
