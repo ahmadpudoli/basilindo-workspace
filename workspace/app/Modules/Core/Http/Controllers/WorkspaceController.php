@@ -15,6 +15,7 @@ class WorkspaceController extends Controller
                 ['key' => 'crm', 'permission' => 'access_crm', 'label' => 'CRM', 'description' => 'Kelola account, lead, opportunity, dan aktivitas.'],
                 ['key' => 'project-management', 'permission' => 'access_project_management', 'label' => 'Project Management', 'description' => 'Kelola project, ticket, member, dan timeline.'],
                 ['key' => 'company', 'permission' => 'access_company', 'label' => 'Company', 'description' => 'Kelola master perusahaan dan company scope.'],
+                ['key' => 'hris', 'permission' => 'access_hris', 'label' => 'HRIS', 'description' => 'Kelola karyawan, cuti, sakit, dan proses HR.'],
             ];
         if (auth()->user()?->hasRole('super_admin') || auth()->user()?->can('access_settings')) {
             $modules[] = ['key' => 'settings', 'label' => 'Pengaturan', 'description' => 'Atur modul aktif, pengguna, role, permission, dan scope data.'];

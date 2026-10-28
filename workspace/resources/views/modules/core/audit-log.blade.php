@@ -38,7 +38,7 @@
                     <td><span class="badge text-bg-light border">{{ str($event->module ?: 'system')->headline() }}</span><div class="small mt-1">{{ $event->action }}</div></td>
                     <td><span class="small">{{ $event->device ?: '—' }}</span><small class="d-block text-secondary text-truncate" style="max-width:180px" title="{{ $event->user_agent }}">{{ $event->user_agent ?: '—' }}</small></td>
                     <td class="text-nowrap">{{ $event->ip_address ?: '—' }}</td>
-                    <td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary workspace-audit-detail-button" data-bs-toggle="modal" data-bs-target="#audit-detail-{{ $event->id }}">Lihat detail</button></td>
+                    <td class="workspace-table-actions text-end"><button type="button" class="btn btn-sm btn-outline-primary workspace-audit-detail-button" data-bs-toggle="modal" data-bs-target="#audit-detail-{{ $event->id }}">Lihat detail</button></td>
                 </tr>
             @empty
                 <tr><td colspan="6" class="text-center text-secondary py-5">Belum ada audit event yang sesuai.</td></tr>

@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'webpush' => [
+        'subject' => env('WEBPUSH_VAPID_SUBJECT', env('APP_URL', 'http://localhost:8080')),
+        'public_key' => env('WEBPUSH_VAPID_PUBLIC_KEY'),
+        'private_key' => env('WEBPUSH_VAPID_PRIVATE_KEY'),
+        'ttl' => env('WEBPUSH_TTL', 300),
+    ],
+
 ];

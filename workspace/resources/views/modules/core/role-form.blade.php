@@ -9,6 +9,14 @@
         'access_crm' => 'CRM',
         'access_project_management' => 'Project Management',
         'access_documents' => 'Document Management',
+        'access_hris' => 'HRIS',
+        'approve_hris_request' => 'HRIS',
+        'manage_hris_settings' => 'HRIS',
+        'view_hris_approvals' => 'HRIS',
+        'view_hris_leave_summary' => 'HRIS',
+        'view_hris_overtime_summary' => 'HRIS',
+        'view_hris_reimbursement_summary' => 'HRIS',
+        'view_hris_cash_advance_summary' => 'HRIS',
         'access_settings' => 'Core & Pengaturan',
     ];
     $permissionGroups = $permissions->groupBy(function ($permission) use ($modulePermissionGroups) {
@@ -20,11 +28,12 @@
             str_contains($name, 'crm_') => 'CRM',
             str_contains($name, 'document') => 'Document Management',
             str_contains($name, 'project') || str_contains($name, 'ticket') => 'Project Management',
+            str_contains($name, 'hris') || str_ends_with($name, '_employee') || str_ends_with($name, '_leave_request') || str_ends_with($name, '_overtime') || str_ends_with($name, '_claim') => 'HRIS',
             str_contains($name, 'user') || str_contains($name, 'role') || str_contains($name, 'audit') || $name === 'access_settings' => 'Core & Pengaturan',
             default => 'Lainnya',
         };
     });
-    $groupOrder = ['Core & Pengaturan', 'Company & Vendor', 'CRM', 'Project Management', 'Document Management', 'Lainnya'];
+    $groupOrder = ['Core & Pengaturan', 'Company & Vendor', 'CRM', 'Project Management', 'Document Management', 'HRIS', 'Lainnya'];
     $permissionGroups = $permissionGroups->sortBy(fn ($items, $group) => array_search($group, $groupOrder, true));
 @endphp
 

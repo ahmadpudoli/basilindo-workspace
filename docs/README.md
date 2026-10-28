@@ -31,6 +31,7 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Runbook backup dan restore](operations/backup-restore.md)
 - [Monitoring](operations/monitoring.md)
 - [Requirement health dan monitoring](requirements/monitoring-and-health.md)
+- [Requirement modul HRIS](requirements/hris-module.md)
 - [Requirement single-app identity](requirements/single-app-identity.md)
 - [Requirement Workspace runtime tunggal](requirements/workspace-runtime.md)
 - [Requirement migrasi fitur legacy ke Workspace](requirements/legacy-feature-migration-to-workspace.md)

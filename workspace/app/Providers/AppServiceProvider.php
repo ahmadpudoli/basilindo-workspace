@@ -36,6 +36,12 @@ use App\Modules\DocumentManagement\Policies\DocumentTypePolicy;
 use App\Modules\ProjectManagement\Domain\Models\Ticket;
 use App\Modules\ProjectManagement\Policies\ProjectPolicy;
 use App\Modules\ProjectManagement\Policies\TicketPolicy;
+use App\Modules\HRIS\Domain\Models\Employee;
+use App\Modules\HRIS\Domain\Models\LeaveRequest;
+use App\Modules\HRIS\Application\Services\EmployeePolicy;
+use App\Modules\HRIS\Application\Services\LeaveRequestPolicy;
+use App\Modules\HRIS\Application\Services\OvertimePolicy;
+use App\Modules\HRIS\Application\Services\ClaimPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -65,6 +71,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(DocumentType::class, DocumentTypePolicy::class);
         Gate::policy(Project::class, ProjectPolicy::class);
         Gate::policy(Ticket::class, TicketPolicy::class);
+        Gate::policy(Employee::class, EmployeePolicy::class);
+        Gate::policy(LeaveRequest::class, LeaveRequestPolicy::class);
+        Gate::policy(\App\Modules\HRIS\Domain\Models\OvertimeRequest::class, OvertimePolicy::class);
+        Gate::policy(\App\Modules\HRIS\Domain\Models\Claim::class, ClaimPolicy::class);
 
         // Temporary upload Livewire disimpan pada folder private di MinIO/S3.
         config([

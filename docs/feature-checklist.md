@@ -242,7 +242,85 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Pengaturan modul aktif global dengan dashboard/launcher filtering
 - [x] Pengguna dapat dikelola dengan role dan direct permission tambahan
 - [x] Pengguna dapat diberi scope akses ke beberapa perusahaan internal
-- [ ] Relasi employee satu-perusahaan menunggu implementasi modul HRIS
+- [x] Relasi employee satu-perusahaan melalui pilihan karyawan pada form user, dengan scope perusahaan
+
+## Modul HRIS
+
+- [x] Dokumentasi requirement dan acceptance criteria modul HRIS
+- [x] Master karyawan dengan company scope dan relasi akun user
+- [x] Parameter HRIS per perusahaan/periode
+- [x] Pengajuan cuti dan sakit fase pertama
+- [x] Form pengajuan cuti/sakit memiliki validasi client-side terstruktur dan validasi server-side
+- [x] Input tanggal Workspace menggunakan tampilan global `dd/mm/yyyy` dengan nilai server ISO
+- [x] Form pengajuan cuti/sakit memiliki validasi client-side terstruktur dan validasi server-side
+- [x] Kuota cuti tahunan configurable dengan default 12 hari
+- [x] Validasi overlap tanggal pengajuan aktif
+- [x] Pengajuan cuti/sakit lintas tahun ditolak dan harus dibuat sebagai pengajuan terpisah
+- [x] Detail tanggal cuti/sakit disimpan sebagai multiple row dan tidak bergantung pada `start_date`/`end_date`
+- [x] Pengajuan cuti/sakit menyimpan `requester_user_id` selain relasi `employee_id`
+- [x] Primary key ULID pengajuan HRIS disimpan sebagai string agar detail tanggal terhubung ke request yang benar
+- [x] Status workflow cuti/sakit disederhanakan menjadi Menunggu atasan, Menunggu HR, Disetujui, dan Ditolak
+- [x] Workflow revisi pengajuan cuti/sakit dengan klasifikasi substansi/administrasi, resubmit pemohon, dan approval event
+- [x] Primary key ULID pengajuan HRIS disimpan sebagai string agar detail tanggal terhubung ke request yang benar
+- [x] Pengajuan cuti/sakit menyimpan `requester_user_id` selain relasi `employee_id`
+- [x] Tabel HRIS menggunakan koneksi/prefix `hris_` dengan migrasi rename dan backfill aman
+- [x] Approval manager/HR/Finance/final dan approval event
+- [ ] Kalender hari libur dan perhitungan hari kerja
+- [x] Lembur dengan pembulatan, maksimum, dan post-submission policy
+- [x] Reimbursement dan workflow Finance
+- [x] Cash advance dan pertanggungjawaban
+- [x] In-app notification
+- [x] Web Push PWA subscription, service worker, queue job, dan VAPID configuration
+- [x] Pengaturan HRIS dipusatkan di modul Pengaturan
+- [x] Cut-off pengajuan cuti unik satu konfigurasi aktif per tahun lintas scope
+- [x] Tanggal berlaku parameter HRIS ditampilkan dengan format lokal Indonesia
+- [x] Warning validasi penyimpanan parameter HRIS tampil di halaman Pengaturan HRIS
+- [x] Aksi arsip parameter HRIS memakai modal konfirmasi Workspace
+- [x] Konflik tanggal saat submit revisi tampil sebagai validasi pada form revisi
+- [x] Pesan konflik tanggal membedakan status disetujui dan masih diproses
+- [x] Submit revisi mencatat approval event tanpa error namespace model
+- [x] Tanggal pengajuan awal tidak berubah setelah submit revisi
+- [x] Notifikasi approver membuka halaman detail pada child Persetujuan HRIS
+- [x] Detail approval terpisah dari detail pemohon dan menyediakan tindakan workflow
+- [x] Blok tindakan approval memiliki judul dan penjelasan yang jelas
+- [x] Panduan jenis revisi tersedia dalam panel collapsible pada detail approval
+- [x] Tolak dan Minta revisi pada detail approval menggunakan modal dan kembali ke daftar
+- [x] Pagination, filter, edit, dan arsip parameter HRIS
+- [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
+- [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
+- [x] Daftar karyawan dengan filter perusahaan multiple select, pagination, dan aksi ubah/hapus/arsip
+- [x] Relasi akun Core User dengan karyawan (Nama dan NIP)
+- [x] Permission HRIS dikelompokkan pada bagian HRIS di form role dan user, termasuk role hris_admin dan hris_member
+- [x] Master role dan permission HRIS diprovision melalui migration data idempotent, termasuk approval dan permission ringkasan
+- [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
+- [x] Sidebar menampilkan Ringkasan HRIS berbasis `access_hris` dengan mode ringkasan pengajuan pribadi
+- [x] Daftar cuti memiliki resume tahunan, filter, pagination, detail, dan timeline approval
+- [x] Badge status pada detail cuti mengikuti lebar konten label
+- [x] Form revisi cuti memakai struktur layout yang sama dengan form create
+- [x] Pengajuan cuti menolak tahun yang belum memiliki konfigurasi kuota
+- [x] Pesan error form HRIS tidak menampilkan panel global duplikat
+- [x] Cut-off pengajuan cuti wajib dikonfigurasi per tahun dan ditegakkan server-side
+- [x] Tabel parameter HRIS menampilkan nama bisnis dan kode teknis parameter
+- [x] Field nilai parameter HRIS menyesuaikan tipe parameter yang dipilih
+- [x] Setiap parameter HRIS memiliki deskripsi panduan pengguna
+- [x] Maksimum lembur bersifat opsional tanpa batas jika belum dikonfigurasi
+- [x] Filter daftar cuti mendukung opsi Semua tahun
+- [x] Approval inbox HRIS memiliki permission khusus dan cakupan bawahan langsung
+- [x] Approval inbox HRIS menggunakan satu tabel terpadu dengan modal alasan untuk tolak dan minta revisi
+- [x] Aksi Setujui pada approval HRIS menggunakan modal konfirmasi sebelum submit
+- [x] Popup konfirmasi Setujui menyediakan catatan persetujuan opsional
+- [x] Approval inbox HRIS memiliki filter, sorting, dan pagination dengan state query string
+- [x] Header Workspace memiliki dropdown notifikasi unread, halaman daftar, detail, dan link target
+- [x] Detail notifikasi memiliki kartu informasi modern dan tombol kembali yang konsisten
+- [x] Tooltip jenis revisi di popup approval diinisialisasi saat modal ditampilkan
+- [x] Popup minta revisi menampilkan panduan jenis revisi secara langsung
+- [x] Sidebar HRIS mendukung menu bertingkat untuk Biodata, Kehadiran, dan Claim
+- [x] Biodata karyawan menampilkan atasan dan treeview bawahan bertingkat
+- [x] Biodata personal mengambil data berdasarkan relasi akun tanpa scope daftar karyawan/company
+- [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
+- [x] Daftar karyawan dengan filter perusahaan multiple select, pagination, dan aksi ubah/hapus/arsip
+- [x] Pagination, filter, edit, dan arsip parameter HRIS
+- [x] Pengaturan HRIS dipusatkan di modul Pengaturan
 
 - [x] Consumer dan tabel legacy project-management dipensiunkan dari File Organizer
 

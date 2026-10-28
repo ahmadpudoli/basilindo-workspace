@@ -23,6 +23,10 @@ class RoleSeeder extends Seeder
             'crm_opportunity',
             'crm_activity',
             'ticket',
+            'employee',
+            'leave_request',
+            'overtime',
+            'claim',
         ];
 
         $actions = ['view', 'view_any', 'create', 'update', 'delete'];
@@ -45,6 +49,18 @@ class RoleSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
         foreach (['view_role', 'view_any_role', 'create_role', 'update_role', 'delete_role', 'view_audit_trail'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        foreach ([
+            'access_hris',
+            'approve_hris_request',
+            'manage_hris_settings',
+            'view_hris_approvals',
+            'view_hris_leave_summary',
+            'view_hris_overtime_summary',
+            'view_hris_reimbursement_summary',
+            'view_hris_cash_advance_summary',
+        ] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
@@ -102,6 +118,11 @@ class RoleSeeder extends Seeder
         $projectAdmin->syncPermissions($projectPermissions);
         $projectMember->syncPermissions($projectPermissions->filter(fn ($permission) => str_starts_with($permission->name, 'view')));
 
+        // Role dan permission HRIS adalah master data migration
+        // 2026_10_26_000006_reconcile_hris_role_permission_master.
+        $hrisAdmin = Role::query()->where('name', 'hris_admin')->where('guard_name', 'web')->first();
+        $hrisMember = Role::query()->where('name', 'hris_member')->where('guard_name', 'web')->first();
+
         // Member hanya melihat katalog dan metadata dokumen.
         $memberPermissions = Permission::where(function($q) {
             $q->whereIn('name', [
@@ -121,8 +142,9 @@ class RoleSeeder extends Seeder
             'access_crm' => ['view_any_crm_account', 'view_any_crm_lead', 'view_any_crm_opportunity', 'view_any_crm_activity'],
             'access_project_management' => ['view_any_project', 'view_any_ticket'],
             'access_documents' => ['view_any_document', 'view_any_document_type'],
+            'access_hris' => ['view_any_employee', 'view_any_leave_request'],
         ];
-        foreach ([$admin, $member, $financeAdmin, $financeReviewer, $documentAdmin, $crmAdmin, $projectAdmin, $crmMember, $projectMember] as $role) {
+        foreach ([$admin, $member, $financeAdmin, $financeReviewer, $documentAdmin, $crmAdmin, $projectAdmin, $crmMember, $projectMember, $hrisAdmin, $hrisMember] as $role) {
             foreach ($moduleAccess as $modulePermission => $signals) {
                 if ($role->hasAnyPermission($signals)) {
                     $role->givePermissionTo($modulePermission);

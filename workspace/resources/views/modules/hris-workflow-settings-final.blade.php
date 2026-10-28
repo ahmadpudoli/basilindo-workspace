@@ -1,0 +1,26 @@
+@extends('layouts.app', ['title' => 'Workflow Approval HRIS'])
+@section('content')
+<div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Pengaturan HRIS</div><h1 class="h3 mb-1">Workflow Approval</h1><p class="text-secondary mb-0">Atur approver berdasarkan perusahaan operasional.</p></div>
+<div class="workspace-workflow-grid">
+    <section class="card card-body workspace-workflow-card">
+        <div class="workspace-form-kicker">Approval cuti & lembur</div><h2 class="h5 mb-1">Atasan lalu HR</h2><p class="text-secondary small">Pengajuan cuti, sakit, dan lembur diverifikasi atasan langsung, kemudian approver HR.</p>
+        <form method="POST" action="{{ $editingApprover?->workflow_key === 'leave_sick' ? route('workspace.settings.hris.workflow.update', $editingApprover) : route('workspace.settings.hris.workflow.store') }}">@csrf @if($editingApprover?->workflow_key === 'leave_sick') @method('PATCH') @endif<input type="hidden" name="workflow_key" value="leave_sick">
+            <div class="workspace-floating-field"><select name="company_id" class="form-select mb-2" required><option value="">Pilih perusahaan operasional</option>@foreach($companies as $company)<option value="{{ $company->id }}" @selected(($editingApprover?->workflow_key === 'leave_sick') && $editingApprover?->company_id == $company->id)>{{ $company->name }}</option>@endforeach</select><label class="form-label">Perusahaan operasional <span class="text-danger">*</span></label></div><div class="form-text mb-3">Satu perusahaan hanya boleh memiliki satu konfigurasi aktif untuk workflow ini.</div>
+            <label class="form-label">Approver HR <span class="text-danger">*</span></label><select name="user_id" class="form-select mb-3" required><option value="">Pilih pengguna HR</option>@foreach($users as $user)<option value="{{ $user->id }}">{{ $user->name }} · {{ $user->email }}</option>@endforeach</select><button class="btn btn-primary btn-sm" type="submit">Simpan workflow</button>
+        </form>
+    </section>
+    <section class="card card-body workspace-workflow-card">
+        <div class="workspace-form-kicker">Approval reimbursement & cash advance</div><h2 class="h5 mb-1">Atasan lalu Finance</h2><p class="text-secondary small">Pengajuan claim diverifikasi atasan, lalu approver Finance sesuai perusahaan.</p>
+        <form method="POST" action="{{ $editingApprover?->workflow_key === 'claim' ? route('workspace.settings.hris.workflow.update', $editingApprover) : route('workspace.settings.hris.workflow.store') }}">@csrf @if($editingApprover?->workflow_key === 'claim') @method('PATCH') @endif<input type="hidden" name="workflow_key" value="claim">
+            <div class="workspace-floating-field"><select name="company_id" class="form-select mb-2" required><option value="">Pilih perusahaan operasional</option>@foreach($companies as $company)<option value="{{ $company->id }}" @selected(($editingApprover?->workflow_key === 'claim') && $editingApprover?->company_id == $company->id)>{{ $company->name }}</option>@endforeach</select><label class="form-label">Perusahaan operasional <span class="text-danger">*</span></label></div><div class="form-text mb-3">Satu perusahaan hanya boleh memiliki satu konfigurasi aktif untuk workflow ini.</div>
+            <label class="form-label">Approver Finance <span class="text-danger">*</span></label><select name="user_id" class="form-select mb-3" required><option value="">Pilih pengguna Finance</option>@foreach($users as $user)<option value="{{ $user->id }}">{{ $user->name }} · {{ $user->email }}</option>@endforeach</select><button class="btn btn-primary btn-sm" type="submit">Simpan workflow</button>
+        </form>
+    </section>
+</div>
+<div class="card card-body mt-3"><h2 class="h6 mb-1">Konfigurasi workflow aktif</h2><p class="text-secondary small mb-3">Perubahan hanya memengaruhi pengajuan baru. Riwayat approval tetap tersimpan.</p><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Perusahaan</th><th>Workflow</th><th>Approver</th><th class="text-end">Aksi</th></tr></thead><tbody>@forelse($workflowApprovers as $approver)<tr><td>{{ $approver->company?->name ?? '-' }}</td><td>{{ $approver->workflow_key === 'claim' ? 'Reimbursement & cash advance' : 'Cuti & lembur' }}</td><td>{{ $approver->user?->name ?? '-' }} <small class="text-secondary d-block">{{ $approver->user?->email }}</small></td><td class="workspace-table-actions text-end"><a href="{{ route('workspace.settings.hris.workflow.edit', $approver) }}" class="btn btn-sm btn-outline-primary">Edit</a><form method="POST" action="{{ route('workspace.settings.hris.workflow.archive', $approver) }}" class="d-inline" data-confirm="Arsipkan konfigurasi workflow ini?">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-secondary" type="submit">Arsipkan</button></form></td></tr>@empty<tr><td colspan="4" class="text-center text-secondary py-4">Belum ada konfigurasi workflow aktif.</td></tr>@endforelse</tbody></table></div></div>
+@if($editingApprover)
+<script>
+document.querySelectorAll('select[name="user_id"]').forEach((select) => { select.value = @json($editingApprover->user_id); });
+</script>
+@endif
+@endsection

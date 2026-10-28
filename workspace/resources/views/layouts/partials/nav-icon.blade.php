@@ -1,4 +1,7 @@
 @switch($icon)
+    @case('dashboard')
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="10" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="16" width="6" height="4" rx="1"/></svg>
+        @break
     @case('company') @case('vendor')
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M2 21h20M8 7h2M8 11h2M13 7h2M13 11h2M18 21v-8h2v8"/></svg>
         @break
@@ -31,6 +34,9 @@
         @break
     @case('settings')
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="m4.9 4.9 2 1.4M17.1 17.7l2 1.4M4 12H2M22 12h-2M4.9 19.1l2-1.4M17.1 6.3l2-1.4M12 4V2M12 22v-2"/></svg>
+        @break
+    @case('calendar')
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M13 14h3M8 17h3"/></svg>
         @break
     @case('toggle')
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="5"/><circle cx="16" cy="12" r="3"/></svg>

@@ -9,6 +9,41 @@ if (savedTheme === 'dark' || savedTheme === 'light') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
+        bootstrap.Tooltip.getOrCreateInstance(element);
+    });
+    document.addEventListener('shown.bs.modal', (event) => {
+        event.target.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
+            bootstrap.Tooltip.getInstance(element)?.dispose();
+            bootstrap.Tooltip.getOrCreateInstance(element, { container: 'body' });
+        });
+    });
+
+    const pushButton = document.querySelector('[data-web-push-enable]');
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    const decodeVapidKey = (value) => Uint8Array.from(atob(`${value.replace(/-/g, '+').replace(/_/g, '/')}${'='.repeat((4 - value.length % 4) % 4)}`), (character) => character.charCodeAt(0));
+    const setupWebPush = async () => {
+        if (!pushButton || !('serviceWorker' in navigator) || !('PushManager' in window) || !window.isSecureContext) return;
+        try {
+            const config = await fetch('/workspace/notifications/push/config', { headers: { Accept: 'application/json' } }).then((response) => response.json());
+            if (!config.enabled) return;
+            pushButton.hidden = false;
+            pushButton.addEventListener('click', async () => {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') return;
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                let subscription = await registration.pushManager.getSubscription();
+                if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeVapidKey(config.publicKey) });
+                await fetch('/workspace/notifications/push/subscriptions', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf },
+                    body: JSON.stringify(subscription.toJSON()),
+                });
+                pushButton.title = 'Notifikasi perangkat aktif';
+            }, { once: true });
+        } catch (_) {}
+    };
+    setupWebPush();
+
     const enhanceFloatingFields = () => {
         document.querySelectorAll('label.form-label').forEach((label) => {
             const field = label.nextElementSibling;
@@ -34,7 +69,133 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const formatWorkspaceDate = (value) => {
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+        return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+    };
+    const parseWorkspaceDate = (value) => {
+        const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value || '');
+        if (!match) return '';
+        const day = Number(match[1]);
+        const month = Number(match[2]);
+        const year = Number(match[3]);
+        const date = new Date(Date.UTC(year, month - 1, day));
+        return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+            ? `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+            : '';
+    };
+    const enhanceDateInputs = () => {
+        document.querySelectorAll('input[type="date"]:not([data-workspace-date-enhanced]):not([data-workspace-date-value])').forEach((input) => {
+            const fieldName = input.name;
+            const hidden = document.createElement('input');
+            hidden.type = 'date';
+            hidden.className = 'workspace-date-picker-source';
+            hidden.name = fieldName;
+            hidden.value = input.value || '';
+            hidden.dataset.workspaceDateValue = 'true';
+
+            const dateRow = input.closest('[data-date-row]');
+            const dateControl = dateRow ? document.createElement('div') : input.parentElement;
+            if (dateRow) {
+                dateControl.className = 'workspace-date-control';
+                input.parentElement.insertBefore(dateControl, input);
+                dateControl.append(input);
+            }
+
+            input.dataset.workspaceDateEnhanced = 'true';
+            input.dataset.workspaceDateName = fieldName || '';
+            input.type = 'text';
+            input.name = '';
+            input.inputMode = 'numeric';
+            input.autocomplete = 'off';
+            input.placeholder = 'dd/mm/yyyy';
+            input.value = formatWorkspaceDate(hidden.value);
+            input.setAttribute('aria-label', input.getAttribute('aria-label') || 'Tanggal (dd/mm/yyyy)');
+            dateControl?.classList.add('workspace-date-control');
+            input.insertAdjacentElement('afterend', hidden);
+            const pickerButton = document.createElement('button');
+            pickerButton.type = 'button';
+            pickerButton.className = 'workspace-date-picker-button';
+            pickerButton.dataset.workspaceDatePicker = 'true';
+            pickerButton.setAttribute('aria-label', 'Buka kalender');
+            pickerButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>';
+            input.insertAdjacentElement('afterend', pickerButton);
+
+            const sync = () => {
+                const digits = input.value.replace(/\D/g, '').slice(0, 8);
+                const formatted = digits.length > 4
+                    ? `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+                    : (digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
+                if (input.value !== formatted) input.value = formatted;
+                hidden.value = parseWorkspaceDate(formatted);
+            };
+            input.addEventListener('input', sync);
+            input.addEventListener('blur', sync);
+        });
+    };
+
+    document.addEventListener('change', (event) => {
+        const source = event.target.closest?.('[data-workspace-date-value]');
+        if (!source) return;
+        const display = source.parentElement?.querySelector('[data-workspace-date-enhanced]');
+        if (display) display.value = formatWorkspaceDate(source.value);
+    });
+    document.addEventListener('click', (event) => {
+        const button = event.target.closest?.('[data-workspace-date-picker]');
+        if (!button) return;
+        event.preventDefault();
+        const source = button.parentElement?.querySelector('[data-workspace-date-value]');
+        if (!source) return;
+        if (typeof source.showPicker === 'function') source.showPicker();
+        else source.click();
+    });
+
     enhanceFloatingFields();
+    enhanceDateInputs();
+
+    if (window.location.pathname === '/workspace/hris/leave-requests') {
+        document.querySelectorAll('table tbody tr').forEach((row) => {
+            const cell = row.children[2];
+            if (!cell || !cell.textContent.includes('/')) return;
+            const dates = cell.textContent.split(',').map((date) => date.trim()).filter(Boolean);
+            if (!dates.length) return;
+            const badges = document.createElement('div');
+            badges.className = 'workspace-leave-date-badges';
+            dates.forEach((date) => {
+                const badge = document.createElement('span');
+                badge.className = 'badge rounded-pill text-bg-light';
+                badge.textContent = date;
+                badges.append(badge);
+            });
+            cell.replaceChildren(badges);
+        });
+    }
+
+    if (window.location.pathname === '/workspace/settings/hris/workflow') {
+        const workflowTable = document.querySelector('.workspace-list-pagination')?.closest('.card')?.querySelector('table');
+        const sortableColumns = { Perusahaan: 'company_id', Workflow: 'workflow_key', Approver: 'user_id' };
+        workflowTable?.querySelectorAll('thead th').forEach((header) => {
+            const label = header.textContent.trim();
+            const column = sortableColumns[label];
+            if (!column) return;
+            const params = new URLSearchParams(window.location.search);
+            const active = params.get('sort') === column;
+            const currentDirection = params.get('direction') === 'desc' ? 'desc' : 'asc';
+            const direction = active && currentDirection === 'asc' ? 'desc' : 'asc';
+            params.set('sort', column);
+            params.set('direction', direction);
+            params.delete('page');
+            const link = document.createElement('a');
+            link.className = `workspace-sort-link${active ? ' active' : ''}`;
+            link.href = `${window.location.pathname}?${params.toString()}`;
+            link.textContent = label;
+            const indicator = document.createElement('span');
+            indicator.setAttribute('aria-hidden', 'true');
+            indicator.textContent = active ? (currentDirection === 'desc' ? ' ↓' : ' ↑') : ' ↕';
+            link.append(indicator);
+            header.replaceChildren(link);
+        });
+    }
 
     document.querySelectorAll('[data-subject-audit-toggle]').forEach((toggle) => {
         const panel = toggle.closest('[data-subject-audit-panel]');
@@ -117,7 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const floatingObserver = new MutationObserver(enhanceFloatingFields);
+    const floatingObserver = new MutationObserver(() => {
+        enhanceFloatingFields();
+        enhanceDateInputs();
+    });
     floatingObserver.observe(document.body, { childList: true, subtree: true });
 
     document.querySelectorAll('[data-company-brand-upload]').forEach((upload) => {
@@ -192,6 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const confirmModalElement = document.querySelector('#workspaceConfirmModal');
     const confirmMessage = document.querySelector('[data-workspace-confirm-message]');
+    const confirmCommentWrap = document.querySelector('[data-workspace-confirm-comment-wrap]');
+    const confirmComment = document.querySelector('[data-workspace-confirm-comment]');
     const confirmSubmit = document.querySelector('[data-workspace-confirm-submit]');
     const confirmModal = confirmModalElement ? bootstrap.Modal.getOrCreateInstance(confirmModalElement) : null;
     let pendingConfirmForm = null;
@@ -251,6 +417,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!value('status')) addError('status', 'Status wajib dipilih.');
             const operational = [...form.querySelectorAll('[name="operational_company_ids[]"]:checked')];
             if (!operational.length) addError('operational_company_ids[]', 'Pilih minimal satu perusahaan operasional.', form.querySelector('[data-searchable-dropdown]'));
+        }
+        if (type === 'employee') {
+            if (!value('company_id')) addError('company_id', 'Perusahaan wajib dipilih.');
+            if (!value('employee_number')) addError('employee_number', 'Nomor karyawan wajib diisi.');
+            else if (value('employee_number').length > 50) addError('employee_number', 'Nomor karyawan maksimal 50 karakter.');
+            if (!value('full_name')) addError('full_name', 'Nama lengkap wajib diisi.');
+            else if (value('full_name').length > 150) addError('full_name', 'Nama lengkap maksimal 150 karakter.');
+            if (value('email') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value('email'))) addError('email', 'Format email tidak valid.');
+            if (value('job_title') && value('job_title').length > 150) addError('job_title', 'Jabatan maksimal 150 karakter.');
+            if (value('phone') && value('phone').length > 50) addError('phone', 'Nomor telepon maksimal 50 karakter.');
+            if (!value('status')) addError('status', 'Status wajib dipilih.');
+        }
+        if (type === 'hris-workflow') {
+            if (!value('company_id')) addError('company_id', 'Perusahaan operasional wajib dipilih.');
+            if (!value('user_id')) addError('user_id', 'Approver wajib dipilih.');
         }
         if (type === 'document') {
             if (!value('title')) addError('title', 'Judul dokumen wajib diisi.');
@@ -333,6 +514,9 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingConfirmForm = form;
         confirmMessage.textContent = form.dataset.confirm;
         confirmSubmit.textContent = form.dataset.confirmAction || 'Lanjutkan';
+        const hasOptionalComment = form.dataset.confirmComment === 'optional';
+        confirmCommentWrap?.classList.toggle('d-none', !hasOptionalComment);
+        if (confirmComment) confirmComment.value = '';
         confirmModal.show();
     }, true);
 
@@ -342,6 +526,27 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingConfirmForm = null;
         form.dataset.confirmHandled = 'true';
         form.removeAttribute('onsubmit');
+        const submitter = form.querySelector('button[name][value], input[type="submit"][name][value]');
+        if (submitter?.name && !form.querySelector(`[name="${CSS.escape(submitter.name)}"][data-workspace-confirm-value]`)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = submitter.name;
+            input.value = submitter.value;
+            input.dataset.workspaceConfirmValue = 'true';
+            form.append(input);
+        }
+        if (form.dataset.confirmComment === 'optional') {
+            form.querySelector('input[name="comment"][data-workspace-confirm-value]')?.remove();
+            const comment = confirmComment?.value?.trim() || '';
+            if (comment) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'comment';
+                input.value = comment;
+                input.dataset.workspaceConfirmValue = 'true';
+                form.append(input);
+            }
+        }
         confirmModal.hide();
         showLoading(formLoadingMessage(form));
         form.submit();
@@ -349,6 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('submit', (event) => {
         const form = event.target;
+        if (event.defaultPrevented) return;
         if (form instanceof HTMLFormElement && form.dataset.confirmHandled !== 'true' && !form.dataset.confirm) showLoading(formLoadingMessage(form));
     });
 

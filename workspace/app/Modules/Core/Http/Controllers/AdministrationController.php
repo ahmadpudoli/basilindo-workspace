@@ -5,6 +5,7 @@ namespace App\Modules\Core\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\Core\Application\Services\WorkspaceModuleRegistry;
+use App\Modules\HRIS\Domain\Models\Employee;
 use Core\Models\Company;
 use Core\Models\Permission;
 use Core\Models\Role;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AdministrationController extends Controller
@@ -62,16 +64,19 @@ class AdministrationController extends Controller
             ->orderBy($sort === 'status' ? 'is_system_account' : $sort, $direction)
             ->orderBy('name')->paginate($perPage)->withQueryString();
 
-        return view('modules.core.users', compact('users', 'search', 'selectedRoles', 'status', 'perPage', 'sort', 'direction') + ['roles' => Role::query()->orderBy('name')->get(['name'])]);
+        $employeesByUserId = Employee::query()->whereIn('user_id', $users->getCollection()->pluck('id'))->get()->keyBy('user_id');
+        return view('modules.core.users', compact('users', 'search', 'selectedRoles', 'status', 'perPage', 'sort', 'direction', 'employeesByUserId') + ['roles' => Role::query()->orderBy('name')->get(['name'])]);
     }
     public function userCreate(): View { Gate::authorize('create', User::class); return view('modules.core.user-form', $this->userFormData()); }
     public function userStore(Request $request, AuditLogger $audit): RedirectResponse
     {
         Gate::authorize('create', User::class);
         $data = $request->validate(['name' => 'required|string|max:255', 'email' => ['required', 'email', 'max:255', $this->uniqueUserEmail()], 'password' => 'required|string|min:8|confirmed', 'roles' => 'nullable|array', 'roles.*' => $this->modelExistsRule(Role::class, 'name'), 'company_ids' => 'nullable|array', 'company_ids.*' => ['integer', $this->modelExistsRule(Company::class, 'id')->where(fn ($query) => $query->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active'))], 'permissions' => 'nullable|array', 'permissions.*' => $this->modelExistsRule(Permission::class, 'name')]);
+        if (in_array('super_admin', $data['roles'] ?? [], true)) throw ValidationException::withMessages(['roles' => 'Role super_admin hanya boleh digunakan oleh akun sistem.']);
+        $employeeId = $request->validate(['employee_id' => $this->employeeRule()])['employee_id'] ?? null;
         $roles = $data['roles'] ?? []; $companyIds = $data['company_ids'] ?? []; $permissions = $data['permissions'] ?? [];
         unset($data['roles'], $data['company_ids'], $data['permissions']); $data['password'] = Hash::make($data['password']);
-        $user = User::create($data); if ($roles) $user->syncRoles($roles); if ($permissions) $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); $audit->record('user.created', $user, null, ['role_count' => count($roles), 'company_count' => count($companyIds)], null, $this->userSnapshot($user));
+        $user = User::create($data); if ($roles) $user->syncRoles($roles); if ($permissions) $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); $this->syncEmployee($user, $employeeId); $audit->record('user.created', $user, null, ['role_count' => count($roles), 'company_count' => count($companyIds)], null, $this->userSnapshot($user));
         return redirect()->route('workspace.core.users')->with('status', 'Pengguna berhasil dibuat.');
     }
     public function userEdit(User $user): View { Gate::authorize('view', $user); return view('modules.core.user-form', $this->userFormData($user) + ['action' => route('workspace.core.users.update', $user), 'method' => 'PUT']); }
@@ -79,9 +84,11 @@ class AdministrationController extends Controller
     {
         Gate::authorize('update', $user);
         $data = $request->validate(['name' => 'required|string|max:255', 'email' => ['required', 'email', 'max:255', $this->uniqueUserEmail($user)], 'password' => 'nullable|string|min:8|confirmed', 'roles' => 'nullable|array', 'roles.*' => $this->modelExistsRule(Role::class, 'name'), 'company_ids' => 'nullable|array', 'company_ids.*' => ['integer', $this->modelExistsRule(Company::class, 'id')->where(fn ($query) => $query->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active'))], 'permissions' => 'nullable|array', 'permissions.*' => $this->modelExistsRule(Permission::class, 'name')]);
+        if (! $user->isProtectedSystemAccount() && in_array('super_admin', $data['roles'] ?? [], true)) throw ValidationException::withMessages(['roles' => 'Role super_admin hanya boleh digunakan oleh akun sistem.']);
+        $employeeId = $request->validate(['employee_id' => $this->employeeRule($user)])['employee_id'] ?? null;
         $roles = $data['roles'] ?? []; $companyIds = $data['company_ids'] ?? []; $permissions = $data['permissions'] ?? [];
         unset($data['roles'], $data['company_ids'], $data['permissions']); if (filled($data['password'] ?? null)) $data['password'] = Hash::make($data['password']); else unset($data['password']);
-        $before = $this->userSnapshot($user); $user->update($data); if (! $user->isProtectedSystemAccount()) { $user->syncRoles($roles); $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); } $user->refresh(); $audit->recordChange('user.updated', $user, $before, $this->userSnapshot($user));
+        $before = $this->userSnapshot($user); $user->update($data); if (! $user->isProtectedSystemAccount()) { $user->syncRoles($roles); $user->syncPermissions($permissions); $user->companies()->sync(array_fill_keys($companyIds, ['scope_role' => 'member'])); $this->syncEmployee($user, $employeeId); } $user->refresh(); $audit->recordChange('user.updated', $user, $before, $this->userSnapshot($user));
         return redirect()->route('workspace.core.users')->with('status', 'Pengguna berhasil diperbarui.');
     }
     public function userDestroy(User $user, AuditLogger $audit): RedirectResponse { Gate::authorize('delete', $user); $before = $this->userSnapshot($user); $user->delete(); $audit->recordChange('user.archived', $user, $before, ['deleted_at' => now()->toIso8601String()]); return back()->with('status', 'Pengguna dipindahkan ke arsip.'); }
@@ -114,7 +121,30 @@ class AdministrationController extends Controller
 
     private function userFormData(?User $user = null): array
     {
-        return ['user' => $user, 'roles' => Role::query()->orderBy('name')->get(), 'permissions' => Permission::query()->orderBy('name')->get(), 'companies' => Company::query()->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active')->orderBy('name')->get()];
+        $employees = Employee::query()->with('company')->where(function ($query) use ($user): void { $query->whereNull('user_id'); if ($user) $query->orWhere('user_id', $user->getKey()); })->visibleTo(auth()->user())->orderBy('full_name')->get();
+        $roles = Role::query()->when(! $user?->isProtectedSystemAccount(), fn ($query) => $query->where('name', '!=', 'super_admin'))->orderBy('name')->get();
+        return ['user' => $user, 'roles' => $roles, 'permissions' => Permission::query()->orderBy('name')->get(), 'companies' => Company::query()->where('entity_type', 'company')->where('classification', 'internal')->where('status', 'active')->orderBy('name')->get(), 'employees' => $employees];
+    }
+
+    private function employeeRule(?User $user = null): array
+    {
+        $model = new Employee;
+        $actor = auth()->user();
+        $companyIds = $actor?->hasRole('super_admin') ? [] : $actor?->companies()->pluck('companies.id')->all();
+        $rule = Rule::exists($model->getConnectionName().'.'.$model->getTable(), 'id')->where(function ($query) use ($companyIds, $user): void {
+            $query->where(function ($relation) use ($user): void {
+                $relation->whereNull('user_id');
+                if ($user) $relation->orWhere('user_id', $user->getKey());
+            });
+            if ($companyIds !== []) $query->whereIn('company_id', $companyIds);
+        });
+        return ['nullable', 'string', 'size:26', $rule];
+    }
+
+    private function syncEmployee(User $user, ?string $employeeId): void
+    {
+        Employee::query()->where('user_id', $user->getKey())->update(['user_id' => null]);
+        if ($employeeId) Employee::query()->whereKey($employeeId)->update(['user_id' => $user->getKey()]);
     }
 
     private function userSnapshot(User $user): array

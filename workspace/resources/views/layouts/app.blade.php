@@ -61,12 +61,33 @@
                     ['label' => 'Bundel', 'url' => route('workspace.documents.bundles'), 'permission' => 'view_any_document'],
                 ],
             ],
+            'hris' => [
+                'label' => 'HRIS', 'icon' => 'hris', 'url' => route('workspace.hris'), 'permission' => 'access_hris',
+                'items' => [
+                    ['label' => 'Ringkasan', 'url' => route('workspace.hris'), 'permission' => 'access_hris'],
+                    ['label' => 'Biodata', 'url' => route('workspace.hris.biodata'), 'permission' => 'access_hris'],
+                    ['label' => 'Approval Pengajuan', 'url' => route('workspace.hris.approvals'), 'permission' => 'view_hris_approvals'],
+                    ['label' => 'Manajemen Kehadiran', 'icon' => 'calendar', 'items' => [
+                        ['label' => 'Ringkasan Cuti Karyawan', 'url' => route('workspace.hris.leave-requests', ['view' => 'summary']), 'permission' => 'view_hris_leave_summary'],
+                        ['label' => 'Cuti & Sakit', 'url' => route('workspace.hris.leave-requests'), 'permission' => 'access_hris'],
+                        ['label' => 'Ringkasan Lembur Karyawan', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_hris_overtime_summary'],
+                        ['label' => 'Lembur', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_any_overtime'],
+                    ]],
+                    ['label' => 'Manajemen Claim', 'icon' => 'document', 'items' => [
+                        ['label' => 'Reimbursement & Cash Advance', 'url' => route('workspace.hris.claims'), 'permission' => 'view_any_claim'],
+                    ]],
+                ],
+            ],
         ];
         $moduleDefinitions['settings'] = [
             'label' => 'Pengaturan', 'icon' => 'settings', 'url' => route('workspace.settings'),
             'items' => [
                 ['label' => 'Ringkasan pengaturan', 'url' => route('workspace.settings')],
                 ['label' => 'Modul aktif', 'url' => route('workspace.settings.modules')],
+                ...(auth()->user()?->can('manage_hris_settings') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengaturan HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'manage_hris_settings', 'items' => [
+                    ['label' => 'Parameter HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'manage_hris_settings'],
+                    ['label' => 'Workflow Approval', 'url' => route('workspace.settings.hris.workflow'), 'permission' => 'manage_hris_settings'],
+                ]]] : []),
                 ...(auth()->user()?->can('view_any_user') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengguna & akses', 'url' => route('workspace.core.users')]] : []),
                 ...(auth()->user()?->can('view_any_role') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Role & permission', 'url' => route('workspace.core.roles')]] : []),
                 ...(auth()->user()?->can('view_audit_trail') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Audit trail', 'url' => route('workspace.core.audit-log')]] : []),
@@ -80,10 +101,18 @@
                 continue;
             }
 
-            $moduleDefinitions[$moduleKey]['items'] = array_values(array_filter(
-                $moduleDefinitions[$moduleKey]['items'],
-                fn (array $item): bool => $canModulePermission($item['permission'] ?? null),
-            ));
+            $filterNavigationItems = function (array $items) use (&$filterNavigationItems, $canModulePermission): array {
+                $filtered = [];
+                foreach ($items as $item) {
+                    $children = isset($item['items']) ? $filterNavigationItems($item['items']) : [];
+                    if ($canModulePermission($item['permission'] ?? null) && (! isset($item['items']) || $children !== [])) {
+                        if (isset($item['items'])) $item['items'] = $children;
+                        $filtered[] = $item;
+                    }
+                }
+                return $filtered;
+            };
+            $moduleDefinitions[$moduleKey]['items'] = $filterNavigationItems($moduleDefinitions[$moduleKey]['items']);
             if ($moduleDefinitions[$moduleKey]['items'] === []) {
                 unset($moduleDefinitions[$moduleKey]);
             }
@@ -105,7 +134,7 @@
             'Project' => 'project', 'Ticket' => 'ticket', 'Board ticket' => 'board', 'Timeline' => 'timeline', 'Epic' => 'epic',
             'Catatan' => 'note', 'Komentar' => 'comment', 'Notifikasi' => 'notification', 'Kontribusi pengguna' => 'users',
             'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Dokumen' => 'document', 'Upload dokumen' => 'upload',
-            'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Semua modul' => 'grid',
+            'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Karyawan' => 'users', 'Biodata' => 'users', 'Cuti & sakit' => 'calendar', 'Cuti & Sakit' => 'calendar', 'Lembur' => 'calendar', 'Reimbursement & cash advance' => 'document', 'Reimbursement & Cash Advance' => 'document', 'Pengaturan HRIS' => 'settings', 'Semua modul' => 'grid',
         ];
         $userName = auth()->user()?->name ?: auth()->user()?->email;
         $userInitial = $userName ? mb_strtoupper(mb_substr($userName, 0, 1)) : 'B';
@@ -133,6 +162,10 @@
             </div>
 
             @auth
+                @php
+                    $headerNotifications = \App\Modules\ProjectManagement\Domain\Models\Notification::query()->where('user_id', auth()->id())->latest()->limit(6)->get();
+                    $headerUnreadNotifications = \App\Modules\ProjectManagement\Domain\Models\Notification::query()->where('user_id', auth()->id())->whereNull('read_at')->count();
+                @endphp
                 <div class="workspace-topbar-actions">
                     <div class="dropdown">
                         <button class="workspace-module-launcher" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Beralih modul" title="Beralih modul">
@@ -156,6 +189,24 @@
                         <svg class="theme-icon-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
                         <svg class="theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>
                     </button>
+                    <button class="workspace-icon-button" type="button" data-web-push-enable aria-label="Aktifkan notifikasi perangkat" title="Aktifkan notifikasi perangkat" hidden>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+                    </button>
+                    <div class="dropdown">
+                        <button class="workspace-icon-button workspace-notification-button position-relative" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Notifikasi" title="Notifikasi">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
+                            @if($headerUnreadNotifications > 0)<span class="workspace-notification-count">{{ $headerUnreadNotifications > 99 ? '99+' : $headerUnreadNotifications }}</span>@endif
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end workspace-notification-menu">
+                            <div class="workspace-notification-menu-header"><strong>Notifikasi</strong><span>{{ $headerUnreadNotifications }} belum dibaca</span></div>
+                            @forelse($headerNotifications as $headerNotification)
+                                <a href="{{ route('workspace.notifications.show', $headerNotification) }}" class="workspace-notification-item {{ is_null($headerNotification->read_at) ? 'unread' : '' }}"><span class="workspace-notification-dot"></span><span><strong>{{ $headerNotification->title }}</strong><small>{{ $headerNotification->message }}</small><em>{{ $headerNotification->created_at?->diffForHumans() }}</em></span></a>
+                            @empty
+                                <div class="workspace-notification-empty">Belum ada notifikasi.</div>
+                            @endforelse
+                            <a href="{{ route('workspace.notifications') }}" class="workspace-notification-all">Lihat semua notifikasi <span aria-hidden="true">&rarr;</span></a>
+                        </div>
+                    </div>
                     <div class="dropdown">
                         <button class="workspace-user-menu dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <span class="workspace-avatar">{{ $userInitial }}</span>
@@ -191,19 +242,19 @@
                             if ($activeModule === 'documents' && request()->routeIs('workspace.documents.create', 'workspace.documents.show', 'workspace.documents.edit')) {
                                 $navigationPath = parse_url(route('workspace.documents.list'), PHP_URL_PATH);
                             }
-                            $activeNavPath = collect($activeModuleDefinition['items'])
-                                ->map(fn (array $item) => parse_url($item['url'], PHP_URL_PATH))
+                            $navigationPaths = function (array $items) use (&$navigationPaths): array {
+                                return collect($items)->flatMap(fn (array $item) => array_merge(
+                                    isset($item['url']) ? [parse_url($item['url'], PHP_URL_PATH)] : [],
+                                    isset($item['items']) ? $navigationPaths($item['items']) : [],
+                                ))->all();
+                            };
+                            $activeNavPath = collect($navigationPaths($activeModuleDefinition['items']))
                                 ->filter(fn (string $path) => $navigationPath === $path || str_starts_with($navigationPath, rtrim($path, '/').'/'))
                                 ->sortByDesc(fn (string $path) => strlen($path))
                                 ->first();
                         @endphp
                         <nav class="workspace-nav">
-                            @foreach ($activeModuleDefinition['items'] as $item)
-                                @php($itemUrl = parse_url($item['url'], PHP_URL_PATH))
-                                <a class="workspace-nav-link {{ $activeNavPath === $itemUrl ? 'active' : '' }}" href="{{ $item['url'] }}">
-                                    <span class="workspace-nav-icon">@include('layouts.partials.nav-icon', ['icon' => $navigationIcons[$item['label']] ?? 'dashboard'])</span><span>{{ $item['label'] }}</span>
-                                </a>
-                            @endforeach
+                            @include('layouts.partials.sidebar-nav-items', ['items' => $activeModuleDefinition['items'], 'navigationIcons' => $navigationIcons, 'activeNavPath' => $activeNavPath, 'level' => 0])
                         </nav>
                         <div class="workspace-sidebar-footer">
                             <a class="workspace-nav-link" href="{{ route('dashboard') }}"><span class="workspace-nav-icon">@include('layouts.partials.nav-icon', ['icon' => 'grid'])</span><span>Semua modul</span></a>
@@ -219,9 +270,6 @@
                     @endif
                     @if (session('error'))
                         <div class="alert alert-danger workspace-alert" role="alert">{{ session('error') }}</div>
-                    @endif
-                    @if ($errors->any() && ! request()->routeIs('login'))
-                        <div class="alert alert-danger workspace-alert" role="alert">Periksa kembali input yang ditandai pada formulir.</div>
                     @endif
                     @yield('content')
                 </div>
@@ -241,7 +289,7 @@
         </div>
     </div>
     <div class="modal fade" id="workspaceConfirmModal" tabindex="-1" aria-labelledby="workspaceConfirmTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm"><div class="modal-content workspace-modal-content workspace-confirm-modal"><div class="modal-header workspace-modal-header"><div class="workspace-modal-heading"><span class="workspace-modal-icon workspace-modal-icon-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4Z"/><path d="M12 9v5M12 17h.01"/></svg></span><div><span class="workspace-modal-kicker">Perhatian</span><h5 class="modal-title" id="workspaceConfirmTitle">Konfirmasi tindakan</h5></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body workspace-confirm-body" data-workspace-confirm-message>Apakah Anda yakin ingin melanjutkan tindakan ini?</div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-danger workspace-confirm-submit" data-workspace-confirm-submit>Lanjutkan</button></div></div></div>
+        <div class="modal-dialog modal-dialog-centered modal-sm workspace-confirm-dialog"><div class="modal-content workspace-modal-content workspace-confirm-modal"><div class="modal-header workspace-modal-header"><div class="workspace-modal-heading"><span class="workspace-modal-icon workspace-modal-icon-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4Z"/><path d="M12 9v5M12 17h.01"/></svg></span><div><span class="workspace-modal-kicker">Perhatian</span><h5 class="modal-title" id="workspaceConfirmTitle">Konfirmasi tindakan</h5></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body workspace-confirm-body"><div data-workspace-confirm-message>Apakah Anda yakin ingin melanjutkan tindakan ini?</div><div class="workspace-confirm-comment-wrap d-none" data-workspace-confirm-comment-wrap><label for="workspaceConfirmComment" class="form-label">Catatan persetujuan <span class="text-secondary fw-normal">(opsional)</span></label><textarea id="workspaceConfirmComment" class="form-control" data-workspace-confirm-comment rows="3" maxlength="2000" placeholder="Tambahkan catatan jika diperlukan..."></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-danger workspace-confirm-submit" data-workspace-confirm-submit>Lanjutkan</button></div></div></div>
     </div>
 
     @livewireScripts

@@ -5,6 +5,7 @@
     $selectedRoles = old('roles', isset($user) ? $user->roles->pluck('name')->all() : []);
     $selectedCompanies = old('company_ids', isset($user) ? $user->companies->modelKeys() : []);
     $selectedPermissions = old('permissions', isset($user) ? $user->permissions->pluck('name')->all() : []);
+    $selectedEmployeeId = old('employee_id', isset($user) ? $employees->firstWhere('user_id', $user->getKey())?->getKey() : null);
     $isProtectedSystemUser = isset($user) && $user->isProtectedSystemAccount();
     if ($isProtectedSystemUser) {
         $selectedPermissions = $permissions->pluck('name')->all();
@@ -14,6 +15,12 @@
         'access_crm' => 'CRM',
         'access_project_management' => 'Project Management',
         'access_documents' => 'Document Management',
+        'access_hris' => 'HRIS',
+        'view_hris_approvals' => 'HRIS',
+        'view_hris_leave_summary' => 'HRIS',
+        'view_hris_overtime_summary' => 'HRIS',
+        'view_hris_reimbursement_summary' => 'HRIS',
+        'view_hris_cash_advance_summary' => 'HRIS',
         'access_settings' => 'Core & Pengaturan',
     ];
     $permissionGroups = $permissions->groupBy(function ($permission) use ($modulePermissionGroups) {
@@ -24,11 +31,12 @@
             str_contains($name, 'crm_') => 'CRM',
             str_contains($name, 'document') => 'Document Management',
             str_contains($name, 'project') || str_contains($name, 'ticket') => 'Project Management',
+            str_contains($name, 'hris') || str_ends_with($name, '_employee') || str_ends_with($name, '_leave_request') || str_ends_with($name, '_overtime') || str_ends_with($name, '_claim') => 'HRIS',
             str_contains($name, 'user') || str_contains($name, 'role') || str_contains($name, 'audit') || $name === 'access_settings' => 'Core & Pengaturan',
             default => 'Lainnya',
         };
     });
-    $groupOrder = ['Core & Pengaturan', 'Company & Vendor', 'CRM', 'Project Management', 'Document Management', 'Lainnya'];
+    $groupOrder = ['Core & Pengaturan', 'Company & Vendor', 'CRM', 'Project Management', 'Document Management', 'HRIS', 'Lainnya'];
     $permissionGroups = $permissionGroups->sortBy(fn ($items, $group) => array_search($group, $groupOrder, true));
 @endphp
 
@@ -42,6 +50,7 @@
             <div class="col-md-6"><label class="form-label">Email *</label><input name="email" type="email" value="{{ old('email', $user->email ?? '') }}" class="form-control" required></div>
             <div class="col-md-6"><label class="form-label">Password {{ isset($user) ? '(kosongkan jika tidak diubah)' : '*' }}</label><input name="password" type="password" class="form-control" {{ isset($user) ? '' : 'required' }}></div>
             <div class="col-md-6"><label class="form-label">Konfirmasi password</label><input name="password_confirmation" type="password" class="form-control"></div>
+            <div class="col-12"><label class="form-label">Karyawan terkait <span class="text-secondary fw-normal">(opsional untuk akun non-karyawan)</span></label><select name="employee_id" class="form-select @error('employee_id') is-invalid @enderror" @disabled($isProtectedSystemUser)><option value="">Tidak ada relasi karyawan</option>@foreach($employees as $employee)<option value="{{ $employee->getKey() }}" @selected((string) $selectedEmployeeId === (string) $employee->getKey())>{{ $employee->full_name }} — NIP {{ $employee->employee_number }}{{ $employee->company ? ' — '.$employee->company->name : '' }}</option>@endforeach</select>@error('employee_id')<div class="invalid-feedback">{{ $message }}</div>@enderror<div class="form-text">Satu karyawan hanya dapat direlasikan ke satu akun Workspace.</div></div>
 
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Role pengguna</label><span class="text-secondary small">Dapat memilih lebih dari satu role</span></div>

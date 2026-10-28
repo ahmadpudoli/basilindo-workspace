@@ -6,7 +6,7 @@ use Core\Models\Setting;
 
 class WorkspaceModuleRegistry
 {
-    public const DEFAULT_MODULES = ['company', 'crm', 'project-management', 'documents'];
+    public const DEFAULT_MODULES = ['company', 'crm', 'project-management', 'documents', 'hris'];
 
     public function enabledKeys(): array
     {

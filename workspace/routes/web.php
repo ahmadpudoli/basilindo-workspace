@@ -9,6 +9,7 @@ use App\Modules\Core\Http\Controllers\Auth\LoginController;
 use App\Modules\Core\Http\Controllers\WorkspaceController;
 use App\Modules\Core\Http\Controllers\AdministrationController;
 use App\Modules\Core\Http\Controllers\AuditController;
+use App\Modules\Core\Http\Controllers\NotificationController;
 use App\Modules\Company\Http\Controllers\CompanyDashboardController;
 use App\Modules\Company\Http\Controllers\CompanyController;
 use App\Modules\Company\Http\Controllers\VendorController;
@@ -20,6 +21,12 @@ use App\Modules\ProjectManagement\Http\Controllers\ProjectAnalyticsController;
 use App\Modules\ProjectManagement\Http\Controllers\TicketDataController;
 use App\Modules\DocumentManagement\Http\Controllers\DocumentManagementDashboardController;
 use App\Modules\DocumentManagement\Http\Controllers\DocumentManagementController;
+use App\Modules\HRIS\Application\Services\HrisDashboardController;
+use App\Modules\HRIS\Application\Services\EmployeeController;
+use App\Modules\HRIS\Application\Services\LeaveRequestController;
+use App\Modules\HRIS\Application\Services\HrisOperationsController;
+use App\Modules\HRIS\Application\Services\HrisSettingsController;
+use App\Modules\HRIS\Application\Services\WebPushController;
 
 Route::get('health/ready', [HealthController::class, 'ready'])->name('health.ready');
 Route::view('/', 'welcome')->name('home');
@@ -35,6 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [WorkspaceController::class, 'dashboard'])->name('dashboard');
     Route::get('/workspace/settings', [AdministrationController::class, 'settings'])->name('workspace.settings');
     Route::get('/workspace/core/audit-log', [AuditController::class, 'index'])->name('workspace.core.audit-log');
+    Route::get('/workspace/notifications', [NotificationController::class, 'index'])->name('workspace.notifications');
+    Route::get('/workspace/notifications/{notification}', [NotificationController::class, 'show'])->name('workspace.notifications.show');
+    Route::post('/workspace/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('workspace.notifications.read-all');
     Route::get('/workspace/settings/modules', [AdministrationController::class, 'settingsModules'])->name('workspace.settings.modules');
     Route::put('/workspace/settings/modules', [AdministrationController::class, 'settingsModulesUpdate'])->name('workspace.settings.modules.update');
     Route::get('/workspace/company', CompanyDashboardController::class)->name('workspace.company');
@@ -95,6 +105,47 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/documents/bundles/create', [DocumentManagementController::class, 'bundleCreate'])->name('workspace.documents.bundles.create');
     Route::post('/workspace/documents/bundles', [DocumentManagementController::class, 'bundleStore'])->name('workspace.documents.bundles.store');
     Route::get('/workspace/documents/{document}', [DocumentManagementController::class, 'show'])->name('workspace.documents.show');
+    Route::get('/workspace/hris', HrisDashboardController::class)->name('workspace.hris');
+    Route::get('/workspace/hris/biodata', [HrisDashboardController::class, 'biodata'])->name('workspace.hris.biodata');
+    Route::get('/workspace/hris/employees', [EmployeeController::class, 'index'])->name('workspace.hris.employees');
+    Route::get('/workspace/hris/employees/create', [EmployeeController::class, 'create'])->name('workspace.hris.employees.create');
+    Route::post('/workspace/hris/employees', [EmployeeController::class, 'store'])->name('workspace.hris.employees.store');
+    Route::get('/workspace/hris/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('workspace.hris.employees.edit');
+    Route::put('/workspace/hris/employees/{employee}', [EmployeeController::class, 'update'])->name('workspace.hris.employees.update');
+    Route::delete('/workspace/hris/employees/{employee}', [EmployeeController::class, 'destroy'])->name('workspace.hris.employees.destroy');
+    Route::get('/workspace/hris/leave-requests', [LeaveRequestController::class, 'index'])->name('workspace.hris.leave-requests');
+    Route::get('/workspace/hris/leave-requests/create', [LeaveRequestController::class, 'create'])->name('workspace.hris.leave-requests.create');
+    Route::post('/workspace/hris/leave-requests', [LeaveRequestController::class, 'store'])->name('workspace.hris.leave-requests.store');
+    Route::get('/workspace/hris/leave-requests/{leaveRequest}/edit', [LeaveRequestController::class, 'edit'])->name('workspace.hris.leave-requests.edit');
+    Route::put('/workspace/hris/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'resubmit'])->name('workspace.hris.leave-requests.resubmit');
+    Route::get('/workspace/hris/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('workspace.hris.leave-requests.show');
+    Route::get('/workspace/hris/overtime', [HrisOperationsController::class, 'overtime'])->name('workspace.hris.overtime');
+    Route::get('/workspace/hris/overtime/create', [HrisOperationsController::class, 'overtimeCreate'])->name('workspace.hris.overtime.create');
+    Route::post('/workspace/hris/overtime', [HrisOperationsController::class, 'overtimeStore'])->name('workspace.hris.overtime.store');
+    Route::get('/workspace/hris/claims', [HrisOperationsController::class, 'claims'])->name('workspace.hris.claims');
+    Route::get('/workspace/hris/claims/create', [HrisOperationsController::class, 'claimCreate'])->name('workspace.hris.claims.create');
+    Route::post('/workspace/hris/claims', [HrisOperationsController::class, 'claimStore'])->name('workspace.hris.claims.store');
+    Route::get('/workspace/hris/approvals', [HrisOperationsController::class, 'approvals'])->name('workspace.hris.approvals');
+    Route::get('/workspace/hris/approvals/{type}/{id}/{step}', [HrisOperationsController::class, 'approvalDetail'])->whereIn('type', ['leave', 'overtime', 'claim'])->whereIn('step', ['manager', 'hr'])->name('workspace.hris.approval-detail');
+    Route::get('/workspace/hris/{type}/{id}/supporting-document/{step}', [HrisOperationsController::class, 'supportingDocument'])->name('workspace.hris.supporting-document');
+    Route::post('/workspace/hris/{type}/{id}/approve/{step}', [HrisOperationsController::class, 'approve'])->name('workspace.hris.approve');
+    Route::post('/workspace/hris/claims/{id}/accountability', [HrisOperationsController::class, 'accountability'])->name('workspace.hris.claims.accountability');
+    Route::get('/workspace/settings/hris', [HrisSettingsController::class, 'index'])->name('workspace.settings.hris');
+    Route::get('/workspace/settings/hris/workflow', [HrisSettingsController::class, 'workflow'])->name('workspace.settings.hris.workflow');
+    Route::get('/workspace/settings/hris/workflow/{approver}/edit', [HrisSettingsController::class, 'workflowEdit'])->name('workspace.settings.hris.workflow.edit');
+    Route::post('/workspace/settings/hris', [HrisSettingsController::class, 'store'])->name('workspace.settings.hris.store');
+    Route::post('/workspace/settings/hris/workflow/leave-sick', [HrisSettingsController::class, 'workflowStore'])->name('workspace.settings.hris.workflow.store');
+    Route::patch('/workspace/settings/hris/workflow/{approver}', [HrisSettingsController::class, 'workflowUpdate'])->name('workspace.settings.hris.workflow.update');
+    Route::delete('/workspace/settings/hris/workflow/{approver}', [HrisSettingsController::class, 'workflowArchive'])->name('workspace.settings.hris.workflow.archive');
+    Route::get('/workspace/settings/hris/{setting}/edit', [HrisSettingsController::class, 'edit'])->name('workspace.settings.hris.edit');
+    Route::put('/workspace/settings/hris/{setting}', [HrisSettingsController::class, 'update'])->name('workspace.settings.hris.update');
+    Route::patch('/workspace/settings/hris/{setting}/archive', [HrisSettingsController::class, 'archive'])->name('workspace.settings.hris.archive');
+    Route::patch('/workspace/settings/hris/{setting}/restore', [HrisSettingsController::class, 'restore'])->name('workspace.settings.hris.restore');
+    Route::redirect('/workspace/hris/settings', '/workspace/settings/hris')->name('workspace.hris.settings.legacy');
+    Route::post('/workspace/hris/settings', [HrisSettingsController::class, 'store'])->name('workspace.hris.settings.store.legacy');
+    Route::get('/workspace/notifications/push/config', [WebPushController::class, 'config'])->name('workspace.push.config');
+    Route::post('/workspace/notifications/push/subscriptions', [WebPushController::class, 'store'])->name('workspace.push.store');
+    Route::delete('/workspace/notifications/push/subscriptions', [WebPushController::class, 'destroy'])->name('workspace.push.destroy');
 
     Route::get('/workspace', function () {
         session()->forget('workspace.active_module');
@@ -121,6 +172,7 @@ Route::middleware('auth')->group(function () {
             'crm' => route('workspace.crm'),
             'project-management' => route('workspace.project-management'),
             'documents' => route('workspace.documents'),
+            'hris' => route('workspace.hris'),
         ];
 
         abort_unless(isset($destinations[$module]), 404);
@@ -128,7 +180,7 @@ Route::middleware('auth')->group(function () {
         session(['workspace.active_module' => $module]);
 
         return redirect($destinations[$module]);
-    })->whereIn('module', ['core', 'company', 'crm', 'project-management', 'documents'])
+    })->whereIn('module', ['core', 'company', 'crm', 'project-management', 'documents', 'hris'])
         ->name('workspace.module');
 });
 
