@@ -64,6 +64,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Daftar dokumen memiliki sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status yang terhubung dengan filter serta pagination
 - [x] Daftar dokumen memiliki sorting server-side pada kolom judul, perusahaan, jenis, tanggal, dan status yang terhubung dengan filter serta pagination
 - [x] Audit login dan permission changes
+- [x] Audit seluruh CRUD resource bisnis aktif melalui observer terpusat dengan snapshot ter-redaksi
+- [x] Audit akses preview/download dokumen penting tanpa menyimpan isi file
 - [x] Audit trail Core menyimpan konteks request, device, snapshot JSON, filter super admin, dan history edit dokumen
 - [x] Login lokal Workspace sebagai satu-satunya metode authentication runtime
 - [x] Satu session dan satu deployment untuk seluruh modul

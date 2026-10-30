@@ -3,6 +3,7 @@
 namespace App\Modules\DocumentManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\DocumentManagement\Domain\Models\Bundle;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -10,11 +11,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BundleDownloadController extends Controller
 {
-    public function __invoke(Bundle $bundle): StreamedResponse
+    public function __invoke(Bundle $bundle, AuditLogger $audit): StreamedResponse
     {
         Gate::authorize('download', $bundle);
         $stream = Storage::disk($bundle->disk)->readStream($bundle->object_key);
         abort_unless(is_resource($stream), 404);
+        $audit->record('bundle.downloaded', $bundle, $bundle->company_id, [
+            'mime_type' => 'application/zip',
+        ]);
 
         return response()->streamDownload(function () use ($stream) {
             fpassthru($stream);

@@ -12,6 +12,7 @@ use Core\Models\Project;
 use Core\Models\User;
 use Core\Models\Company;
 use App\Modules\Core\Application\Services\Audit\AuditLogger;
+use App\Modules\Core\Application\Services\Audit\AuditModelObserver;
 use App\Modules\Core\Policies\RolePolicy;
 use App\Modules\Core\Policies\UserPolicy;
 use App\Modules\Company\Policies\CompanyPolicy;
@@ -88,6 +89,43 @@ class AppServiceProvider extends ServiceProvider
         Role::created(fn (Role $role) => app(AuditLogger::class)->record('permission.role_created', $role, null, ['role_id' => $role->getKey()]));
         Role::updated(fn (Role $role) => app(AuditLogger::class)->record('permission.role_updated', $role, null, ['role_id' => $role->getKey(), 'changed_fields' => array_keys($role->getChanges())]));
         Role::deleted(fn (Role $role) => app(AuditLogger::class)->record('permission.role_deleted', $role, null, ['role_id' => $role->getKey()]));
+
+        foreach ([
+            \Core\Models\Company::class,
+            \Core\Models\Vendor::class,
+            \Core\Models\Project::class,
+            \App\Modules\CRM\Domain\Models\CrmAccount::class,
+            \App\Modules\CRM\Domain\Models\CrmContact::class,
+            \App\Modules\CRM\Domain\Models\CrmLead::class,
+            \App\Modules\CRM\Domain\Models\CrmOpportunity::class,
+            \App\Modules\CRM\Domain\Models\CrmActivity::class,
+            \App\Modules\ProjectManagement\Domain\Models\Ticket::class,
+            \App\Modules\ProjectManagement\Domain\Models\Epic::class,
+            \App\Modules\ProjectManagement\Domain\Models\ProjectNote::class,
+            \App\Modules\ProjectManagement\Domain\Models\TicketStatus::class,
+            \App\Modules\ProjectManagement\Domain\Models\TicketPriority::class,
+            \App\Modules\ProjectManagement\Domain\Models\TicketComment::class,
+            \App\Modules\ProjectManagement\Domain\Models\Notification::class,
+            \App\Modules\HRIS\Domain\Models\Employee::class,
+            \App\Modules\HRIS\Domain\Models\EmployeeDocument::class,
+            \App\Modules\HRIS\Domain\Models\LeaveRequest::class,
+            \App\Modules\HRIS\Domain\Models\LeaveRequestDate::class,
+            \App\Modules\HRIS\Domain\Models\OvertimeRequest::class,
+            \App\Modules\HRIS\Domain\Models\Claim::class,
+            \App\Modules\HRIS\Domain\Models\HrisSetting::class,
+            \App\Modules\HRIS\Domain\Models\HrisWorkflowApprover::class,
+            \App\Modules\HRIS\Domain\Models\ApprovalEvent::class,
+            \App\Modules\DocumentManagement\Domain\Models\DocumentVersion::class,
+            \App\Modules\DocumentManagement\Domain\Models\Bundle::class,
+            \App\Modules\DocumentManagement\Domain\Models\DocumentRelation::class,
+            \App\Modules\DocumentManagement\Domain\Models\DocumentParty::class,
+            \App\Modules\DocumentManagement\Domain\Models\VerificationCase::class,
+            \App\Modules\DocumentManagement\Domain\Models\VerificationItem::class,
+        ] as $auditedModel) {
+            if (class_exists($auditedModel)) {
+                $auditedModel::observe(AuditModelObserver::class);
+            }
+        }
 
     }
 }

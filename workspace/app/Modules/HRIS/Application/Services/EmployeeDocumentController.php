@@ -3,6 +3,7 @@
 namespace App\Modules\HRIS\Application\Services;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\HRIS\Domain\Models\Employee;
 use App\Modules\HRIS\Domain\Models\EmployeeDocument;
 use Illuminate\Http\RedirectResponse;
@@ -83,12 +84,16 @@ class EmployeeDocumentController extends Controller
         return redirect()->route('workspace.hris.employee-documents')->with('status', 'Dokumen karyawan berhasil diunggah.');
     }
 
-    public function download(Request $request, EmployeeDocument $employeeDocument)
+    public function download(Request $request, EmployeeDocument $employeeDocument, AuditLogger $audit)
     {
         Gate::authorize('download', $employeeDocument);
         abort_unless(Storage::disk($employeeDocument->disk)->exists($employeeDocument->object_key), 404);
         $stream = Storage::disk($employeeDocument->disk)->readStream($employeeDocument->object_key);
         abort_unless(is_resource($stream), 404);
+        $audit->record('employee_document.downloaded', $employeeDocument, $employeeDocument->company_id, [
+            'document_type' => $employeeDocument->type,
+            'mime_type' => $employeeDocument->mime_type,
+        ]);
 
         return response()->streamDownload(function () use ($stream): void {
             fpassthru($stream);

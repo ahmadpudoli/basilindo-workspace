@@ -8,6 +8,8 @@ Workspace harus menyimpan jejak aktivitas pengguna dan perubahan data agar admin
 
 - Event menyimpan actor, waktu, modul, aksi, subject, request ID, IP address, user agent, device/browser/OS, HTTP method, dan route.
 - Perubahan data menyimpan snapshot `old_values` dan `new_values` dalam JSON; password, token, file binary, dan secret tidak boleh masuk snapshot.
+- Seluruh operasi Create, Update, dan Delete pada resource bisnis aktif wajib menghasilkan audit event, termasuk perubahan melalui relasi atau service; event tidak boleh menggandakan pencatatan eksplisit yang sudah tersedia.
+- View/preview/download dokumen yang dikategorikan penting atau rahasia wajib menghasilkan event akses tanpa menyimpan isi file, token, atau object binary.
 - Login berhasil, login gagal, logout, upload, update, archive, preview, permission, dan aksi domain yang sudah tersedia dicatat melalui service audit terpusat.
 - Halaman audit berada di Core, hanya dapat dibuka oleh role `super_admin`, memiliki filter server-side untuk kata kunci, modul, pengguna, dan rentang tanggal, serta pagination.
 - Edit dokumen menampilkan history dokumen pada side panel yang dapat diciutkan dan memuat waktu, actor, device, serta snapshot perubahan.

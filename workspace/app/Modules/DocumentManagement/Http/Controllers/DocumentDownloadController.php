@@ -3,6 +3,7 @@
 namespace App\Modules\DocumentManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\DocumentManagement\Domain\Models\Document;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +11,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentDownloadController extends Controller
 {
-    public function __invoke(Document $document): StreamedResponse
+    public function __invoke(Document $document, AuditLogger $audit): StreamedResponse
     {
         Gate::authorize('download', $document);
         $version = $document->currentVersion;
@@ -18,6 +19,10 @@ class DocumentDownloadController extends Controller
 
         $stream = Storage::disk($version->disk)->readStream($version->object_key);
         abort_unless(is_resource($stream), 404);
+        $audit->record('document.downloaded', $document, $document->company_id, [
+            'version_id' => $version->getKey(),
+            'mime_type' => $version->mime_type,
+        ]);
 
         return response()->streamDownload(function () use ($stream) {
             fpassthru($stream);
