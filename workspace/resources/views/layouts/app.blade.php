@@ -74,6 +74,7 @@
                         ['label' => 'Cuti & Sakit', 'url' => route('workspace.hris.leave-requests'), 'permission' => 'access_hris'],
                         ['label' => 'Ringkasan Lembur Karyawan', 'url' => route('workspace.hris.overtime-summary'), 'permission' => 'view_hris_overtime_summary'],
                         ['label' => 'Lembur', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_any_overtime'],
+                        ['label' => 'Hari Libur', 'url' => route('workspace.hris.holidays'), 'permission' => 'view_hris_holidays'],
                     ]],
                     ['label' => 'Manajemen Claim', 'icon' => 'document', 'items' => [
                         ['label' => 'Ringkasan Reimbursement', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'reimbursement']), 'permission' => 'view_hris_reimbursement_summary'],
@@ -137,7 +138,7 @@
             'Account' => 'account', 'Contact' => 'contact', 'Lead' => 'lead', 'Opportunity' => 'opportunity', 'Aktivitas' => 'activity',
             'Project' => 'project', 'Ticket' => 'ticket', 'Board ticket' => 'board', 'Timeline' => 'timeline', 'Epic' => 'epic',
             'Catatan' => 'note', 'Komentar' => 'comment', 'Notifikasi' => 'notification', 'Kontribusi pengguna' => 'users',
-            'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Dokumen' => 'document', 'Upload dokumen' => 'upload',
+            'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Dokumen' => 'document', 'Upload dokumen' => 'upload', 'Hari Libur' => 'calendar',
             'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Karyawan' => 'users', 'Daftar Karyawan' => 'users', 'Biodata' => 'users', 'Cuti & sakit' => 'calendar', 'Cuti & Sakit' => 'calendar', 'Lembur' => 'calendar', 'Reimbursement & cash advance' => 'document', 'Reimbursement & Cash Advance' => 'document', 'Pengaturan HRIS' => 'settings', 'Semua modul' => 'grid',
         ];
         $userName = auth()->user()?->name ?: auth()->user()?->email;

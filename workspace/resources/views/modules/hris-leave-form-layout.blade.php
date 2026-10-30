@@ -3,7 +3,7 @@
 @php($dateRows = old('dates', ['']))
 @php($hasHrApprover = $hrApprovers->isNotEmpty())
 <div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran</div><h1 class="h3 mb-1">Ajukan cuti atau sakit</h1><p class="text-secondary mb-0">Lengkapi data pengajuan. Tanggal yang beririsan dengan pengajuan aktif akan ditolak.</p></div>
-<form method="POST" action="{{ route('workspace.hris.leave-requests.store') }}" enctype="multipart/form-data" class="card card-body workspace-leave-form workspace-leave-form-columns" data-leave-form data-remaining-leave="{{ max(0, $quota - $usedLeave) }}" novalidate>
+<form method="POST" action="{{ route('workspace.hris.leave-requests.store') }}" enctype="multipart/form-data" class="card card-body workspace-leave-form workspace-leave-form-columns" data-leave-form data-remaining-leave="{{ max(0, $quota - $usedLeave) }}" data-holidays='@json($blockedHolidays->map(fn ($holiday) => ['date' => $holiday->holiday_date->toDateString(), 'name' => $holiday->name, 'type' => $holiday->type])->values())' novalidate>
 @csrf
 <div class="workspace-leave-column">
 <div class="mb-3"><label class="form-label">Nomor pengajuan</label><input type="hidden" name="request_number" value="{{ old('request_number', $requestNumber) }}"><input class="form-control" value="{{ old('request_number', $requestNumber) }}" readonly><div class="form-text">Nomor dibuat otomatis.</div></div>
@@ -13,7 +13,8 @@
     <div class="workspace-leave-dates" data-date-list>@foreach($dateRows as $index => $date)<div class="workspace-leave-date-row" data-date-row><span class="workspace-leave-date-index">{{ $index + 1 }}</span><input type="date" name="dates[]" class="form-control" value="{{ $date }}" aria-label="Tanggal pengajuan {{ $index + 1 }}"><button type="button" class="btn btn-outline-secondary btn-sm" data-remove-leave-date>Hapus</button></div>@endforeach</div>
     @error('dates')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     <div class="invalid-feedback d-block" data-date-error hidden></div>
-    <div class="form-text">Tanggal dapat diisi mundur. Untuk cuti, jumlah tanggal tidak boleh melebihi sisa kuota.</div>
+    <div class="form-text">Tanggal dapat diisi mundur. Hari libur tidak dapat dipilih. Untuk cuti, jumlah tanggal tidak boleh melebihi sisa kuota.</div>
+    @if($collectiveHolidays->isNotEmpty())<div class="alert alert-warning mt-3 mb-0"><strong>Cuti bersama {{ $year }}</strong><ul class="mb-0 mt-1">@foreach($collectiveHolidays as $holiday)<li>{{ $holiday->holiday_date->format('d/m/Y') }} — {{ $holiday->name }}</li>@endforeach</ul><small class="d-block mt-1">Total {{ $collectiveHolidays->count() }} hari telah mengurangi kuota cuti tahunan.</small></div>@endif
 </section>
 <section class="workspace-leave-section workspace-leave-reason-section"><div class="workspace-leave-section-heading"><h2>Alasan <span class="text-danger">*</span></h2></div><textarea name="reason" class="form-control" rows="4" maxlength="2000" placeholder="Tuliskan alasan pengajuan..." aria-describedby="reason-error">{{ old('reason') }}</textarea><div class="invalid-feedback d-block" id="reason-error" data-reason-error hidden></div></section>
 </div>
@@ -40,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const documentError = form.querySelector('[data-document-error]');
     const reasonError = form.querySelector('[data-reason-error]');
     const remaining = Number(form.dataset.remainingLeave || 0);
+    const holidays = JSON.parse(form.dataset.holidays || '[]');
+    const holidayByDate = new Map(holidays.map((holiday) => [holiday.date, holiday]));
 
     const setError = (input, message) => {
         input?.classList.toggle('is-invalid', Boolean(message));
@@ -51,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         element.classList.toggle('d-block', Boolean(message));
     };
     const selectedType = () => form.querySelector('[data-leave-type]:checked')?.value;
-    const dateInputs = () => [...list.querySelectorAll('input[data-workspace-date-enhanced]')];
+    const dateInputs = () => [...list.querySelectorAll('input[type="date"]')];
 
     const refresh = () => {
         dateInputs().forEach((input, index) => {
@@ -98,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'leave' && values.length > remaining) {
             fail(dates[remaining] || dates[0], `Jumlah tanggal tidak boleh melebihi sisa kuota (${remaining} hari).`, dateError);
         }
+        const holidayInput = dates.find((input) => input.value && holidayByDate.has(input.value));
+        if (holidayInput) fail(holidayInput, `Tanggal ${holidayInput.value} merupakan hari libur (${holidayByDate.get(holidayInput.value).name}) dan tidak dapat dipilih.`, dateError);
 
         if (!reason) fail(reasonInput, 'Alasan pengajuan wajib diisi.', reasonError);
         if (reason.length > 2000) fail(reasonInput, 'Alasan maksimal 2.000 karakter.', reasonError);
@@ -113,9 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     addButton.addEventListener('click', () => {
         if (addButton.disabled) return;
         const row = list.querySelector('[data-date-row]').cloneNode(true);
-        row.querySelector('input[data-workspace-date-enhanced]').value = '';
-        row.querySelector('input[data-workspace-date-enhanced]').classList.remove('is-invalid');
-        row.querySelector('input[data-workspace-date-value]').value = '';
+        row.querySelector('input[type="date"]').value = '';
+        row.querySelector('input[type="date"]').classList.remove('is-invalid');
         list.append(row);
         refresh();
     });
@@ -130,7 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
         validate();
     }));
     form.addEventListener('input', (event) => {
-        if (event.target.matches('input[data-workspace-date-enhanced], [name="reason"], [data-supporting-document]')) validate();
+        if (event.target.matches('input[type="date"]') && holidayByDate.has(event.target.value)) {
+            const holiday = holidayByDate.get(event.target.value);
+            event.target.value = '';
+            setMessage(dateError, `Tanggal tersebut merupakan hari libur (${holiday.name}) dan tidak dapat dipilih.`);
+            return;
+        }
+        if (event.target.matches('input[type="date"], [name="reason"], [data-supporting-document]')) validate();
     });
     form.addEventListener('submit', (event) => {
         const firstInvalid = validate();

@@ -9,6 +9,7 @@ use App\Modules\HRIS\Domain\Models\Employee;
 use App\Modules\HRIS\Domain\Models\LeaveRequest as LeaveRequestModel;
 use App\Modules\HRIS\Domain\Models\LeaveRequestDate;
 use App\Modules\HRIS\Domain\Models\HrisSetting;
+use App\Modules\HRIS\Domain\Models\HrisHoliday;
 use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -30,7 +31,10 @@ class LeaveRequestController extends Controller
         $type = in_array($request->string('type')->toString(), ['leave', 'sick'], true) ? $request->string('type')->toString() : null;
         $status = in_array($request->string('status')->toString(), ['pending_manager', 'pending_hr', 'needs_revision', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
         $yearInput = $request->string('year')->toString();
-        $year = $yearInput === 'all' ? null : ($request->integer('year') ?: now()->year);
+        $activeYear = (int) HrisSetting::resolve(null, 'hris.active_year', now()->year);
+        $year = $yearInput === 'all' ? null : ($request->integer('year') ?: $activeYear);
+        $month = in_array($request->integer('month'), range(1, 12), true) ? $request->integer('month') : null;
+        if ($year === null) $month = null;
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
         $sort = in_array($request->string('sort')->toString(), ['leave_date', 'start_date', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
         if ($sort === 'start_date') $sort = 'leave_date';
@@ -43,7 +47,7 @@ class LeaveRequestController extends Controller
                 $q->where('created_by', $user->getKey())->orWhereHas('employee', fn (Builder $employee) => $employee->where('user_id', $user->getKey()));
             });
         }
-        $query->when($type, fn ($q) => $q->where('type', $type))->when($status, fn ($q) => $q->where('status', $status))->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)));
+        $query->when($type, fn ($q) => $q->where('type', $type))->when($status, fn ($q) => $q->where('status', $status))->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)->when($month, fn ($dateQuery) => $dateQuery->whereMonth('leave_date', $month))));
         if ($sort === 'leave_date') {
             $query->orderBy(LeaveRequestDate::query()->select('leave_date')->whereColumn('leave_request_id', 'leave_requests.id')->orderBy('leave_date')->limit(1), $direction);
         } else {
@@ -51,12 +55,29 @@ class LeaveRequestController extends Controller
         }
         $requests = $query->paginate($perPage)->withQueryString();
         $employee = Employee::query()->where('user_id', $user->getKey())->first();
-        $metricYear = $year ?? now()->year;
-        $quota = $employee ? (int) HrisSetting::resolve($employee->company_id, 'hris.annual_leave_quota', 12) : 0;
-        $usedLeave = $employee ? (int) LeaveRequestDate::query()->whereYear('leave_date', $metricYear)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count() : 0;
-        $sickDays = $employee ? (int) LeaveRequestDate::query()->whereYear('leave_date', $metricYear)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'sick')->where('status', 'approved'))->count() : 0;
+        $metricYear = $year ?? $activeYear;
+        $metricEmployees = $canViewAll
+            ? Employee::query()->where('status', 'active')->when(! $user->hasRole('super_admin'), fn ($employeeQuery) => $employeeQuery->whereIn('company_id', $user->companies()->pluck('companies.id')))->get(['id', 'company_id'])
+            : ($employee ? collect([$employee]) : collect());
+        $metricEmployeeIds = $metricEmployees->pluck('id')->values();
+        $metricCompanyIds = $metricEmployees->pluck('company_id')->unique()->values();
+        $baseQuota = (int) $metricEmployees->sum(fn (Employee $metricEmployee): int => (int) HrisSetting::resolveForYear($metricEmployee->company_id, 'hris.annual_leave_quota', $metricYear, 12));
+        $collectiveHolidays = collect();
+        $collectiveDays = 0;
+        foreach ($metricCompanyIds as $companyId) {
+            $companyCollectiveHolidays = HrisHoliday::query()->where('is_active', true)->where('type', 'collective_leave')->where('deduct_annual_leave', true)->forCompany((int) $companyId)->whereYear('holiday_date', $metricYear)->when($month, fn ($query) => $query->whereMonth('holiday_date', $month))->orderBy('holiday_date')->get(['holiday_date', 'name']);
+            $collectiveDays += $companyCollectiveHolidays->unique(fn (HrisHoliday $holiday): string => $holiday->holiday_date->toDateString())->count();
+            $collectiveHolidays = $collectiveHolidays->merge($companyCollectiveHolidays);
+        }
+        $collectiveHolidays = $collectiveHolidays->unique(fn (HrisHoliday $holiday): string => $holiday->holiday_date->toDateString())->sortBy('holiday_date')->values();
+        $quota = max(0, $baseQuota - $collectiveDays);
+        $usedLeaveRequests = $metricEmployeeIds->isNotEmpty() ? LeaveRequestModel::query()->with(['dates' => fn ($query) => $query->whereYear('leave_date', $metricYear)->when($month, fn ($query) => $query->whereMonth('leave_date', $month))])->whereIn('employee_id', $metricEmployeeIds)->where('type', 'leave')->where('status', 'approved')->whereHas('dates', fn ($query) => $query->whereYear('leave_date', $metricYear)->when($month, fn ($query) => $query->whereMonth('leave_date', $month)))->orderByDesc('created_at')->get(['id', 'request_number', 'reason']) : collect();
+        $usedLeave = (int) $usedLeaveRequests->sum(fn (LeaveRequestModel $leaveRequest): int => $leaveRequest->dates->count());
+        $sickRequests = $metricEmployeeIds->isNotEmpty() ? LeaveRequestModel::query()->with(['dates' => fn ($query) => $query->whereYear('leave_date', $metricYear)->when($month, fn ($query) => $query->whereMonth('leave_date', $month))])->whereIn('employee_id', $metricEmployeeIds)->where('type', 'sick')->where('status', 'approved')->whereHas('dates', fn ($query) => $query->whereYear('leave_date', $metricYear)->when($month, fn ($query) => $query->whereMonth('leave_date', $month)))->orderByDesc('created_at')->get(['id', 'request_number', 'reason']) : collect();
+        $sickDays = (int) $sickRequests->sum(fn (LeaveRequestModel $leaveRequest): int => $leaveRequest->dates->count());
         $canCreate = $user->hasRole('super_admin') || $user->can('create_leave_request');
-        return view('modules.hris-leave-requests-enhanced', compact('requests', 'type', 'status', 'year', 'metricYear', 'perPage', 'sort', 'direction', 'quota', 'usedLeave', 'sickDays', 'canViewAll', 'canCreate', 'summaryView'));
+        $remainingLeave = max(0, $quota - $usedLeave);
+        return view('modules.hris-leave-requests-enhanced', compact('requests', 'type', 'status', 'year', 'month', 'activeYear', 'metricYear', 'perPage', 'sort', 'direction', 'baseQuota', 'collectiveHolidays', 'collectiveDays', 'quota', 'usedLeaveRequests', 'usedLeave', 'remainingLeave', 'sickRequests', 'sickDays', 'canViewAll', 'canCreate', 'summaryView'));
     }
 
     public function show(Request $request, LeaveRequestModel $leaveRequest): View
@@ -140,7 +161,9 @@ class LeaveRequestController extends Controller
         $leaveRequest->load(['employee.company', 'employee.manager', 'dates']);
         $employee = $leaveRequest->employee;
         $year = $leaveRequest->dates->first()?->leave_date?->year ?? now()->year;
-        $quota = (int) HrisSetting::resolve($employee->company_id, 'hris.annual_leave_quota', 12);
+        $baseQuota = (int) HrisSetting::resolveForYear($employee->company_id, 'hris.annual_leave_quota', $year, 12);
+        $collectiveHolidays = HrisHoliday::query()->where('is_active', true)->where('type', 'collective_leave')->where('deduct_annual_leave', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get();
+        $quota = max(0, $baseQuota - $collectiveHolidays->count());
         $usedLeave = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count();
         $sickDays = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'sick')->where('status', 'approved'))->count();
         $hrApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'leave_sick', 'hr')->get();
@@ -148,7 +171,8 @@ class LeaveRequestController extends Controller
         $hasSupportingDocument = filled($leaveRequest->supporting_document_id) && $disk->exists((string) $leaveRequest->supporting_document_id);
         $supportingMimeType = $hasSupportingDocument ? ($disk->mimeType((string) $leaveRequest->supporting_document_id) ?: 'application/octet-stream') : null;
         $canPreviewSupportingDocument = $supportingMimeType === 'application/pdf' || str_starts_with((string) $supportingMimeType, 'image/');
-        return view('modules.hris-leave-revision-modern', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'leaveRequest', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument'));
+        $blockedHolidays = HrisHoliday::query()->where('is_active', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get(['holiday_date', 'name', 'type']);
+        return view('modules.hris-leave-revision-modern', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'leaveRequest', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument', 'collectiveHolidays', 'blockedHolidays'));
     }
 
     public function create(Request $request): View
@@ -156,12 +180,15 @@ class LeaveRequestController extends Controller
         Gate::authorize('create', LeaveRequestModel::class);
         $employee = Employee::query()->with(['company', 'manager'])->where('user_id', $request->user()->getKey())->where('status', 'active')->firstOrFail();
         $year = now()->year;
-        $quota = (int) HrisSetting::resolve($employee->company_id, 'hris.annual_leave_quota', 12);
+        $baseQuota = (int) HrisSetting::resolveForYear($employee->company_id, 'hris.annual_leave_quota', $year, 12);
+        $collectiveHolidays = HrisHoliday::query()->where('is_active', true)->where('type', 'collective_leave')->where('deduct_annual_leave', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get();
+        $blockedHolidays = HrisHoliday::query()->where('is_active', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get(['holiday_date', 'name', 'type']);
+        $quota = max(0, $baseQuota - $collectiveHolidays->count());
         $usedLeave = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count();
         $sickDays = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'sick')->where('status', 'approved'))->count();
         $hrApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'leave_sick', 'hr')->get();
         $requestNumber = LeaveRequestModel::generateRequestNumber();
-        return view('modules.hris-leave-form-layout', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'requestNumber'));
+        return view('modules.hris-leave-form-layout', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'requestNumber', 'collectiveHolidays', 'blockedHolidays'));
     }
 
     public function store(LeaveRequestForm $request, LeaveRequestService $service): RedirectResponse

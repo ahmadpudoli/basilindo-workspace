@@ -28,6 +28,7 @@ use App\Modules\HRIS\Application\Services\LeaveRequestController;
 use App\Modules\HRIS\Application\Services\LeaveSummaryController;
 use App\Modules\HRIS\Application\Services\HrisOperationsController;
 use App\Modules\HRIS\Application\Services\HrisSettingsController;
+use App\Modules\HRIS\Application\Services\HrisHolidayController;
 use App\Modules\HRIS\Application\Services\WebPushController;
 
 Route::get('health/ready', [HealthController::class, 'ready'])->name('health.ready');
@@ -130,6 +131,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/hris/leave-requests/{leaveRequest}/supporting-document', [LeaveRequestController::class, 'supportingDocument'])->name('workspace.hris.leave-requests.supporting-document');
     Route::get('/workspace/hris/leave-requests/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('workspace.hris.leave-requests.show');
     Route::get('/workspace/hris/overtime', [HrisOperationsController::class, 'overtime'])->name('workspace.hris.overtime');
+    Route::get('/workspace/hris/holidays', [HrisHolidayController::class, 'index'])->name('workspace.hris.holidays');
+    Route::get('/workspace/hris/holidays/create', [HrisHolidayController::class, 'create'])->name('workspace.hris.holidays.create');
+    Route::post('/workspace/hris/holidays', [HrisHolidayController::class, 'store'])->name('workspace.hris.holidays.store');
+    Route::get('/workspace/hris/holidays/{holiday}/edit', [HrisHolidayController::class, 'edit'])->name('workspace.hris.holidays.edit');
+    Route::put('/workspace/hris/holidays/{holiday}', [HrisHolidayController::class, 'update'])->name('workspace.hris.holidays.update');
+    Route::delete('/workspace/hris/holidays/{holiday}', [HrisHolidayController::class, 'destroy'])->name('workspace.hris.holidays.destroy');
     Route::get('/workspace/hris/overtime-summary', [HrisOperationsController::class, 'overtimeSummary'])->name('workspace.hris.overtime-summary');
     Route::get('/workspace/hris/overtime/create', [HrisOperationsController::class, 'overtimeCreate'])->name('workspace.hris.overtime.create');
     Route::post('/workspace/hris/overtime', [HrisOperationsController::class, 'overtimeStore'])->name('workspace.hris.overtime.store');

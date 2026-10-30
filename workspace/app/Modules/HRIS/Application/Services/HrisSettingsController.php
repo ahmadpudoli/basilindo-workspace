@@ -177,7 +177,9 @@ class HrisSettingsController extends Controller
 
     private function visibleSettings(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        return HrisSetting::query()->when(! $request->user()->hasRole('super_admin'), fn ($q) => $q->whereIn('company_id', $request->user()->companies()->pluck('companies.id')));
+        return HrisSetting::query()->when(! $request->user()->hasRole('super_admin'), fn ($q) => $q->where(function ($scope) use ($request): void {
+            $scope->whereIn('company_id', $request->user()->companies()->pluck('companies.id'))->orWhereNull('company_id');
+        }));
     }
 
     private function workflowPerPage(Request $request): int
@@ -210,13 +212,18 @@ class HrisSettingsController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate(['company_id' => ['nullable', 'integer'], 'key' => ['required', 'in:hris.annual_leave_quota,hris.leave_submission_cutoff,hris.overtime_maximum_minutes,hris.claim_final_approval_threshold'], 'value' => ['required', 'string', 'max:1000'], 'effective_from' => ['nullable', 'date']]);
+        return $request->validate(['company_id' => ['nullable', 'integer'], 'key' => ['required', 'in:hris.active_year,hris.annual_leave_quota,hris.leave_submission_cutoff,hris.overtime_maximum_minutes,hris.claim_final_approval_threshold'], 'value' => ['required', 'string', 'max:1000'], 'effective_from' => ['nullable', 'date']]);
     }
 
     private function normalized(Request $request, array $data, bool $create = true): array
     {
+        if ($data['key'] === 'hris.active_year') {
+            if (! empty($data['company_id'])) $this->throwValidationError('company_id', 'Tahun aktif HRIS hanya boleh diatur secara global.');
+            if (! filter_var($data['value'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 2000, 'max_range' => 2100]])) $this->throwValidationError('value', 'Tahun aktif harus berupa angka antara 2000 dan 2100.');
+        }
         if ($data['company_id'] && ! $request->user()->hasRole('super_admin')) abort_unless($request->user()->companies()->whereKey($data['company_id'])->exists(), 403);
         $value = match ($data['key']) {
+            'hris.active_year' => (int) $data['value'],
             'hris.annual_leave_quota', 'hris.overtime_maximum_minutes', 'hris.claim_final_approval_threshold' => is_numeric($data['value']) ? (float) $data['value'] : $this->throwValidationError('value', 'Nilai harus numerik.'),
             'hris.leave_submission_cutoff' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $data['value']) && strtotime((string) $data['value']) !== false ? $data['value'] : $this->throwValidationError('value', 'Cut-off harus menggunakan format tanggal YYYY-MM-DD.'),
             default => $data['value'],

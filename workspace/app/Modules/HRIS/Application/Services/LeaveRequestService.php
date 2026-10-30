@@ -5,6 +5,7 @@ namespace App\Modules\HRIS\Application\Services;
 use App\Modules\HRIS\Domain\Exceptions\OverlappingLeaveRequest;
 use App\Modules\HRIS\Domain\Models\Employee;
 use App\Modules\HRIS\Domain\Models\HrisSetting;
+use App\Modules\HRIS\Domain\Models\HrisHoliday;
 use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
 use App\Modules\HRIS\Domain\Models\ApprovalEvent;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
@@ -27,6 +28,7 @@ class LeaveRequestService
             if ($parsedDates->contains(fn (CarbonImmutable $date): bool => $date->year !== $year)) {
                 throw ValidationException::withMessages(['dates' => 'Tanggal pengajuan harus berada pada tahun yang sama.']);
             }
+            $this->validateHolidayDates($employee, $dates->all(), $year);
 
             $dateOverlap = LeaveRequestDate::query()
                 ->whereIn('leave_date', $dates->all())
@@ -43,7 +45,7 @@ class LeaveRequestService
                 $this->validateSubmissionCutoff($employee, $year);
                 $quotaSetting = HrisSetting::resolveForYear($employee->company_id, 'hris.annual_leave_quota', $year);
                 if ($quotaSetting === null) throw ValidationException::withMessages(['dates' => "Kuota cuti untuk tahun {$year} belum dikonfigurasi. Hubungi administrator HRIS."]);
-                $quota = (int) $quotaSetting;
+                $quota = max(0, (int) $quotaSetting - HrisHoliday::collectiveDaysForCompany((int) $employee->company_id, $year));
                 $used = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($query) => $query->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count();
                 if ($used + $days > $quota) throw ValidationException::withMessages(['dates' => "Pengajuan melebihi sisa kuota cuti tahun {$year}."]);
             }
@@ -81,14 +83,15 @@ class LeaveRequestService
             if ($parsedDates->contains(fn (CarbonImmutable $date): bool => $date->year !== $parsedDates->first()->year)) {
                 throw ValidationException::withMessages(['dates' => 'Tanggal pengajuan harus berada pada tahun yang sama.']);
             }
+            $year = $parsedDates->first()->year;
+            $this->validateHolidayDates($employee, $dates->all(), $year);
             $overlap = LeaveRequestDate::query()->whereIn('leave_date', $dates->all())->where('leave_request_id', '!=', $request->getKey())->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->active())->exists();
             if ($overlap) throw new OverlappingLeaveRequest($this->overlapMessage($dates->all(), $employee->getKey(), $request->getKey()));
             if ($request->type === 'leave') {
-                $year = $parsedDates->first()->year;
                 $this->validateSubmissionCutoff($employee, $year);
                 $quotaSetting = HrisSetting::resolveForYear($employee->company_id, 'hris.annual_leave_quota', $year);
                 if ($quotaSetting === null) throw ValidationException::withMessages(['dates' => "Kuota cuti untuk tahun {$year} belum dikonfigurasi. Hubungi administrator HRIS."]);
-                $quota = (int) $quotaSetting;
+                $quota = max(0, (int) $quotaSetting - HrisHoliday::collectiveDaysForCompany((int) $employee->company_id, $year));
                 $used = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->where('leave_request_id', '!=', $request->getKey())->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count();
                 if ($used + $dates->count() > $quota) throw ValidationException::withMessages(['dates' => 'Pengajuan melebihi sisa kuota cuti.']);
             }
@@ -130,6 +133,18 @@ class LeaveRequestService
         if (now(config('app.timezone', 'Asia/Jakarta'))->greaterThan($cutoff)) {
             throw ValidationException::withMessages(['dates' => "Batas pengajuan cuti untuk tahun {$year} telah lewat pada {$cutoff->format('d/m/Y')}."]);
         }
+    }
+
+    private function validateHolidayDates(Employee $employee, array $dates, int $year): void
+    {
+        $holidays = HrisHoliday::query()->where('is_active', true)->forCompany((int) $employee->company_id)
+            ->whereYear('holiday_date', $year)->whereIn('holiday_date', $dates)->orderBy('holiday_date')->get(['holiday_date', 'name']);
+        if ($holidays->isEmpty()) {
+            return;
+        }
+
+        $details = $holidays->map(fn (HrisHoliday $holiday): string => $holiday->holiday_date->format('d/m/Y').' ('.$holiday->name.')')->implode(', ');
+        throw ValidationException::withMessages(['dates' => 'Tanggal berikut merupakan hari libur dan tidak dapat dipilih: '.$details.'.']);
     }
 
     /**

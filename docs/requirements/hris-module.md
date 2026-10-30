@@ -24,6 +24,11 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Pengajuan ditolak, dibatalkan, kadaluarsa, atau draft tidak memblokir tanggal.
 - Parameter hari libur, cut-off, aturan approval, dan kebijakan lembur akan
   disimpan sebagai pengaturan, bukan hardcode.
+- Kalender hari libur dikelola pada Manajemen Kehadiran dan mendukung cakupan
+  global atau beberapa perusahaan sekaligus melalui assignment multi-company.
+- Hari libur aktif tidak dapat dipilih pada pengajuan cuti maupun sakit;
+  cuti bersama mengurangi kuota cuti tahunan efektif dan daftar cuti bersama
+  tahun berjalan ditampilkan pada form pengajuan.
 - Reimbursement dan cash advance menjadi fase lanjutan.
 - Notifikasi in-app dikirim dengan metadata ID saja; Web Push PWA memakai
   subscription browser terenkripsi, job queue, service worker, dan VAPID.
@@ -158,6 +163,9 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Dashboard HRIS menampilkan early warning daftar approval yang menunggu jika
   user memiliki `view_hris_approvals`; setiap item mengikuti scope inbox dan
   mengarah ke detail approval yang terotorisasi.
+- Menu Hari Libur menyediakan CRUD terotorisasi, filter tahun/jenis/status,
+  assignment perusahaan, audit trail, serta opsi pengurang kuota cuti untuk
+  setiap tanggal cuti bersama.
 
 ## Status
 
@@ -207,6 +215,12 @@ pengunggah.
   metadata, menjadi bagian dari object key, tampil pada daftar, dan dapat dicari.
 
 ## Di luar fase ini
+
+### Tahun aktif HRIS dan KPI cuti
+
+- Parameter global `hris.active_year` dikelola melalui Pengaturan HRIS dan menjadi default filter tahun pada halaman Cuti & Sakit.
+- KPI kuota, cuti bersama, cuti terpakai, sisa cuti, dan sakit tercatat harus mengikuti tahun filter yang dipilih.
+- Detail KPI harus menjelaskan sumber perhitungan dan menampilkan tanggal yang membentuk nilai cuti bersama, cuti terpakai, atau sakit tercatat.
 
 Perhitungan hari kerja berdasarkan kalender libur dan upload evidence langsung
 ke object storage masih memerlukan konfigurasi operasional tambahan. Core

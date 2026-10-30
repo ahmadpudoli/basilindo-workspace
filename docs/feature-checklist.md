@@ -400,3 +400,5 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Feedback login kredensial invalid tampil inline dekat form dengan pesan generik yang jelas
 - [x] Akses tingkat modul (`access_company`, `access_crm`, `access_project_management`, `access_documents`) menyaring kartu, launcher, sidebar, dan halaman ringkasan
 - [x] Form tambah/edit dokumen memiliki pasangan field, counterparty searchable, filter tipe dokumen berdasarkan perusahaan, loading metadata, nominal lokal, dan tag chip
+- [x] Kalender Hari Libur HRIS multi-company dengan cakupan global/perusahaan, cuti bersama, dampak kuota cuti, CRUD, permission, dan audit trail
+- [x] Kalender Hari Libur HRIS multi-company dengan cakupan global/perusahaan, cuti bersama, dampak kuota cuti, CRUD, permission, dan audit trail
