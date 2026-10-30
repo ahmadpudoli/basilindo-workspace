@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="mb-4">
-        <div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran & biaya</div>
+        <div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran &amp; claim</div>
         <h1 class="h3 mb-1">Persetujuan HRIS</h1>
         <p class="text-secondary mb-0">Semua pengajuan yang membutuhkan tindakan Anda ditampilkan dalam satu tabel.</p>
     </div>
@@ -66,7 +66,11 @@
                                         <button name="action" value="approve" class="btn btn-sm btn-primary">Setujui</button>
                                     </form>
                                     @if ($row['has_supporting_document'])
-                                        <a href="{{ route('workspace.hris.supporting-document', [$row['type'], $item->getKey(), $row['step']]) }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">Dokumen</a>
+                                        @if ($row['can_preview_supporting_document'])
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#supporting-{{ $rowKey }}">Dokumen</button>
+                                        @else
+                                            <a href="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'download' => 1]) }}" class="btn btn-sm btn-outline-secondary">Dokumen</a>
+                                        @endif
                                     @endif
                                     <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reject-{{ $rowKey }}">Tolak</button>
                                     @if ($row['type'] === 'leave')
@@ -75,6 +79,12 @@
                                 </div>
                             </td>
                         </tr>
+
+                        @if ($row['has_supporting_document'] && $row['can_preview_supporting_document'])
+                            <div class="modal fade" id="supporting-{{ $rowKey }}" tabindex="-1" aria-labelledby="supporting-title-{{ $rowKey }}" aria-hidden="true">
+                                <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="supporting-title-{{ $rowKey }}">Dokumen pendukung · {{ $item->employee?->full_name ?? '-' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">@if ($row['supporting_mime_type'] === 'application/pdf')<iframe src="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>@else<img src="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'preview' => 1]) }}" alt="Dokumen pendukung" class="img-fluid d-block mx-auto" style="max-height:70vh">@endif</div></div></div>
+                            </div>
+                        @endif
 
                         <div class="modal fade" id="detail-{{ $rowKey }}" tabindex="-1" aria-labelledby="detail-title-{{ $rowKey }}" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -108,7 +118,7 @@
                                                 <div class="col-12"><div class="small text-secondary">Keperluan</div><div class="fw-semibold">{{ $item->purpose ?: '-' }}</div></div>
                                             @endif
                                             <div class="col-12"><div class="small text-secondary">Diajukan pada</div><div class="fw-semibold">{{ $item->created_at?->format('d/m/Y H:i') ?? '-' }}</div></div>
-                                            <div class="col-12"><div class="small text-secondary">Dokumen pendukung</div>@if ($row['has_supporting_document'])<a href="{{ route('workspace.hris.supporting-document', [$row['type'], $item->getKey(), $row['step']]) }}" class="btn btn-sm btn-outline-primary mt-1" target="_blank" rel="noopener">Buka dokumen pendukung</a>@else<div class="text-secondary mt-1">Dokumen pendukung tidak tersedia atau belum diupload.</div>@endif</div>
+                                            <div class="col-12"><div class="small text-secondary">Dokumen pendukung</div>@if ($row['has_supporting_document'])@if ($row['can_preview_supporting_document'])<button type="button" class="btn btn-sm btn-outline-primary mt-1" data-bs-toggle="modal" data-bs-target="#supporting-{{ $rowKey }}">Preview dokumen pendukung</button>@else<a href="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'download' => 1]) }}" class="btn btn-sm btn-outline-primary mt-1">Unduh dokumen pendukung</a>@endif@else<div class="text-secondary mt-1">Dokumen pendukung tidak tersedia atau belum diupload.</div>@endif</div>
                                         </div>
                                     </div>
                                     <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button></div>

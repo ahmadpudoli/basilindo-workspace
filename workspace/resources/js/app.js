@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mime = trigger.dataset.previewType || '';
         const title = trigger.dataset.previewTitle || 'Preview dokumen';
         previewTitle.textContent = title;
-        previewFallback.href = url;
+        previewFallback.href = trigger.dataset.previewFallbackUrl || url;
         previewStage.replaceChildren();
         showLoading('Memuat dokumen...');
 
@@ -572,6 +572,16 @@ document.addEventListener('DOMContentLoaded', () => {
             toggle.indeterminate = items.some((item) => item.checked) && !toggle.checked;
         };
         toggle.addEventListener('change', () => items.forEach((item) => { item.checked = toggle.checked; }));
+        items.forEach((item) => item.addEventListener('change', sync));
+        sync();
+    });
+
+    document.querySelectorAll('.workspace-permission-subgroup').forEach((subgroup) => {
+        const items = [...subgroup.querySelectorAll('[data-permission-item]')];
+        const counter = subgroup.querySelector('.workspace-permission-subgroup-title em');
+        const sync = () => {
+            if (counter) counter.textContent = `${items.filter((item) => item.checked).length} dipilih`;
+        };
         items.forEach((item) => item.addEventListener('change', sync));
         sync();
     });

@@ -36,6 +36,9 @@
             </div>
 
             <div class="workspace-notification-detail-message">{{ $notification->message }}</div>
+            @if(data_get($notification->data, 'request_number') || data_get($notification->data, 'requester_name'))
+                <div class="alert alert-light border mt-3 mb-0"><strong>Identitas pengajuan</strong><div class="small mt-1">Nomor: {{ data_get($notification->data, 'request_number', '—') }} · Pemohon: {{ data_get($notification->data, 'requester_name', '—') }}</div></div>
+            @endif
 
             <div class="workspace-notification-detail-footer">
                 @if($targetUrl)

@@ -7,7 +7,9 @@ use App\Modules\HRIS\Domain\Models\Employee;
 use App\Modules\HRIS\Domain\Models\Claim;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
 use App\Modules\HRIS\Domain\Models\OvertimeRequest;
+use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class HrisDashboardController extends Controller
@@ -61,6 +63,8 @@ class HrisDashboardController extends Controller
         $canCreateEmployees = $user->hasRole('super_admin') || $user->can('create_employee');
         $canCreateLeave = $user->hasRole('super_admin') || $user->can('create_leave_request');
         $canViewLeave = $user->hasRole('super_admin') || $user->can('view_any_leave_request');
+        $canViewApprovals = $user->hasRole('super_admin') || $user->can('view_hris_approvals');
+        $approvalRows = $this->approvalRows($user);
 
         if (! $canViewEmployees) {
             $personalLeave = LeaveRequest::query()->where(function ($query) use ($user): void {
@@ -78,6 +82,8 @@ class HrisDashboardController extends Controller
 
             return view('modules.hris-dashboard-personal', [
                 'canCreateLeave' => $canCreateLeave,
+                'canViewApprovals' => $canViewApprovals,
+                'approvalRows' => $approvalRows,
                 'personalStats' => [
                     ['label' => 'Cuti & sakit saya', 'value' => (clone $personalLeave)->count()],
                     ['label' => 'Lembur saya', 'value' => (clone $personalOvertime)->count()],
@@ -94,6 +100,8 @@ class HrisDashboardController extends Controller
         return view('modules.hris-dashboard', [
             'canCreateEmployees' => $canCreateEmployees,
             'canCreateLeave' => $canCreateLeave,
+            'canViewApprovals' => $canViewApprovals,
+            'approvalRows' => $approvalRows,
             'canViewEmployees' => $canViewEmployees,
             'stats' => [
                 ['label' => 'Karyawan aktif', 'value' => $employees ? (clone $employees)->where('status', 'active')->count() : 0],
@@ -102,5 +110,22 @@ class HrisDashboardController extends Controller
             ],
             'employees' => $employees ? $employees->with(['company', 'manager'])->latest()->limit(5)->get() : collect(),
         ]);
+    }
+
+    private function approvalRows($user): Collection
+    {
+        if (! $user->hasRole('super_admin') && ! $user->can('view_hris_approvals')) return collect();
+
+        $manager = Employee::query()->where('user_id', $user->getKey())->first();
+        $subordinateIds = $manager ? Employee::query()->where('manager_id', $manager->getKey())->pluck('id') : collect();
+        $hrCompanyIds = HrisWorkflowApprover::query()->where('workflow_key', 'leave_sick')->where('step', 'hr')->where('user_id', $user->getKey())->where('is_active', true)->pluck('company_id');
+
+        return collect()
+            ->concat(LeaveRequest::query()->with(['employee', 'dates'])->whereIn('employee_id', $subordinateIds)->where('status', 'pending_manager')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'leave', 'step' => 'manager', 'stage' => 'Atasan', 'label' => $item->type === 'sick' ? 'Sakit' : 'Cuti']))
+            ->concat(OvertimeRequest::query()->with('employee')->whereIn('employee_id', $subordinateIds)->where('status', 'pending_manager')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'overtime', 'step' => 'manager', 'stage' => 'Atasan', 'label' => 'Lembur']))
+            ->concat(Claim::query()->with('employee')->whereIn('employee_id', $subordinateIds)->where('status', 'pending_manager')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'claim', 'step' => 'manager', 'stage' => 'Atasan', 'label' => $item->type === 'cash_advance' ? 'Cash advance' : 'Reimbursement']))
+            ->concat(LeaveRequest::query()->with(['employee', 'dates'])->whereIn('company_id', $hrCompanyIds)->where('status', 'pending_hr')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'leave', 'step' => 'hr', 'stage' => 'HR', 'label' => $item->type === 'sick' ? 'Sakit' : 'Cuti']))
+            ->sortByDesc(fn (array $row) => $row['item']->created_at?->timestamp ?? 0)
+            ->values();
     }
 }

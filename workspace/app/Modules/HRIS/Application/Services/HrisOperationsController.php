@@ -49,6 +49,8 @@ class HrisOperationsController extends Controller
         $approvalRows = $approvalRows->map(function (array $row) use ($supportingDisk): array {
             $objectKey = $row['item']->supporting_document_id;
             $row['has_supporting_document'] = filled($objectKey) && $supportingDisk->exists((string) $objectKey);
+            $row['supporting_mime_type'] = $row['has_supporting_document'] ? ($supportingDisk->mimeType((string) $objectKey) ?: 'application/octet-stream') : null;
+            $row['can_preview_supporting_document'] = $row['supporting_mime_type'] === 'application/pdf' || str_starts_with((string) $row['supporting_mime_type'], 'image/');
 
             return $row;
         });
@@ -87,6 +89,8 @@ class HrisOperationsController extends Controller
         abort_unless($model->status === $expectedStatus, 404);
         $supportingDisk = Storage::disk(config('filesystems.default', 's3'));
         $hasSupportingDocument = filled($model->supporting_document_id) && $supportingDisk->exists((string) $model->supporting_document_id);
+        $supportingMimeType = $hasSupportingDocument ? ($supportingDisk->mimeType((string) $model->supporting_document_id) ?: 'application/octet-stream') : null;
+        $canPreviewSupportingDocument = $supportingMimeType === 'application/pdf' || str_starts_with((string) $supportingMimeType, 'image/');
         $typeLabel = match ($type) {
             'leave' => $model->type === 'sick' ? 'Sakit' : 'Cuti',
             'overtime' => 'Lembur',
@@ -94,26 +98,79 @@ class HrisOperationsController extends Controller
         };
         $stage = $step === 'manager' ? 'Atasan' : 'HR';
 
-        return view('modules.hris-approval-detail', compact('model', 'type', 'step', 'stage', 'typeLabel', 'hasSupportingDocument'));
+        return view('modules.hris-approval-detail', compact('model', 'type', 'step', 'stage', 'typeLabel', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument'));
     }
 
-    public function overtime(Request $request): View { Gate::authorize('viewAny', OvertimeRequest::class); $items = OvertimeRequest::query()->visibleTo($request->user())->with('employee')->latest()->paginate(10)->withQueryString(); return view('modules.hris-overtime', compact('items')); }
-    public function overtimeCreate(Request $request): View { Gate::authorize('create', OvertimeRequest::class); return view('modules.hris-overtime-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get()]); }
-    public function overtimeStore(OvertimeRequestForm $request, OvertimeService $service): RedirectResponse { Gate::authorize('create', OvertimeRequest::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $service->submit($employee, $request->validated(), $request->user()->id); return redirect()->route('workspace.hris.overtime')->with('status', 'Pengajuan lembur berhasil dikirim.'); }
+    public function overtime(Request $request): View
+    {
+        $summaryView = $request->string('view')->toString() === 'summary';
+        if ($summaryView) {
+            abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('view_hris_overtime_summary'), 403);
+        } else {
+            Gate::authorize('viewAny', OvertimeRequest::class);
+        }
+
+        $items = OvertimeRequest::query()
+            ->when($summaryView && ! $request->user()->hasRole('super_admin'), fn ($query) => $query->whereIn('company_id', $request->user()->companies()->pluck('companies.id')))
+            ->when(! $summaryView, fn ($query) => $query->visibleTo($request->user()))
+            ->with('employee')
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('modules.hris-overtime', compact('items', 'summaryView'));
+    }
+
+    public function overtimeSummary(Request $request): View
+    {
+        abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('view_hris_overtime_summary'), 403);
+        $companyScope = $request->user()->hasRole('super_admin') ? null : $request->user()->companies()->pluck('companies.id');
+        $items = OvertimeRequest::query()
+            ->when($companyScope !== null, fn ($query) => $query->whereIn('company_id', $companyScope))
+            ->with(['employee.company'])
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+        $metricsQuery = OvertimeRequest::query()->when($companyScope !== null, fn ($query) => $query->whereIn('company_id', $companyScope));
+        $metrics = [
+            'total' => (clone $metricsQuery)->count(),
+            'pending' => (clone $metricsQuery)->whereIn('status', ['pending_manager', 'pending_hr'])->count(),
+            'approved_minutes' => (int) (clone $metricsQuery)->where('status', 'approved')->sum('duration_minutes'),
+        ];
+
+        return view('modules.hris-overtime-summary', compact('items', 'metrics'));
+    }
+    public function overtimeCreate(Request $request): View { Gate::authorize('create', OvertimeRequest::class); $requestNumber = OvertimeRequest::generateRequestNumber(); $request->session()->put('hris.request_number.overtime', $requestNumber); return view('modules.hris-overtime-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get(), 'requestNumber' => $requestNumber]); }
+    public function overtimeStore(OvertimeRequestForm $request, OvertimeService $service): RedirectResponse { Gate::authorize('create', OvertimeRequest::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $data = $request->validated(); $data['request_number'] = $request->session()->pull('hris.request_number.overtime', null); $service->submit($employee, $data, $request->user()->id); return redirect()->route('workspace.hris.overtime')->with('status', 'Pengajuan lembur berhasil dikirim.'); }
 
     public function claims(Request $request): View
     {
-        Gate::authorize('viewAny', Claim::class);
         $type = in_array($request->string('type')->toString(), ['reimbursement', 'cash_advance'], true) ? $request->string('type')->toString() : null;
+        $summaryView = $request->string('view')->toString() === 'summary';
+        if ($summaryView) {
+            abort_unless($type !== null, 404);
+            $permission = $type === 'reimbursement' ? 'view_hris_reimbursement_summary' : 'view_hris_cash_advance_summary';
+            abort_unless($request->user()->hasRole('super_admin') || $request->user()->can($permission), 403);
+        } else {
+            Gate::authorize('viewAny', Claim::class);
+        }
         $status = in_array($request->string('status')->toString(), ['submitted', 'pending_manager', 'pending_finance', 'pending_final', 'awaiting_accountability', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
         $sort = in_array($request->string('sort')->toString(), ['type', 'amount', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $items = Claim::query()->visibleTo($request->user())->with('employee')->when($type, fn ($q) => $q->where('type', $type))->when($status, fn ($q) => $q->where('status', $status))->orderBy($sort, $direction)->paginate($perPage)->withQueryString();
-        return view('modules.hris-claims-enhanced', compact('items', 'type', 'status', 'perPage', 'sort', 'direction'));
+        $items = Claim::query()
+            ->when($summaryView && ! $request->user()->hasRole('super_admin'), fn ($query) => $query->whereIn('company_id', $request->user()->companies()->pluck('companies.id')))
+            ->when(! $summaryView, fn ($query) => $query->visibleTo($request->user()))
+            ->with('employee')
+            ->when($type, fn ($q) => $q->where('type', $type))
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->orderBy($sort, $direction)
+            ->paginate($perPage)
+            ->withQueryString();
+        return view('modules.hris-claims-enhanced', compact('items', 'type', 'status', 'perPage', 'sort', 'direction', 'summaryView'));
     }
-    public function claimCreate(Request $request): View { Gate::authorize('create', Claim::class); return view('modules.hris-claim-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get(), 'selectedType' => $request->string('type')->toString()]); }
-    public function claimStore(ClaimRequestForm $request, ClaimService $service): RedirectResponse { Gate::authorize('create', Claim::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $service->submit($employee, $request->validated(), $request->user()->id); return redirect()->route('workspace.hris.claims')->with('status', 'Pengajuan claim berhasil dikirim.'); }
+    public function claimCreate(Request $request): View { Gate::authorize('create', Claim::class); $requestNumber = Claim::generateRequestNumber(); $request->session()->put('hris.request_number.claim', $requestNumber); return view('modules.hris-claim-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get(), 'selectedType' => $request->string('type')->toString(), 'requestNumber' => $requestNumber]); }
+    public function claimStore(ClaimRequestForm $request, ClaimService $service): RedirectResponse { Gate::authorize('create', Claim::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $data = $request->validated(); $data['request_number'] = $request->session()->pull('hris.request_number.claim', null); $service->submit($employee, $data, $request->user()->id); return redirect()->route('workspace.hris.claims')->with('status', 'Pengajuan claim berhasil dikirim.'); }
 
     public function approve(Request $request, string $type, string $id, string $step): RedirectResponse
     {
@@ -161,15 +218,19 @@ class HrisOperationsController extends Controller
         $stream = $disk->readStream($objectKey);
         abort_unless(is_resource($stream), 404);
 
+        $mimeType = $disk->mimeType($objectKey) ?: 'application/octet-stream';
+        $filename = basename($objectKey);
+        $headers = [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => $request->boolean('preview') ? 'inline; filename="'.addslashes($filename).'"' : 'attachment; filename="'.addslashes($filename).'"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ];
+
         return response()->stream(function () use ($stream): void {
             fpassthru($stream);
             fclose($stream);
-        }, 200, [
-            'Content-Type' => $disk->mimeType($objectKey) ?: 'application/octet-stream',
-            'Content-Disposition' => 'inline; filename="'.addslashes(basename($objectKey)).'"',
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control' => 'private, no-store',
-        ]);
+        }, 200, $headers);
     }
 
     public function accountability(Request $request, string $id): RedirectResponse

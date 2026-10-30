@@ -66,14 +66,18 @@
                 'items' => [
                     ['label' => 'Ringkasan', 'url' => route('workspace.hris'), 'permission' => 'access_hris'],
                     ['label' => 'Biodata', 'url' => route('workspace.hris.biodata'), 'permission' => 'access_hris'],
+                    ['label' => 'Daftar Karyawan', 'url' => route('workspace.hris.employees'), 'permission' => 'view_any_employee'],
+                    ['label' => 'Dokumen Karyawan', 'url' => route('workspace.hris.employee-documents'), 'permission' => 'view_own_employee_documents'],
                     ['label' => 'Approval Pengajuan', 'url' => route('workspace.hris.approvals'), 'permission' => 'view_hris_approvals'],
                     ['label' => 'Manajemen Kehadiran', 'icon' => 'calendar', 'items' => [
-                        ['label' => 'Ringkasan Cuti Karyawan', 'url' => route('workspace.hris.leave-requests', ['view' => 'summary']), 'permission' => 'view_hris_leave_summary'],
+                        ['label' => 'Ringkasan Cuti Karyawan', 'url' => route('workspace.hris.leave-summary'), 'permission' => 'view_hris_leave_summary'],
                         ['label' => 'Cuti & Sakit', 'url' => route('workspace.hris.leave-requests'), 'permission' => 'access_hris'],
-                        ['label' => 'Ringkasan Lembur Karyawan', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_hris_overtime_summary'],
+                        ['label' => 'Ringkasan Lembur Karyawan', 'url' => route('workspace.hris.overtime-summary'), 'permission' => 'view_hris_overtime_summary'],
                         ['label' => 'Lembur', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_any_overtime'],
                     ]],
                     ['label' => 'Manajemen Claim', 'icon' => 'document', 'items' => [
+                        ['label' => 'Ringkasan Reimbursement', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'reimbursement']), 'permission' => 'view_hris_reimbursement_summary'],
+                        ['label' => 'Ringkasan Cash Advance', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'cash_advance']), 'permission' => 'view_hris_cash_advance_summary'],
                         ['label' => 'Reimbursement & Cash Advance', 'url' => route('workspace.hris.claims'), 'permission' => 'view_any_claim'],
                     ]],
                 ],
@@ -134,7 +138,7 @@
             'Project' => 'project', 'Ticket' => 'ticket', 'Board ticket' => 'board', 'Timeline' => 'timeline', 'Epic' => 'epic',
             'Catatan' => 'note', 'Komentar' => 'comment', 'Notifikasi' => 'notification', 'Kontribusi pengguna' => 'users',
             'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Dokumen' => 'document', 'Upload dokumen' => 'upload',
-            'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Karyawan' => 'users', 'Biodata' => 'users', 'Cuti & sakit' => 'calendar', 'Cuti & Sakit' => 'calendar', 'Lembur' => 'calendar', 'Reimbursement & cash advance' => 'document', 'Reimbursement & Cash Advance' => 'document', 'Pengaturan HRIS' => 'settings', 'Semua modul' => 'grid',
+            'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Karyawan' => 'users', 'Daftar Karyawan' => 'users', 'Biodata' => 'users', 'Cuti & sakit' => 'calendar', 'Cuti & Sakit' => 'calendar', 'Lembur' => 'calendar', 'Reimbursement & cash advance' => 'document', 'Reimbursement & Cash Advance' => 'document', 'Pengaturan HRIS' => 'settings', 'Semua modul' => 'grid',
         ];
         $userName = auth()->user()?->name ?: auth()->user()?->email;
         $userInitial = $userName ? mb_strtoupper(mb_substr($userName, 0, 1)) : 'B';

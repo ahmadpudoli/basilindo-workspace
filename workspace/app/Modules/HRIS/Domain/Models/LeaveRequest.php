@@ -13,10 +13,11 @@ class LeaveRequest extends Model
     protected $table = 'leave_requests';
     protected $keyType = 'string';
     public $incrementing = false;
-    protected $fillable = ['employee_id', 'company_id', 'type', 'status', 'total_days', 'reason', 'supporting_document_id', 'created_by', 'requester_user_id', 'submitted_at', 'revision_requested_by', 'revision_requested_role', 'revision_type', 'revision_reason', 'revision_requested_at', 'revision_submitted_at', 'revision_number'];
+    protected $fillable = ['request_number', 'employee_id', 'company_id', 'type', 'status', 'total_days', 'reason', 'supporting_document_id', 'created_by', 'requester_user_id', 'submitted_at', 'revision_requested_by', 'revision_requested_role', 'revision_type', 'revision_reason', 'revision_requested_at', 'revision_submitted_at', 'revision_number'];
     protected function casts(): array { return ['total_days' => 'integer', 'revision_number' => 'integer', 'submitted_at' => 'datetime', 'manager_approved_at' => 'datetime', 'hr_approved_at' => 'datetime', 'revision_requested_at' => 'datetime', 'revision_submitted_at' => 'datetime', 'cancelled_at' => 'datetime']; }
 
-    protected static function booted(): void { static::creating(fn (self $request) => $request->id ??= (string) Str::ulid()); }
+    protected static function booted(): void { static::creating(function (self $request): void { $request->id ??= (string) Str::ulid(); $request->request_number ??= self::generateRequestNumber(); }); }
+    public static function generateRequestNumber(): string { return 'HRIS-LEAVE-'.now()->format('Ymd').'-'.Str::upper(Str::random(10)); }
     public function employee() { return $this->belongsTo(Employee::class); }
     public function requester() { return $this->belongsTo(User::class, 'requester_user_id'); }
     public function company() { return $this->belongsTo(Company::class); }

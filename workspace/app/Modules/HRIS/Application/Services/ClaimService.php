@@ -15,8 +15,9 @@ class ClaimService
         if ((float) $data['amount'] <= 0) throw ValidationException::withMessages(['amount' => 'Nominal harus lebih besar dari nol.']);
         return DB::connection('hris')->transaction(function () use ($employee, $data, $actorId): Claim {
             $claim = Claim::create(array_merge($data, ['employee_id' => $employee->id, 'company_id' => $employee->company_id, 'created_by' => $actorId, 'status' => 'submitted']));
-            app(HrisWorkflowService::class)->notify($actorId, 'Pengajuan claim terkirim', 'Pengajuan reimbursement atau cash advance Anda berhasil dikirim.', ['request_type' => 'claim', 'request_id' => $claim->id, 'status' => $claim->status]);
-        if ($employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Pengajuan '.($claim->type === 'cash_advance' ? 'cash advance' : 'reimbursement').' baru', 'Pengajuan '.($claim->type === 'cash_advance' ? 'cash advance' : 'reimbursement').' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'claim', 'request_id' => $claim->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
+            $label = $claim->type === 'cash_advance' ? 'cash advance' : 'reimbursement';
+            app(HrisWorkflowService::class)->notify($actorId, 'Pengajuan '.$label.' ['.$claim->request_number.'] terkirim', 'Pengajuan '.$label.' nomor '.$claim->request_number.' berhasil dikirim.', ['request_type' => 'claim', 'request_id' => $claim->id, 'status' => $claim->status]);
+        if ($employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Pengajuan '.$label.' ['.$claim->request_number.'] baru', 'Pengajuan '.$label.' nomor '.$claim->request_number.' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'claim', 'request_id' => $claim->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
             return $claim;
         });
     }

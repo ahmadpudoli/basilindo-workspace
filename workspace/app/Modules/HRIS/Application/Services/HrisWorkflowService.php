@@ -17,6 +17,7 @@ class HrisWorkflowService
     public function notify(int $userId, string $title, string $message, array $data = []): void
     {
         if (! User::query()->whereKey($userId)->exists()) return;
+        $data = $this->enrichRequestData($data);
         Notification::create(['user_id' => $userId, 'type' => 'hris', 'title' => $title, 'message' => $message, 'data' => $data]);
         SendWebPushNotification::dispatch($userId, $title, $message, $data);
     }
@@ -86,12 +87,35 @@ class HrisWorkflowService
 
     private function requestLabel(string $requestType, object $request): string
     {
-        return match ($requestType) {
+        $label = match ($requestType) {
             'leave' => $request->type === 'sick' ? 'Pengajuan sakit' : 'Pengajuan cuti',
             'overtime' => 'Pengajuan lembur',
             'claim' => $request->type === 'cash_advance' ? 'Pengajuan cash advance' : 'Pengajuan reimbursement',
             default => 'Pengajuan HRIS',
         };
+
+        return filled($request->request_number ?? null) ? $label.' ['.$request->request_number.']' : $label;
+    }
+
+    private function enrichRequestData(array $data): array
+    {
+        $requestType = $data['request_type'] ?? null;
+        $requestId = $data['request_id'] ?? null;
+        if (! is_string($requestType) || ! filled($requestId)) return $data;
+
+        $request = match ($requestType) {
+            'leave' => LeaveRequest::query()->with('employee')->find($requestId),
+            'overtime' => OvertimeRequest::query()->with('employee')->find($requestId),
+            'claim' => Claim::query()->with('employee')->find($requestId),
+            default => null,
+        };
+        if (! $request) return $data;
+
+        $data['request_number'] ??= $request->request_number;
+        $data['requester_name'] ??= $request->employee?->full_name;
+        $data['request_label'] ??= $this->requestLabel($requestType, $request);
+
+        return $data;
     }
 
     private function stepLabel(string $step): string

@@ -17,6 +17,11 @@
         'view_hris_overtime_summary' => 'HRIS',
         'view_hris_reimbursement_summary' => 'HRIS',
         'view_hris_cash_advance_summary' => 'HRIS',
+        'download_employee_documents' => 'HRIS',
+        'manage_employee_documents' => 'HRIS',
+        'upload_employee_documents' => 'HRIS',
+        'view_employee_documents' => 'HRIS',
+        'view_own_employee_documents' => 'HRIS',
         'access_settings' => 'Core & Pengaturan',
     ];
     $permissionGroups = $permissions->groupBy(function ($permission) use ($modulePermissionGroups) {
@@ -27,7 +32,7 @@
             str_contains($name, 'company') || str_contains($name, 'vendor') => 'Company & Vendor',
             str_contains($name, 'crm_') => 'CRM',
             str_contains($name, 'document') => 'Document Management',
-            str_contains($name, 'project') || str_contains($name, 'ticket') => 'Project Management',
+            str_contains($name, 'project') || str_contains($name, 'ticket') || str_contains($name, 'epic') || str_contains($name, 'note') || str_contains($name, 'comment') => 'Project Management',
             str_contains($name, 'hris') || str_ends_with($name, '_employee') || str_ends_with($name, '_leave_request') || str_ends_with($name, '_overtime') || str_ends_with($name, '_claim') => 'HRIS',
             str_contains($name, 'user') || str_contains($name, 'role') || str_contains($name, 'audit') || $name === 'access_settings' => 'Core & Pengaturan',
             default => 'Lainnya',
@@ -52,28 +57,8 @@
             <div class="col-md-6"><label class="form-label">Guard *</label><input name="guard_name" value="{{ old('guard_name', $role->guard_name ?? 'web') }}" class="form-control" required></div>
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Permission role</label><span class="text-secondary small">Kelompokkan berdasarkan modul</span></div>
-                <div class="workspace-permission-groups">
-                    @foreach($permissionGroups as $group => $groupPermissions)
-                        @php($permissionPanelId = 'rolePermissionGroup'.$loop->index)
-                        <section class="workspace-permission-group">
-                            <div class="workspace-permission-group-header">
-                                <button type="button" class="workspace-permission-collapse-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#{{ $permissionPanelId }}" aria-expanded="false" aria-controls="{{ $permissionPanelId }}">
-                                    <span><strong>{{ $group }}</strong><small>{{ $groupPermissions->count() }} permission</small></span>
-                                    <span class="workspace-permission-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></span>
-                                </button>
-                                <label class="workspace-permission-select-all"><input type="checkbox" data-permission-group-toggle><span>Pilih semua</span></label>
-                            </div>
-                            <div id="{{ $permissionPanelId }}" class="collapse">
-                                <div class="workspace-permission-grid">
-                                    @foreach($groupPermissions as $permission)
-                                        <label class="workspace-permission-option"><input type="checkbox" name="permissions[]" value="{{ $permission->name }}" data-permission-item @checked($isProtectedSuperAdminRole || in_array($permission->name, $selectedPermissions, true)) @disabled($isProtectedSuperAdminRole)><span>{{ $permission->name }}</span></label>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </section>
-                    @endforeach
-                </div>
-                <div class="form-text mt-3">Role <code>super_admin</code> selalu dipulihkan ke seluruh permission.@if($isProtectedSuperAdminRole) Permission role ini dikunci dan tidak dapat dikurangi.@endif</div>
+                @include('modules.partials.permission-assignment-groups', ['permissionGroups' => $permissionGroups, 'permissionPanelPrefix' => 'rolePermissionGroup', 'selectedPermissions' => $selectedPermissions, 'isProtected' => $isProtectedSuperAdminRole])
+                <div class="form-text mt-3">Role <code>super_admin</code> selalu dipulihkan ke seluruh permission. Untuk menampilkan menu HRIS, centang <code>access_hris</code>; permission fitur tetap mengatur halaman dan aksi secara granular.@if($isProtectedSuperAdminRole) Permission role ini dikunci dan tidak dapat dikurangi.@endif</div>
             </div>
         </div>
     </div>

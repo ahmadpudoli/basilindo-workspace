@@ -25,8 +25,8 @@ class OvertimeService
             if ($minutes <= 0) throw ValidationException::withMessages(['end_time' => 'Durasi lembur setelah pembulatan harus lebih dari 0 menit.']);
             if ($maximum !== null && $minutes > (int) $maximum) throw ValidationException::withMessages(['end_time' => "Durasi lembur setelah pembulatan tidak boleh melebihi {$maximum} menit."]);
             $request = OvertimeRequest::create(['employee_id' => $employee->id, 'company_id' => $employee->company_id, 'work_date' => $data['work_date'], 'start_time' => $data['start_time'], 'end_time' => $data['end_time'], 'duration_minutes' => $minutes, 'reason' => $data['reason'], 'created_by' => $actorId, 'status' => 'submitted']);
-            app(HrisWorkflowService::class)->notify($actorId, 'Pengajuan lembur terkirim', 'Pengajuan lembur Anda berhasil dikirim dan menunggu pemeriksaan atasan.', ['request_type' => 'overtime', 'request_id' => $request->id, 'status' => $request->status]);
-        if ($employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Pengajuan lembur baru', 'Pengajuan lembur dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'overtime', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
+            app(HrisWorkflowService::class)->notify($actorId, 'Pengajuan lembur ['.$request->request_number.'] terkirim', 'Pengajuan lembur nomor '.$request->request_number.' berhasil dikirim.', ['request_type' => 'overtime', 'request_id' => $request->id, 'status' => $request->status]);
+        if ($employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Pengajuan lembur ['.$request->request_number.'] baru', 'Pengajuan lembur nomor '.$request->request_number.' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'overtime', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
             return $request;
         });
     }

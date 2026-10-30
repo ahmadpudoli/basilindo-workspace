@@ -21,6 +21,11 @@
         'view_hris_overtime_summary' => 'HRIS',
         'view_hris_reimbursement_summary' => 'HRIS',
         'view_hris_cash_advance_summary' => 'HRIS',
+        'download_employee_documents' => 'HRIS',
+        'manage_employee_documents' => 'HRIS',
+        'upload_employee_documents' => 'HRIS',
+        'view_employee_documents' => 'HRIS',
+        'view_own_employee_documents' => 'HRIS',
         'access_settings' => 'Core & Pengaturan',
     ];
     $permissionGroups = $permissions->groupBy(function ($permission) use ($modulePermissionGroups) {
@@ -30,7 +35,7 @@
             str_contains($name, 'company') || str_contains($name, 'vendor') => 'Company & Vendor',
             str_contains($name, 'crm_') => 'CRM',
             str_contains($name, 'document') => 'Document Management',
-            str_contains($name, 'project') || str_contains($name, 'ticket') => 'Project Management',
+            str_contains($name, 'project') || str_contains($name, 'ticket') || str_contains($name, 'epic') || str_contains($name, 'note') || str_contains($name, 'comment') => 'Project Management',
             str_contains($name, 'hris') || str_ends_with($name, '_employee') || str_ends_with($name, '_leave_request') || str_ends_with($name, '_overtime') || str_ends_with($name, '_claim') => 'HRIS',
             str_contains($name, 'user') || str_contains($name, 'role') || str_contains($name, 'audit') || $name === 'access_settings' => 'Core & Pengaturan',
             default => 'Lainnya',
@@ -43,13 +48,19 @@
 <div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Pengaturan akun</div><h1 class="h3 mb-1">{{ isset($user) ? 'Edit pengguna' : 'Tambah pengguna' }}</h1><p class="text-secondary mb-0">Atur role, permission tambahan, dan perusahaan yang dapat diakses pengguna.</p></div>
 <form method="POST" action="{{ $action ?? route('workspace.core.users.store') }}" class="card border-0 shadow-sm">
     <div class="card-body">
+        @if($errors->any())
+            <div class="alert alert-danger workspace-alert mb-4" role="alert">
+                <strong>Perubahan pengguna belum disimpan.</strong>
+                <ul class="mb-0 mt-2">@foreach(array_unique($errors->all()) as $message)<li>{{ $message }}</li>@endforeach</ul>
+            </div>
+        @endif
         @if($isProtectedSystemUser)<div class="alert alert-warning">Akun sistem ini memiliki akses penuh. Role, perusahaan, dan permission dikunci.</div>@endif
         @csrf @if(isset($user)) @method('PUT') @endif
         <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Nama *</label><input name="name" value="{{ old('name', $user->name ?? '') }}" class="form-control" required></div>
-            <div class="col-md-6"><label class="form-label">Email *</label><input name="email" type="email" value="{{ old('email', $user->email ?? '') }}" class="form-control" required></div>
-            <div class="col-md-6"><label class="form-label">Password {{ isset($user) ? '(kosongkan jika tidak diubah)' : '*' }}</label><input name="password" type="password" class="form-control" {{ isset($user) ? '' : 'required' }}></div>
-            <div class="col-md-6"><label class="form-label">Konfirmasi password</label><input name="password_confirmation" type="password" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Nama *</label><input name="name" value="{{ old('name', $user->name ?? '') }}" class="form-control @error('name') is-invalid @enderror" required>@error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6"><label class="form-label">Email *</label><input name="email" type="email" value="{{ old('email', $user->email ?? '') }}" class="form-control @error('email') is-invalid @enderror" required>@error('email')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6"><label class="form-label">Password {{ isset($user) ? '(kosongkan jika tidak diubah)' : '*' }}</label><input name="password" type="password" class="form-control @error('password') is-invalid @enderror" {{ isset($user) ? '' : 'required' }}>@error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+            <div class="col-md-6"><label class="form-label">Konfirmasi password</label><input name="password_confirmation" type="password" class="form-control @error('password_confirmation') is-invalid @enderror">@error('password_confirmation')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
             <div class="col-12"><label class="form-label">Karyawan terkait <span class="text-secondary fw-normal">(opsional untuk akun non-karyawan)</span></label><select name="employee_id" class="form-select @error('employee_id') is-invalid @enderror" @disabled($isProtectedSystemUser)><option value="">Tidak ada relasi karyawan</option>@foreach($employees as $employee)<option value="{{ $employee->getKey() }}" @selected((string) $selectedEmployeeId === (string) $employee->getKey())>{{ $employee->full_name }} — NIP {{ $employee->employee_number }}{{ $employee->company ? ' — '.$employee->company->name : '' }}</option>@endforeach</select>@error('employee_id')<div class="invalid-feedback">{{ $message }}</div>@enderror<div class="form-text">Satu karyawan hanya dapat direlasikan ke satu akun Workspace.</div></div>
 
             <div class="col-12">
@@ -70,19 +81,7 @@
 
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Permission tambahan pengguna</label><span class="text-secondary small">Dikelompokkan berdasarkan modul</span></div>
-                <div class="workspace-permission-groups">
-                    @foreach($permissionGroups as $group => $groupPermissions)
-                        @php($permissionPanelId = 'userPermissionGroup'.$loop->index)
-                        <section class="workspace-permission-group">
-                            <div class="workspace-permission-group-header"><button type="button" class="workspace-permission-collapse-toggle collapsed" data-bs-toggle="collapse" data-bs-target="#{{ $permissionPanelId }}" aria-expanded="false" aria-controls="{{ $permissionPanelId }}"><span><strong>{{ $group }}</strong><small>{{ $groupPermissions->count() }} permission</small></span><span class="workspace-permission-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 9 5 5 5-5"/></svg></span></button><label class="workspace-permission-select-all"><input type="checkbox" data-permission-group-toggle><span>Pilih semua</span></label></div>
-                            <div id="{{ $permissionPanelId }}" class="collapse">
-                                <div class="workspace-permission-grid">
-                                    @foreach($groupPermissions as $permission)<label class="workspace-permission-option"><input type="checkbox" name="permissions[]" value="{{ $permission->name }}" data-permission-item @checked(in_array($permission->name, $selectedPermissions, true)) @disabled($isProtectedSystemUser)><span>{{ $permission->name }}</span></label>@endforeach
-                                </div>
-                            </div>
-                        </section>
-                    @endforeach
-                </div>
+                @include('modules.partials.permission-assignment-groups', ['permissionGroups' => $permissionGroups, 'permissionPanelPrefix' => 'userPermissionGroup', 'selectedPermissions' => $selectedPermissions, 'isProtected' => $isProtectedSystemUser])
                 <div class="form-text mt-3">Permission ini menambah hak dari role pengguna.</div>
             </div>
         </div>

@@ -6,6 +6,7 @@
 <form method="POST" action="{{ route('workspace.hris.leave-requests.store') }}" enctype="multipart/form-data" class="card card-body workspace-leave-form workspace-leave-form-columns" data-leave-form data-remaining-leave="{{ max(0, $quota - $usedLeave) }}" novalidate>
 @csrf
 <div class="workspace-leave-column">
+<div class="mb-3"><label class="form-label">Nomor pengajuan</label><input type="hidden" name="request_number" value="{{ old('request_number', $requestNumber) }}"><input class="form-control" value="{{ old('request_number', $requestNumber) }}" readonly><div class="form-text">Nomor dibuat otomatis.</div></div>
 <section class="workspace-date-panel">
     <div class="workspace-leave-quota" data-quota-panel><div><span>Kuota cuti {{ $year }}</span><strong>{{ $quota }} hari</strong></div><div><span>Sudah disetujui</span><strong>{{ $usedLeave }} hari</strong></div><div><span>Sisa cuti</span><strong>{{ max(0, $quota - $usedLeave) }} hari</strong></div><div><span>Sakit tercatat</span><strong>{{ $sickDays }} hari</strong></div></div>
     <div class="workspace-leave-section-heading workspace-date-heading"><h2>Tanggal pengajuan <span class="text-danger">*</span></h2><button type="button" class="btn btn-outline-primary btn-sm" data-add-leave-date>+ Tambah tanggal</button></div>

@@ -34,6 +34,7 @@ class Employee extends Model
     public function manager() { return $this->belongsTo(self::class, 'manager_id'); }
     public function subordinates() { return $this->hasMany(self::class, 'manager_id'); }
     public function leaveRequests() { return $this->hasMany(LeaveRequest::class); }
+    public function employeeDocuments() { return $this->hasMany(EmployeeDocument::class); }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {

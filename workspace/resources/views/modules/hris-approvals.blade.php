@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="mb-4">
-        <div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran & biaya</div>
+        <div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran &amp; claim</div>
         <h1 class="h3 mb-1">Persetujuan HRIS</h1>
         <p class="text-secondary mb-0">Tinjau pengajuan yang menunggu verifikasi manager/atasan atau HR.</p>
     </div>

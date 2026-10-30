@@ -61,18 +61,43 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Revisi substansi selalu kembali ke approval atasan. Revisi administratif
   kembali ke pihak yang meminta revisi; untuk HR berarti langsung ke HR.
 - Setiap permintaan revisi dan pengiriman ulang disimpan sebagai approval event
+- Setiap pengajuan cuti/sakit, lembur, reimbursement, dan cash advance memiliki nomor pengajuan unik otomatis yang tampil pada form, daftar, detail, dan notifikasi.
+- Tautan notifikasi approval hanya membuka detail aksi saat status masih menunggu tahap tersebut; notifikasi lama setelah keputusan mengarah ke daftar approval dan tidak menghasilkan 404.
   beserta aktor, waktu, jenis revisi, dan alasan.
 - Status dan tanggal pengajuan disimpan untuk kebutuhan timeline approval.
 - Halaman daftar menyediakan filter personal berdasarkan jenis, status, dan
   periode, pagination standar, serta akses detail pengajuan.
+- Tabel daftar Cuti & Sakit dan Ringkasan Cuti Karyawan menampilkan tombol
+  Lihat dokumen pada kolom aksi jika pengajuan memiliki lampiran. Tombol
+  membuka dialog preview melalui endpoint privat terotorisasi; PDF dan gambar
+  ditampilkan inline, sedangkan format lain tetap menyediakan fallback buka/
+  unduh.
 - Ringkasan tahun aktif menampilkan kuota, penggunaan, dan sisa cuti; sakit
   hanya dihitung sebagai riwayat tanpa mengurangi kuota.
 - Detail pengajuan menampilkan timeline dibuat, verifikasi manager/atasan,
   verifikasi HR, dan keputusan akhir beserta waktu, aktor, serta komentar.
+- Detail cuti/sakit menyediakan preview dialog untuk PDF/gambar dan unduhan untuk
+  jenis file lain melalui private storage dengan authorization policy pemohon atau
+  scope HRIS yang sesuai.
+- Daftar approval HRIS menggunakan dialog preview untuk dokumen PDF/gambar;
+  jenis file lain tetap tersedia sebagai unduhan.
+- Detail approval HRIS menggunakan dialog preview untuk dokumen pendukung PDF/gambar;
+  tipe file lain tetap menggunakan unduhan.
+- Header halaman persetujuan menggunakan label “Kehadiran & Claim”.
+- Detail dari Ringkasan Cuti Karyawan menggunakan route dan controller khusus
+  Ringkasan, tetapi tetap memakai resource view detail cuti/sakit yang sama.
+  Aksi pengajuan/pemohon disembunyikan dan sidebar tetap berada pada parent
+  Ringkasan Cuti Karyawan.
+- Semua timeline pengajuan menampilkan alasan awal pada aktivitas pengajuan dibuat
+  dan keterangan pada setiap aktivitas approval jika tersedia.
+- Ringkasan pada halaman Cuti & Sakit ditampilkan sebagai empat badge informasi
+  dalam satu panel: kuota, cuti terpakai, sisa cuti, dan sakit tercatat.
 - Badge status pada ringkasan detail pengajuan mengikuti lebar konten label dan
   tidak melebar memenuhi kolom.
 - Form revisi pengajuan memakai struktur visual dan urutan section yang sama
   dengan form create, dengan jenis pengajuan tetap terkunci.
+- Pada revisi pengajuan sakit, lampiran lama tetap digunakan bila file baru
+  dikosongkan; file lama ditampilkan sebagai informasi dan dapat dipreview.
 - Pengajuan cuti ditolak server-side bila belum ada konfigurasi kuota aktif yang
   berlaku untuk tahun tanggal pengajuan.
 - Pesan validasi form tidak ditampilkan sebagai panel global duplikat; error
@@ -100,6 +125,12 @@ audit, dan layout aplikasi yang sudah tersedia.
   penjelasan singkat agar perbedaan Setujui, Tolak, dan Minta revisi jelas.
 - Blok Minta revisi menyediakan panel informasi collapsible untuk menjelaskan
   perbedaan revisi substansi dan revisi administrasi.
+- Permission `view_hris_leave_summary`, `view_hris_overtime_summary`,
+  `view_hris_reimbursement_summary`, dan `view_hris_cash_advance_summary`
+  masing-masing memiliki menu ringkasan dan daftar pengajuan lintas karyawan
+  yang dibatasi oleh scope perusahaan user.
+- Ringkasan Cuti Karyawan dan Ringkasan Lembur Karyawan adalah halaman dan
+  route terpisah dari halaman operasional Cuti & Sakit dan Lembur.
 - Aksi Tolak dan Minta revisi pada halaman detail approval menggunakan modal
   konfirmasi/input agar halaman tetap ringkas; setelah keputusan tersimpan,
   pengguna kembali ke daftar Persetujuan HRIS.
@@ -124,6 +155,9 @@ audit, dan layout aplikasi yang sudah tersedia.
   approval khusus untuk cuti, sakit, lembur, reimbursement, dan cash advance.
 - Permission `view_hris_approvals` menjadi permission granular untuk menu inbox
   approval; data approval manager dibatasi pada bawahan langsung user.
+- Dashboard HRIS menampilkan early warning daftar approval yang menunggu jika
+  user memiliki `view_hris_approvals`; setiap item mengikuti scope inbox dan
+  mengarah ke detail approval yang terotorisasi.
 
 ## Status
 
@@ -142,6 +176,35 @@ memiliki tanggal berlaku, antara lain:
 - `hris.work_calendar`;
 - `hris.approval_workflow`;
 - `hris.overtime_rounding` dan `hris.overtime_maximum`.
+
+## Dokumen karyawan dan kontrak
+
+Dokumen kontrak kerja, addendum, surat pengangkatan, identitas, dan dokumen
+personal disimpan sebagai domain HRIS terpisah dari Document Management. File
+tetap menggunakan private MinIO/S3, dengan object key berprefix
+`hris/employee-documents/{employee_id}`. Metadata disimpan di koneksi HRIS dan
+menyimpan checksum, MIME, ukuran, nama file asli, periode berlaku, serta akun
+pengunggah.
+
+### Acceptance criteria
+
+- Pengguna berpermission dokumen HRIS hanya melihat dokumen karyawan dalam
+  scope perusahaan yang dimilikinya.
+- Upload harus memilih karyawan aktif, jenis dokumen, judul, dan file PDF/JPG/PNG
+  maksimal 20 MB; tanggal berakhir tidak boleh sebelum tanggal berlaku.
+- File tidak disimpan pada public disk dan tidak menjadi bagian dari daftar
+  Document Management umum.
+- Download melewati policy scope dan membaca object private melalui stream.
+- Arsip hanya melakukan soft delete metadata; object tidak dihapus otomatis agar
+  kebutuhan retensi dan audit tetap dapat dipenuhi.
+- Daftar menyediakan pencarian, filter karyawan/jenis, sorting server-side,
+  pagination, dan pilihan 10/25/50/100 baris.
+- Permission dokumen karyawan ditampilkan pada grup HRIS di pengaturan role dan
+  pengguna, meskipun nama teknisnya tetap kompatibel dengan assignment lama.
+- Form upload dokumen memiliki susunan modern dengan area file/preview, metadata
+  dokumen, informasi keamanan, dan nomor dokumen yang dibuat otomatis server-side.
+- Nomor dokumen unik berformat `HRIS-YYYYMMDD-XXXXXXXXXX`, tersimpan sebagai
+  metadata, menjadi bagian dari object key, tampil pada daftar, dan dapat dicari.
 
 ## Di luar fase ini
 

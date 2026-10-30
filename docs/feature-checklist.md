@@ -28,6 +28,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Core User CRUD memiliki edit, update, role assignment, dan safe archive untuk non-system account
 - [x] Core Role CRUD memiliki create, edit, update, delete terproteksi, dan larangan menghapus super_admin
 - [x] Core Role list memiliki filter server-side, tabel responsif, pagination, dan aturan tombol aksi
+- [x] Form Role mengelompokkan permission HRIS berdasarkan fitur halaman dan mengurutkan permission CRUD per resource
+- [x] Panel permission Role dan Edit Pengguna compact serta expandable per fitur untuk seluruh modul
 - [x] Company memiliki CRUD Vendor dengan scope company, policy, validasi, dan soft delete
 - [x] Document Management memiliki form upload private storage dengan validasi file dan metadata dasar, termasuk rule database yang memakai koneksi schema pemilik tabel
 - [-] Document Management memiliki halaman detail kasus verifikasi, review item, release, dan reject lifecycle (ditunda dari alur MVP sederhana)
@@ -246,6 +248,16 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Modul HRIS
 
+- [x] Dokumen kontrak/personal karyawan memiliki domain dan menu khusus HRIS,
+  terpisah dari Document Management umum.
+- [x] Dokumen karyawan diunggah ke private MinIO/S3 dengan prefix HRIS,
+  metadata checksum, MIME, ukuran, periode berlaku, policy scope, dan download
+  terotorisasi.
+- [x] Daftar dokumen karyawan memiliki filter, sorting server-side, pagination,
+  pilihan 10/25/50/100 baris, upload, download, dan arsip soft delete.
+- [x] Form dokumen karyawan memiliki UI modern dan nomor dokumen otomatis unik
+  yang tampil pada daftar serta dapat digunakan untuk pencarian.
+
 - [x] Dokumentasi requirement dan acceptance criteria modul HRIS
 - [x] Master karyawan dengan company scope dan relasi akun user
 - [x] Parameter HRIS per perusahaan/periode
@@ -270,6 +282,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Reimbursement dan workflow Finance
 - [x] Cash advance dan pertanggungjawaban
 - [x] In-app notification
+- [x] Nomor pengajuan otomatis HRIS tampil pada form, daftar, detail, dan notifikasi
+- [x] Tautan notifikasi approval memiliki fallback aman setelah pengajuan selesai diproses
 - [x] Web Push PWA subscription, service worker, queue job, dan VAPID configuration
 - [x] Pengaturan HRIS dipusatkan di modul Pengaturan
 - [x] Cut-off pengajuan cuti unik satu konfigurasi aktif per tahun lintas scope
@@ -285,6 +299,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Blok tindakan approval memiliki judul dan penjelasan yang jelas
 - [x] Panduan jenis revisi tersedia dalam panel collapsible pada detail approval
 - [x] Tolak dan Minta revisi pada detail approval menggunakan modal dan kembali ke daftar
+- [x] Empat permission summary HRIS memiliki menu dan daftar scoped perusahaan
+- [x] Ringkasan Cuti dan Ringkasan Lembur memakai halaman terpisah
 - [x] Pagination, filter, edit, dan arsip parameter HRIS
 - [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
 - [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
@@ -295,6 +311,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
 - [x] Sidebar menampilkan Ringkasan HRIS berbasis `access_hris` dengan mode ringkasan pengajuan pribadi
 - [x] Daftar cuti memiliki resume tahunan, filter, pagination, detail, dan timeline approval
+- [x] Daftar Cuti & Sakit dan Ringkasan Cuti Karyawan memiliki tombol preview lampiran pada kolom aksi melalui dialog privat
 - [x] Badge status pada detail cuti mengikuti lebar konten label
 - [x] Form revisi cuti memakai struktur layout yang sama dengan form create
 - [x] Pengajuan cuti menolak tahun yang belum memiliki konfigurasi kuota
@@ -315,6 +332,9 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Tooltip jenis revisi di popup approval diinisialisasi saat modal ditampilkan
 - [x] Popup minta revisi menampilkan panduan jenis revisi secara langsung
 - [x] Sidebar HRIS mendukung menu bertingkat untuk Biodata, Kehadiran, dan Claim
+- [x] Sidebar HRIS menampilkan menu Pegawai berdasarkan permission `view_any_employee`
+- [x] Label menu Pegawai menggunakan nama bisnis Daftar Karyawan
+- [x] Dashboard HRIS menampilkan early warning approval sesuai permission dan scope inbox
 - [x] Biodata karyawan menampilkan atasan dan treeview bawahan bertingkat
 - [x] Biodata personal mengambil data berdasarkan relasi akun tanpa scope daftar karyawan/company
 - [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
@@ -371,6 +391,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Permission role dikelompokkan per modul dalam panel collapsible dengan kondisi awal tertutup
 - [x] Daftar pengguna memiliki filter nama/email, role, status, pagination 10/25/50/100, dan aturan tombol berbasis permission
 - [x] Daftar pengguna memiliki sorting server-side pada kolom nama, email, dan status
+- [x] Relasi pengguna-karyawan ditampilkan sebagai kolom Karyawan pada tabel utama
 - [x] Feedback login kredensial invalid tampil inline dekat form dengan pesan generik yang jelas
 - [x] Halaman error HTTP utama memiliki template modern, responsif, dan animasi CSS ringan
 - [x] Logo Basilindo digunakan pada identitas aplikasi dan favicon multi-resolusi tersedia
