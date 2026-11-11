@@ -12,6 +12,7 @@ class LeaveRevisionForm extends FormRequest
     public function rules(): array
     {
         return [
+            'action' => ['nullable', 'in:draft,submit'],
             'type' => ['required', 'in:leave,sick'],
             'dates' => ['required', 'array', 'min:1'],
             'dates.*' => ['required', 'date', 'distinct'],

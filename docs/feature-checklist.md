@@ -1,5 +1,23 @@
 # Feature Checklist
 
+- [x] Pengajuan/revisi lembur External / Project memiliki dropdown Project opsional dengan scope perusahaan dan akses project serta validasi server
+- [x] Form pengajuan lembur memakai susunan dua kolom dan card/footer yang konsisten dengan form cuti/sakit
+- [x] Form pengajuan lembur tidak menampilkan field visual Pemohon; employee_id tetap dikirim secara tersembunyi
+- [x] Form pengajuan cuti/sakit menyamakan layout jenis pengajuan dan nomor pengajuan dengan form lembur serta memakai master penomoran perusahaan
+- [x] Form pengajuan cuti/sakit menyamakan layout jenis pengajuan dan nomor pengajuan dengan form lembur serta memakai master penomoran perusahaan
+
+- [x] Pengajuan/revisi lembur External / Project memiliki dropdown Project opsional dengan scope perusahaan dan akses project serta validasi server
+
+- [x] Form tambah/edit dan filter master penomoran Core memakai floating label global; bantuan pola terpisah di bawah input format
+- [x] Filter master penomoran Core mendukung penyaringan berdasarkan jenis form dan multi-select perusahaan/jenis form
+- [x] Filter master penomoran Core mendukung penyaringan berdasarkan jenis form dan multi-select perusahaan/jenis form
+- [x] Form tambah master penomoran Core memiliki dua kolom sama lebar dengan pasangan field sejajar
+- [x] Bantuan pola penomoran berada setelah seluruh field pada form tambah dan edit, sebelum tombol simpan
+- [x] Bantuan pola penomoran berada setelah seluruh field pada form tambah dan edit, sebelum tombol simpan
+- [x] Form tambah master penomoran Core memiliki dua kolom sama lebar dengan pasangan field sejajar
+
+- [x] Form tambah/edit dan filter master penomoran Core memakai floating label global; bantuan pola terpisah di bawah input format
+
 Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusan dibutuhkan.
 
 ## Platform
@@ -42,6 +60,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Object storage memakai bucket `app-workspace` dengan prefix aplikasi dan path dokumen berdasarkan `storage_key` perusahaan/tanggal dokumen
 - [x] Temporary upload Livewire memakai folder `workspace-tmp` pada bucket MinIO private dan dihapus setelah upload permanen berhasil
 - [x] Temporary upload memiliki cleanup terjadwal berdasarkan TTL environment dan berjalan setiap jam
+- [x] Definisi scheduler Workspace dipusatkan di routes/console.php dan command scheduler terdaftar eksplisit
+- [x] Definisi scheduler Workspace dipusatkan di routes/console.php dan command scheduler terdaftar eksplisit
 - [x] Preview dokumen ditampilkan pada PDF viewer dalam modal dialog dengan authorization dan audit trail
 - [x] Metadata pada detail dokumen ditampilkan sebagai tabel nama field dan nilai
 - [x] Perusahaan memiliki `storage_key` ULID immutable untuk object storage; data lama di-backfill melalui migration
@@ -76,6 +96,23 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 
 ## Catalog dan metadata
 
+- [x] CRM minimum memiliki configurable pipeline stage, closing status, board drag-and-drop, dan konteks client/Sales/project untuk HRIS
+- [x] Integration MVP memiliki koneksi Odoo PostgreSQL read-only, external reference, projection, queue sync, scheduler, riwayat sinkronisasi, dan normalisasi upsert CRM/project berbasis company mapping
+- [x] Scheduler sinkronisasi Odoo hanya dispatch job dan queue worker menjalankan service sync dengan proteksi unique lock
+- [x] Job asynchronous memiliki queue name eksplisit per domain dan worker development memproses seluruh queue aplikasi
+- [x] Infrastruktur Web Push lintas modul berada di Core Notifications, sedangkan pemicu notifikasi tetap dimiliki modul bisnis
+- [x] Infrastruktur Web Push lintas modul berada di Core Notifications, sedangkan pemicu notifikasi tetap dimiliki modul bisnis
+- [x] Normalisasi CRM membedakan account perusahaan/perorangan, menghubungkan perusahaan ke `core_companies`, dan membiarkan status account kosong bila belum pasti
+- [x] Daftar CRM Account memiliki filter tipe/perusahaan, pagination 10/25/50/100, sorting server-side, serta menampilkan kontak dan perusahaan terkait; status account tidak ditampilkan
+- [x] Tabel CRM Account tidak menampilkan kolom status; status tetap tersedia sebagai filter
+- [x] Tabel CRM Account tidak menampilkan kolom status; status tetap tersedia sebagai filter
+- [x] Normalisasi account perorangan mengikuti parent company Odoo, menyimpan alamat account/perusahaan, dan mendukung banyak person pada perusahaan yang sama
+- [x] Tabel hasil normalisasi CRM, project, dan company memiliki penanda sumber seragam: source system/database, external ID, integration flag, dan last synced at
+- [x] Tabel hasil normalisasi CRM, project, dan company memiliki penanda sumber seragam: source system/database, external ID, integration flag, dan last synced at
+- [x] Normalisasi account perorangan mengikuti parent company Odoo, menyimpan alamat account/perusahaan, dan mendukung banyak person pada perusahaan yang sama
+- [x] Daftar CRM Account memiliki filter tipe/status/perusahaan, pagination 10/25/50/100, sorting server-side, serta menampilkan kontak dan perusahaan terkait
+- [x] Core memiliki monitor queue/job dengan status antre, proses, berhasil, gagal, pagination, dan error log
+
 - [x] Company management (Group, anak perusahaan, client/vendor sebagai role)
 - [x] Project management
 - [x] Master perusahaan menyatukan internal, client, vendor, dan partner
@@ -87,6 +124,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Workspace Project Management UI parity: board, timeline, leaderboard, user contributions, dan notification resource
 - [x] Project creation dibatasi pada company scope user
 - [x] Detail project menampilkan members, tickets, dan dokumen terkait
+- [x] Binding model Project Management pada Core menggunakan model runtime modul, bukan class legacy `App\Models\Ticket`
+- [x] Pengguna dengan `view_any_project` dapat melihat detail project tanpa anggota; perubahan tetap dibatasi scope
 - [x] Vendor management memakai master `Company` berperan `vendor` sebagai identitas vendor
 - [x] Vendor management memiliki CRUD Blade, detail, scope multi-perusahaan operasional, filter multiselect, sorting, pagination, dan soft archive
 - [x] Validasi client-side dan Form Request server-side pada form Company dan Vendor
@@ -120,6 +159,10 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Activity CRM dengan due date dan completion state
 - [x] Account detail menampilkan contact, opportunity, activity, dan dokumen terkait
 - [x] CRM pipeline workflow dan dashboard ringkas pada Workspace
+- [x] Lifecycle pipeline Odoo: full sync menandai record yang hilang sebagai soft-deleted/source deleted dan pipeline menyediakan tampilan arsip
+- [x] Menu Konfigurasi CRM ditempatkan di posisi paling bawah setelah resource operasional
+- [x] Menu Konfigurasi CRM ditempatkan di posisi paling bawah setelah resource operasional
+- [x] Menu Konfigurasi CRM ditempatkan di posisi paling bawah setelah resource operasional
 - [x] CRM hub pada navigation dengan empty state saat company assignment belum tersedia
 - [x] Project dibuat dari opportunity CRM
 - [x] Dokumen dapat dikaitkan dengan account/opportunity CRM
@@ -281,8 +324,24 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Approval manager/HR/Finance/final dan approval event
 - [ ] Kalender hari libur dan perhitungan hari kerja
 - [x] Lembur dengan pembulatan, maksimum, dan post-submission policy
+- [x] Pengajuan Lembur multi-rincian dengan snapshot divisi/jabatan dan durasi server-side
+- [x] Setiap rincian lembur menentukan jenis hari Hari Kerja atau Hari Libur dengan validasi dan penyimpanan per baris
+- [x] Form lembur memiliki validasi client-side berbasis JavaScript dan validasi server-side untuk field utama, tanggal, waktu, referensi, dan rincian
+- [x] Lembur lintas tengah malam wajib dipisah menjadi rincian pada tanggal berikutnya; jam selesai tidak boleh sama atau lebih awal dari jam mulai
+- [x] Halaman detail lembur compact tanpa panel alasan/konteks serta menampilkan ringkasan, realisasi, dan workflow secara hierarkis
+- [x] Halaman detail lembur membagi konten menjadi area utama kiri dan sidebar riwayat workflow kanan yang responsive
+- [x] Form pengajuan/revisi lembur menampilkan HR approver aktif berdasarkan perusahaan karyawan
+- [x] Resubmit revisi administrasi mengirim notifikasi kembali ke HR peminta revisi dengan redaksi revisi, bukan pengajuan baru
+- [x] Workflow lembur Atasan lalu HR mendukung setujui, tolak, revisi substansi/administrasi, dan kirim ulang pemohon
+- [x] Master struktur organisasi Core untuk perusahaan operasional internal dengan hierarchy, scope, permission, filter, sorting, dan pagination
+- [x] Data karyawan dapat dikaitkan ke divisi/unit organisasi Core
+- [x] Pengajuan Lembur multi-rincian dengan snapshot divisi/jabatan dan durasi server-side
+- [x] Workflow lembur Atasan lalu HR mendukung setujui, tolak, revisi substansi/administrasi, dan kirim ulang pemohon
+- [x] Master struktur organisasi Core untuk perusahaan operasional internal dengan hierarchy, scope, permission, filter, sorting, dan pagination
+- [x] Data karyawan dapat dikaitkan ke divisi/unit organisasi Core
 - [x] Reimbursement dan workflow Finance
 - [x] Cash advance dan pertanggungjawaban
+- [x] Reimbursement multi-rincian dengan approval Finance, threshold final per perusahaan, dan pencatatan pembayaran terpisah
 - [x] In-app notification
 - [x] Nomor pengajuan otomatis HRIS tampil pada form, daftar, detail, dan notifikasi
 - [x] Tautan notifikasi approval memiliki fallback aman setelah pengajuan selesai diproses
@@ -401,4 +460,41 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Akses tingkat modul (`access_company`, `access_crm`, `access_project_management`, `access_documents`) menyaring kartu, launcher, sidebar, dan halaman ringkasan
 - [x] Form tambah/edit dokumen memiliki pasangan field, counterparty searchable, filter tipe dokumen berdasarkan perusahaan, loading metadata, nominal lokal, dan tag chip
 - [x] Kalender Hari Libur HRIS multi-company dengan cakupan global/perusahaan, cuti bersama, dampak kuota cuti, CRUD, permission, dan audit trail
+- [x] Semua panel filter GET Workspace otomatis menjadi expandable dan collapsed pada perangkat mobile
 - [x] Kalender Hari Libur HRIS multi-company dengan cakupan global/perusahaan, cuti bersama, dampak kuota cuti, CRUD, permission, dan audit trail
+- [x] Filter Account CRM mendukung multiple select untuk tipe, status, perusahaan pemilik, dan client/partner
+- [x] Data perusahaan hasil integrasi Odoo mengunci field sumber, menyediakan edit terbatas untuk field lokal, dan tidak menyediakan aksi arsip
+- [x] Data CRM Account, Contact, Opportunity, dan Project hasil integrasi Odoo menolak perubahan field sumber pada backend
+- [x] Filter Account CRM mendukung multiple select untuk tipe, status, perusahaan pemilik, dan client/partner
+- [x] Pengajuan lembur External / Project dapat mereferensikan project atau CRM opportunity dengan snapshot nama/status dan validasi scope
+- [x] Dropdown referensi pekerjaan memiliki input pencarian tetap dan overflow vertikal/horizontal hanya pada tabel
+- [x] Form lembur, reimbursement/cash advance, dan cuti/sakit mendukung draft, konfirmasi submit, penghapusan draft, serta alokasi nomor master saat dikirim
+- [x] Form revisi cuti/sakit mempertahankan layout dua kolom dan panel alasan revisi tidak masuk ke grid field
+- [x] Form edit draft cuti/sakit merender atribut form dengan benar dan tidak menampilkan directive method sebagai teks
+- [x] Edit draft cuti/sakit menampilkan dokumen pendukung tersimpan, menyediakan preview/unduh, dan hanya mewajibkan upload jika dokumen belum ada
+- [x] Preview dokumen pendukung pada edit draft cuti/sakit tampil menggunakan popup dialog
+- [x] Panel dokumen tersimpan pada edit draft cuti/sakit menggunakan layout compact dan responsif
+- [x] Menyimpan ulang draft cuti/sakit tanpa upload baru mempertahankan dokumen pendukung lama
+- [x] Penyimpanan draft cuti/sakit menerapkan validasi tanggal aktif dan hari libur yang sama dengan pengiriman pengajuan
+- [x] Form revisi cuti/sakit memakai grid dua kolom yang konsisten; panel peringatan tidak mengambil posisi sebagai kolom field
+- [x] Draft dan revisi cuti/sakit memakai template layout form yang sama dengan halaman create
+- [x] Field kontrol form `action` tidak ikut dipersist sebagai atribut model saat resubmit revisi cuti/sakit
+- [x] Daftar lembur hanya menampilkan tombol Revisi untuk status `needs_revision` dan memakai badge kuning untuk Draft
+- [x] Tombol pada kolom Aksi daftar HRIS memiliki jarak horizontal yang konsisten
+- [x] Filter status pengajuan lembur menggunakan dropdown multiple select dan query server-side `status[]`
+- [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
+- [x] Daftar lembur memakai rentang tanggal default awal bulan sampai hari ini dan panel ringkasan jumlah serta total durasi sesuai filter
+- [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
+- [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
+- [x] Form edit draft lembur tidak menampilkan judul atau catatan revisi; pesan revisi hanya tampil untuk status non-draft yang perlu diperbaiki
+- [x] Simpan draft lembur kembali ke daftar lembur dengan pesan draft, bukan ke detail dengan pesan revisi
+- [x] Tombol Kirim pengajuan lembur menggunakan dialog konfirmasi template, bukan native browser confirm
+- [x] Submit draft lembur selalu mengalokasikan nomor baru dan melewati nomor master yang sudah terpakai
+- [x] Panel ringkasan draft di atas daftar lembur dihilangkan karena aksi draft tersedia langsung pada baris tabel
+- [x] Panel ringkasan draft di atas daftar lembur dihilangkan karena aksi draft tersedia langsung pada baris tabel
+- [x] Filter status pengajuan lembur menggunakan dropdown multiple select dan query server-side `status[]`
+- [x] Draft dan revisi cuti/sakit memakai template layout form yang sama dengan halaman create
+- [x] Preview dokumen pendukung pada edit draft cuti/sakit tampil menggunakan popup dialog
+- [x] Edit draft cuti/sakit menampilkan dokumen pendukung tersimpan, menyediakan preview/unduh, dan hanya mewajibkan upload jika dokumen belum ada
+- [x] Form lembur, reimbursement/cash advance, dan cuti/sakit mendukung draft, konfirmasi submit, penghapusan draft, serta alokasi nomor master saat dikirim
+- [x] Dropdown referensi pekerjaan memiliki input pencarian tetap dan overflow vertikal/horizontal hanya pada tabel

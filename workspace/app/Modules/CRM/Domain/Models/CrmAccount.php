@@ -16,18 +16,25 @@ class CrmAccount extends Model
     protected $table = 'accounts';
 
     protected $fillable = [
-        'company_id', 'name', 'status', 'industry', 'segment', 'owner_user_id',
+        'company_id', 'party_company_id', 'account_type', 'name', 'status', 'industry', 'segment', 'owner_user_id',
+        'street', 'street2', 'city', 'state', 'zip', 'country',
+        'source_system', 'source_database', 'external_id', 'is_integrated', 'last_synced_at',
         'estimated_value', 'currency', 'metadata',
     ];
 
     protected function casts(): array
     {
-        return ['estimated_value' => 'decimal:4', 'metadata' => 'array'];
+        return ['estimated_value' => 'decimal:4', 'metadata' => 'array', 'is_integrated' => 'boolean', 'last_synced_at' => 'datetime'];
     }
 
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function partyCompany()
+    {
+        return $this->belongsTo(Company::class, 'party_company_id');
     }
 
     public function contacts()

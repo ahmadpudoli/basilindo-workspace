@@ -25,6 +25,12 @@ class ProjectPolicy
         return $project->members()->where('users.id', $authUser->id)->exists();
     }
 
+    private function hasGlobalProjectView(AuthUser $authUser): bool
+    {
+        return method_exists($authUser, 'hasRole')
+            && ($authUser->hasRole(['super_admin']) || $authUser->can('view_any_project'));
+    }
+
     public function viewAny(AuthUser $authUser): bool
     {
         return $authUser->hasRole('super_admin') || $authUser->can('access_project_management');
@@ -32,7 +38,8 @@ class ProjectPolicy
 
     public function view(AuthUser $authUser, Project $project): bool
     {
-        return ($authUser->hasRole('super_admin') || $authUser->can('view_project')) && $this->hasAccessToProject($authUser, $project);
+        return ($authUser->hasRole('super_admin') || $authUser->can('view_project'))
+            && ($this->hasGlobalProjectView($authUser) || $this->hasAccessToProject($authUser, $project));
     }
 
     public function create(AuthUser $authUser): bool
@@ -47,7 +54,7 @@ class ProjectPolicy
 
     public function delete(AuthUser $authUser, Project $project): bool
     {
-        return ($authUser->hasRole('super_admin') || $authUser->can('delete_project')) && $this->hasAccessToProject($authUser, $project);
+        return ! $this->isIntegrated($project) && ($authUser->hasRole('super_admin') || $authUser->can('delete_project')) && $this->hasAccessToProject($authUser, $project);
     }
 
     public function restore(AuthUser $authUser, Project $project): bool
@@ -78,5 +85,10 @@ class ProjectPolicy
     public function reorder(AuthUser $authUser): bool
     {
         return $authUser->can('reorder_project');
+    }
+
+    private function isIntegrated(Project $project): bool
+    {
+        return (bool) $project->is_integrated || filled($project->source_system);
     }
 }

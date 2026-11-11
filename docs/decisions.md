@@ -84,3 +84,12 @@ dari source code.
 - **Alasan:** data project, company, vendor, dan user perlu konsisten serta dapat digunakan lintas aplikasi, sementara tabel domain tetap terisolasi.
 - **Implementasi:** seluruh migration aktif disimpan di `core/database/migrations` dalam kelompok `shared`, `file-organizer`, dan `project-management`. File Organizer menjalankan migration `shared`; setiap aplikasi menjalankan set domain miliknya dari `core`.
 - **Konsekuensi:** foreign key lintas prefix tidak dibuat melalui koneksi domain karena Laravel otomatis menambahkan prefix koneksi. Reference ID lintas domain divalidasi di service/policy; foreign key internal masing-masing prefix tetap digunakan.
+## Project opsional pada lembur — 2026-11-03
+
+- Pilihan project dibatasi perusahaan karyawan pemohon dan kontrak akses ProjectPolicy:
+  permission view_project serta membership, dengan pengecualian super_admin.
+  Hak mengajukan lembur tidak otomatis memberi akses project.
+- Alternatif daftar semua project perusahaan tidak dipakai karena memperluas akses.
+- Referensi lintas domain divalidasi oleh service dan disimpan sebagai bigint nullable
+  tanpa foreign key lintas prefix. Pengajuan lama tetap null.
+- Rollback kode mempertahankan kolom nullable agar data referensi tidak hilang.

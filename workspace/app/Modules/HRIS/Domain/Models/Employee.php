@@ -4,6 +4,7 @@ namespace App\Modules\HRIS\Domain\Models;
 
 use Core\Models\Company;
 use Core\Models\User;
+use Core\Models\OrganizationUnit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -20,7 +21,7 @@ class Employee extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['company_id', 'user_id', 'employee_number', 'full_name', 'email', 'phone', 'job_title', 'manager_id', 'hire_date', 'status'];
+    protected $fillable = ['company_id', 'organization_unit_id', 'user_id', 'employee_number', 'full_name', 'email', 'phone', 'job_title', 'manager_id', 'hire_date', 'status'];
 
     protected function casts(): array { return ['hire_date' => 'date']; }
 
@@ -32,8 +33,10 @@ class Employee extends Model
     public function company() { return $this->belongsTo(Company::class); }
     public function user() { return $this->belongsTo(User::class); }
     public function manager() { return $this->belongsTo(self::class, 'manager_id'); }
+    public function organizationUnit() { return $this->belongsTo(OrganizationUnit::class, 'organization_unit_id'); }
     public function subordinates() { return $this->hasMany(self::class, 'manager_id'); }
     public function leaveRequests() { return $this->hasMany(LeaveRequest::class); }
+    public function overtimeRequests() { return $this->hasMany(OvertimeRequest::class); }
     public function employeeDocuments() { return $this->hasMany(EmployeeDocument::class); }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder

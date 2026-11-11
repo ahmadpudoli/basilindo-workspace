@@ -1,0 +1,44 @@
+@extends('layouts.app', ['title' => 'Pengajuan Lembur'])
+@section('content')
+<style>
+.workspace-overtime-index > .alert.alert-light.border.shadow-sm { display: none !important; }
+</style>
+<div class="workspace-overtime-index">
+@if($items->where('status', 'draft')->isNotEmpty())<div class="alert alert-light border shadow-sm"><div class="fw-semibold mb-2">Draft pengajuan lembur</div><div class="d-flex flex-wrap gap-2">@foreach($items->where('status', 'draft') as $draft)<a href="{{ route('workspace.hris.overtime.edit', $draft) }}" class="btn btn-sm btn-outline-primary">Lanjutkan draft · {{ $draft->created_at?->format('d/m/Y H:i') }}</a><form method="POST" action="{{ route('workspace.hris.overtime.destroy', $draft) }}" class="d-inline" data-confirm="Hapus draft pengajuan lembur ini? Draft tidak dapat dipulihkan.">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Hapus draft</button></form>@endforeach</div></div>@endif
+@php($statusLabels=['draft'=>'Draft','pending_manager'=>'Menunggu Atasan','pending_hr'=>'Menunggu HR','needs_revision'=>'Perlu revisi','approved'=>'Disetujui HR','rejected'=>'Ditolak'])
+<div class="row g-3 mb-3" id="overtime-summary-panel"><div class="col-xl"><div class="workspace-overtime-summary-card"><span>Total pengajuan</span><strong>{{ $summary['total']['count'] }}</strong><small>{{ intdiv($summary['total']['minutes'], 60) }} jam {{ $summary['total']['minutes'] % 60 }} menit</small></div></div><div class="col-xl"><div class="workspace-overtime-summary-card is-approved"><span>Disetujui</span><strong>{{ $summary['approved']['count'] }}</strong><small>{{ intdiv($summary['approved']['minutes'], 60) }} jam {{ $summary['approved']['minutes'] % 60 }} menit</small></div></div><div class="col-xl"><div class="workspace-overtime-summary-card is-pending"><span>Dalam proses</span><strong>{{ $summary['pending']['count'] }}</strong><small>{{ intdiv($summary['pending']['minutes'], 60) }} jam {{ $summary['pending']['minutes'] % 60 }} menit</small></div></div><div class="col-xl"><div class="workspace-overtime-summary-card is-rejected"><span>Ditolak</span><strong>{{ $summary['rejected']['count'] }}</strong><small>{{ intdiv($summary['rejected']['minutes'], 60) }} jam {{ $summary['rejected']['minutes'] % 60 }} menit</small></div></div><div class="col-xl"><div class="workspace-overtime-summary-card is-draft"><span>Draft</span><strong>{{ $summary['draft']['count'] }}</strong><small>{{ intdiv($summary['draft']['minutes'], 60) }} jam {{ $summary['draft']['minutes'] % 60 }} menit</small></div></div></div>
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><div class="text-uppercase text-secondary small fw-semibold mb-2">HRIS · Manajemen Kehadiran</div><h1 class="h3 mb-1">Pengajuan Lembur</h1><p class="text-secondary mb-0">Pengajuan lembur dan status verifikasinya.</p></div><a href="{{ route('workspace.hris.overtime.create') }}" class="btn btn-primary">Ajukan Lembur</a></div>
+<form method="GET" class="card card-body border-0 shadow-sm mb-3 workspace-list-filter-form"><div class="row g-2 align-items-end"><div class="col-lg-3"><label class="form-label">Pencarian</label><input name="q" value="{{ request('q') }}" class="form-control" placeholder="Nomor atau nama karyawan"></div><div class="col-lg-2"><div class="workspace-dropdown-multiselect dropdown" data-searchable-dropdown data-dropdown-empty-label="Semua status"><button type="button" class="form-select text-start workspace-dropdown-trigger" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Filter status"><span data-dropdown-label>{{ count($status) ? count($status).' status dipilih' : 'Semua status' }}</span></button><div class="dropdown-menu workspace-dropdown-menu p-2"><div class="workspace-dropdown-options">@foreach($statusLabels as $value=>$label)<label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="status[]" value="{{ $value }}" data-dropdown-item data-dropdown-value="{{ $label }}" @checked(in_array($value, $status, true))><span>{{ $label }}</span></label>@endforeach</div></div></div><label class="form-label">Status</label></div><div class="col-lg-2"><label class="form-label">Dari tanggal</label><input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control"></div><div class="col-lg-2"><label class="form-label">Sampai tanggal</label><input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control"></div><div class="col-lg-1"><label class="form-label">Baris</label><select name="limit" class="form-select">@foreach([10,25,50,100] as $limit)<option value="{{ $limit }}" @selected($perPage===$limit)>{{ $limit }}</option>@endforeach</select></div><div class="col-lg-2"><div class="workspace-filter-actions"><a href="{{ route('workspace.hris.overtime') }}" class="btn btn-sm btn-outline-secondary">Reset</a><button class="btn btn-sm btn-primary">Terapkan</button></div></div></div></form>
+<div class="card border-0 shadow-sm"><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Nomor</th><th>Karyawan</th><th>Realisasi</th><th>Total durasi</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody>@forelse($items as $item)<tr><td><code>{{ $item->request_number }}</code></td><td><div class="fw-semibold">{{ $item->employee?->full_name }}</div><small class="text-secondary">{{ $item->organization_unit_name ?: ($item->employee?->organizationUnit?->name ?? 'Unit belum diatur') }}</small></td><td>{{ $item->entries->count() }} rincian<br><small class="text-secondary">{{ $item->entries->first()?->work_date?->format('d/m/Y') }}@if($item->entries->count()>1) – {{ $item->entries->last()?->work_date?->format('d/m/Y') }}@endif</small></td><td>{{ intdiv($item->duration_minutes,60) }} jam {{ $item->duration_minutes%60 }} menit</td><td><span class="badge text-bg-light">{{ $statusLabels[$item->status] ?? ucfirst(str_replace('_',' ',$item->status)) }}</span></td><td class="text-end text-nowrap"><a href="{{ route('workspace.hris.overtime.show',$item) }}" class="btn btn-sm btn-outline-primary">Detail</a>@can('update',$item)<a href="{{ route('workspace.hris.overtime.edit',$item) }}" class="btn btn-sm btn-warning">Revisi</a>@endcan</td></tr>@empty<tr><td colspan="6" class="text-center text-secondary py-5">Belum ada pengajuan lembur sesuai filter.</td></tr>@endforelse</tbody></table></div><div class="card-footer bg-white workspace-list-pagination"><div class="workspace-pagination-summary">Menampilkan <strong>{{ $items->firstItem()??0 }}</strong>–<strong>{{ $items->lastItem()??0 }}</strong> dari <strong>{{ $items->total() }}</strong> pengajuan</div>{{ $items->onEachSide(1)->links() }}</div></div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const summaryPanel = document.querySelector('#overtime-summary-panel');
+    const filterForm = document.querySelector('form.workspace-list-filter-form');
+    if (summaryPanel && filterForm) filterForm.before(summaryPanel);
+    const dateFrom = document.querySelector('input[name="date_from"]');
+    const dateTo = document.querySelector('input[name="date_to"]');
+    if (dateFrom && !dateFrom.value) dateFrom.value = @json($dateFrom);
+    if (dateTo && !dateTo.value) dateTo.value = @json($dateTo);
+    [...document.querySelectorAll('table tbody tr')].forEach((row) => {
+        const statusCell = row.querySelector('td:nth-child(5)');
+        if (statusCell?.textContent.trim().toLowerCase() !== 'draft') return;
+        const badge = statusCell.querySelector('.badge');
+        badge?.classList.remove('text-bg-light');
+        badge?.classList.add('text-bg-warning', 'text-dark');
+        row.querySelector('.btn-warning')?.remove();
+    });
+    const drafts = [];
+    @foreach($items->getCollection()->where('status', 'draft') as $draft)
+        drafts.push({ edit: @json(route('workspace.hris.overtime.edit', $draft)), delete: @json(route('workspace.hris.overtime.destroy', $draft)) });
+    @endforeach
+    [...document.querySelectorAll('table tbody tr')].filter((row) => row.querySelector('td:nth-child(5)')?.textContent.trim().toLowerCase().includes('draft')).forEach((row, index) => {
+        const action = row.lastElementChild;
+        const draft = drafts[index];
+        if (!action || !draft || action.dataset.draftActions) return;
+        action.dataset.draftActions = 'true';
+        action.insertAdjacentHTML('beforeend', `<a href="${draft.edit}" class="btn btn-sm btn-outline-primary">Edit draft</a><form method="POST" action="${draft.delete}" class="d-inline" data-confirm="Hapus draft pengajuan lembur ini? Draft tidak dapat dipulihkan."><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-outline-danger">Hapus draft</button></form>`);
+    });
+});
+</script>
+</div>
+@endsection

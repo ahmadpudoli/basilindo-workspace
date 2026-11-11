@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -55,7 +56,7 @@ class CompanyController extends Controller
     {
         Gate::authorize('create', Company::class);
         $data = $request->validated();
-        $data['roles'] = $data['entity_type'] === 'group' ? ['group'] : array_values($data['roles'] ?? []);
+        $data['roles'] = ($data['entity_type'] ?? $company->entity_type) === 'group' ? ['group'] : array_values($data['roles'] ?? $company->roles ?? []);
         $visibilityCompanyIds = $data['visibility_company_ids'] ?? [];
         $logo = $data['logo'] ?? null;
         unset($data['logo']);
@@ -96,6 +97,10 @@ class CompanyController extends Controller
     {
         Gate::authorize('update', $company);
         $data = $request->validated();
+        $isIntegrated = (bool) $company->is_integrated || filled($company->source_system);
+        if ($isIntegrated) {
+            $data = Arr::only($data, ['roles', 'parent_company_id', 'status']);
+        }
         $data['roles'] = $data['entity_type'] === 'group' ? ['group'] : array_values($data['roles'] ?? []);
         $visibilityCompanyIds = $data['visibility_company_ids'] ?? [];
         $logo = $data['logo'] ?? null;

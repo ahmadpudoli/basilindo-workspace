@@ -7,6 +7,7 @@
         ['key' => 'crm', 'label' => 'CRM', 'description' => 'Account, contact, lead, opportunity, dan aktivitas.'],
         ['key' => 'project-management', 'label' => 'Project Management', 'description' => 'Project, ticket, board, timeline, dan laporan.'],
         ['key' => 'company', 'label' => 'Company', 'description' => 'Perusahaan, vendor, dan company scope.'],
+        ['key' => 'hris', 'label' => 'HRIS', 'description' => 'Karyawan, kehadiran, lembur, dan reimbursement.'],
     ] as $module)
         <div class="col-md-6"><label class="workspace-settings-module-option"><span><strong>{{ $module['label'] }}</strong><small>{{ $module['description'] }}</small></span><input type="checkbox" name="active_modules[]" value="{{ $module['key'] }}" @checked(in_array($module['key'], $enabledModules, true))><span class="workspace-settings-toggle"></span></label></div>
     @endforeach

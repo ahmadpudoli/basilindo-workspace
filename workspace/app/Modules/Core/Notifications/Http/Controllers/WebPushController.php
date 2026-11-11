@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Modules\HRIS\Application\Services;
+namespace App\Modules\Core\Notifications\Http\Controllers;
 
+use App\Modules\Core\Notifications\Models\WebPushSubscription;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -39,6 +40,7 @@ class WebPushController
     {
         $request->validate(['endpoint' => ['required', 'url', 'max:2000']]);
         WebPushSubscription::query()->where('user_id', $request->user()->getKey())->where('endpoint', (string) $request->string('endpoint'))->delete();
+
         return response()->json(['deleted' => true]);
     }
 }

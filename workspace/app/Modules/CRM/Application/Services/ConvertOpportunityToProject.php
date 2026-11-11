@@ -3,6 +3,7 @@
 namespace App\Modules\CRM\Application\Services;
 
 use App\Modules\CRM\Domain\Models\CrmOpportunity;
+use App\Modules\CRM\Domain\Models\CrmPipelineStage;
 use Core\Models\Project;
 use Throwable;
 
@@ -26,7 +27,8 @@ final class ConvertOpportunityToProject
             ]);
 
             $project->members()->syncWithoutDetaching([$opportunity->owner_user_id ?: auth()->id()]);
-            $opportunity->forceFill(['project_id' => $project->getKey(), 'stage' => 'won'])->save();
+            $wonStage = CrmPipelineStage::query()->where('is_won', true)->orderBy('sequence')->first();
+            $opportunity->forceFill(['project_id' => $project->getKey(), 'stage' => $wonStage?->code ?: 'won', 'stage_id' => $wonStage?->getKey(), 'won_at' => $opportunity->won_at ?: now()])->save();
         } catch (Throwable $exception) {
             $project?->delete();
             throw $exception;

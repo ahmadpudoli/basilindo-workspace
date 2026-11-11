@@ -2,11 +2,18 @@
 @section('content')
 @php($dateRows = old('dates', ['']))
 @php($hasHrApprover = $hrApprovers->isNotEmpty())
-<div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran</div><h1 class="h3 mb-1">Ajukan cuti atau sakit</h1><p class="text-secondary mb-0">Lengkapi data pengajuan. Tanggal yang beririsan dengan pengajuan aktif akan ditolak.</p></div>
-<form method="POST" action="{{ route('workspace.hris.leave-requests.store') }}" enctype="multipart/form-data" class="card card-body workspace-leave-form workspace-leave-form-columns" data-leave-form data-remaining-leave="{{ max(0, $quota - $usedLeave) }}" data-holidays='@json($blockedHolidays->map(fn ($holiday) => ['date' => $holiday->holiday_date->toDateString(), 'name' => $holiday->name, 'type' => $holiday->type])->values())' novalidate>
+@php($isDraft = isset($leaveRequest) && $leaveRequest->status === 'draft')
+@php($isRevision = isset($leaveRequest) && $leaveRequest->status === 'needs_revision')
+@if($isDraft || $isRevision)
+    @php($dateRows = old('dates', $leaveRequest->dates->pluck('leave_date')->map(fn ($date) => $date->format('Y-m-d'))->all()))
+@endif
+<div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran</div><h1 class="h3 mb-1">{{ $isRevision ? 'Revisi pengajuan cuti atau sakit' : ($isDraft ? 'Edit draft cuti atau sakit' : 'Ajukan cuti atau sakit') }}</h1><p class="text-secondary mb-0">{{ $isRevision ? 'Perbaiki data sesuai catatan revisi, lalu kirim ulang untuk diproses.' : 'Lengkapi data pengajuan. Tanggal yang beririsan dengan pengajuan aktif akan ditolak.' }}</p></div>
+@if($isRevision)<div class="alert alert-warning workspace-alert mb-3"><strong>Alasan revisi:</strong> {{ $leaveRequest->revision_reason ?: 'Periksa kembali data pengajuan.' }}<br><small>Diminta oleh {{ $leaveRequest->revision_requested_role === 'hr' ? 'HR' : 'atasan' }}</small></div>@endif
+<form method="POST" action="{{ ($isDraft || $isRevision) ? route('workspace.hris.leave-requests.resubmit', $leaveRequest) : route('workspace.hris.leave-requests.store') }}" enctype="multipart/form-data" class="card card-body workspace-leave-form workspace-leave-form-columns" data-leave-form data-client-validation="leave-request" data-confirm="Kirim pengajuan cuti/sakit untuk diproses atasan? Setelah dikirim, draft tidak dapat dihapus lagi." data-confirm-value="submit" data-confirm-action="Kirim pengajuan" data-has-supporting-document="{{ isset($hasSupportingDocument) && $hasSupportingDocument ? '1' : '0' }}" data-remaining-leave="{{ max(0, $quota - $usedLeave) }}" data-holidays='@json($blockedHolidays->map(fn ($holiday) => ['date' => $holiday->holiday_date->toDateString(), 'name' => $holiday->name, 'type' => $holiday->type])->values())' novalidate>
 @csrf
+@if($isDraft || $isRevision) @method('PUT') @endif
 <div class="workspace-leave-column">
-<div class="mb-3"><label class="form-label">Nomor pengajuan</label><input type="hidden" name="request_number" value="{{ old('request_number', $requestNumber) }}"><input class="form-control" value="{{ old('request_number', $requestNumber) }}" readonly><div class="form-text">Nomor dibuat otomatis.</div></div>
+<section class="workspace-form-section mb-4"><h2 class="h6 mb-3">Informasi pengajuan</h2><div class="workspace-floating-field"><input id="leave-request-number" class="form-control" value="{{ $requestNumber }}" readonly><label for="leave-request-number" class="form-label">Nomor pengajuan</label></div><div class="form-text mt-2">Nomor menggunakan master penomoran perusahaan dan dikunci saat pengajuan dikirim.</div></section>
 <section class="workspace-date-panel">
     <div class="workspace-leave-quota" data-quota-panel><div><span>Kuota cuti {{ $year }}</span><strong>{{ $quota }} hari</strong></div><div><span>Sudah disetujui</span><strong>{{ $usedLeave }} hari</strong></div><div><span>Sisa cuti</span><strong>{{ max(0, $quota - $usedLeave) }} hari</strong></div><div><span>Sakit tercatat</span><strong>{{ $sickDays }} hari</strong></div></div>
     <div class="workspace-leave-section-heading workspace-date-heading"><h2>Tanggal pengajuan <span class="text-danger">*</span></h2><button type="button" class="btn btn-outline-primary btn-sm" data-add-leave-date>+ Tambah tanggal</button></div>
@@ -16,22 +23,24 @@
     <div class="form-text">Tanggal dapat diisi mundur. Hari libur tidak dapat dipilih. Untuk cuti, jumlah tanggal tidak boleh melebihi sisa kuota.</div>
     @if($collectiveHolidays->isNotEmpty())<div class="alert alert-warning mt-3 mb-0"><strong>Cuti bersama {{ $year }}</strong><ul class="mb-0 mt-1">@foreach($collectiveHolidays as $holiday)<li>{{ $holiday->holiday_date->format('d/m/Y') }} — {{ $holiday->name }}</li>@endforeach</ul><small class="d-block mt-1">Total {{ $collectiveHolidays->count() }} hari telah mengurangi kuota cuti tahunan.</small></div>@endif
 </section>
-<section class="workspace-leave-section workspace-leave-reason-section"><div class="workspace-leave-section-heading"><h2>Alasan <span class="text-danger">*</span></h2></div><textarea name="reason" class="form-control" rows="4" maxlength="2000" placeholder="Tuliskan alasan pengajuan..." aria-describedby="reason-error">{{ old('reason') }}</textarea><div class="invalid-feedback d-block" id="reason-error" data-reason-error hidden></div></section>
+<section class="workspace-leave-section workspace-leave-reason-section"><div class="workspace-leave-section-heading"><h2>Alasan <span class="text-danger">*</span></h2></div><textarea name="reason" class="form-control" rows="4" maxlength="2000" placeholder="Tuliskan alasan pengajuan..." aria-describedby="reason-error">{{ old('reason', ($isDraft || $isRevision) ? $leaveRequest->reason : null) }}</textarea><div class="invalid-feedback d-block" id="reason-error" data-reason-error hidden></div></section>
 </div>
 <div class="workspace-leave-column">
-<section class="workspace-leave-section workspace-leave-type-section"><div class="workspace-leave-section-heading"><h2>Jenis pengajuan <span class="text-danger">*</span></h2></div><div class="workspace-leave-type-grid"><label class="workspace-choice-card"><input type="radio" name="type" value="leave" @checked(old('type', 'leave') === 'leave') data-leave-type><span><strong>Cuti</strong><small>Menggunakan kuota cuti tahunan.</small></span></label><label class="workspace-choice-card"><input type="radio" name="type" value="sick" @checked(old('type') === 'sick') data-leave-type><span><strong>Sakit</strong><small>Tidak mengurangi kuota, wajib melampirkan surat.</small></span></label></div></section>
-<section class="workspace-leave-section workspace-leave-document-section"><div class="workspace-leave-section-heading"><h2>Dokumen pendukung <span class="text-danger {{ old('type', 'leave') === 'sick' ? '' : 'd-none' }}" data-supporting-required>*</span></h2></div><input type="file" name="supporting_document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" data-supporting-document aria-describedby="supporting-document-error"><div class="form-text">Wajib untuk sakit. PDF/JPG/PNG, maksimal 10 MB.</div><div class="invalid-feedback d-block" id="supporting-document-error" data-document-error hidden></div></section>
+<section class="workspace-form-section workspace-leave-section workspace-leave-type-section"><div class="workspace-leave-section-heading"><div><h2>Jenis pengajuan <span class="text-danger">*</span></h2><p>Pilih jenis pengajuan yang akan diproses.</p></div></div><div class="workspace-leave-type-grid"><label class="workspace-choice-card workspace-choice-card-leave"><input type="radio" name="type" value="leave" @checked(old('type', 'leave') === 'leave') data-leave-type aria-label="Cuti"><span class="workspace-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 3.5v3M16.5 3.5v3M3.5 9h17M8 13h3M8 17h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="workspace-choice-content"><strong>Cuti</strong><small>Menggunakan kuota cuti tahunan.</small></span><span class="workspace-choice-check" aria-hidden="true">✓</span></label><label class="workspace-choice-card workspace-choice-card-sick"><input type="radio" name="type" value="sick" @checked(old('type') === 'sick') data-leave-type aria-label="Sakit"><span class="workspace-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M9 4.5h6a2 2 0 0 1 2 2v1h1.5A2.5 2.5 0 0 1 21 10v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10a2.5 2.5 0 0 1 2.5-2.5H7v-1a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M9.5 13.5h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="workspace-choice-content"><strong>Sakit</strong><small>Tidak mengurangi kuota, wajib melampirkan surat.</small></span><span class="workspace-choice-check" aria-hidden="true">✓</span></label></div></section>
+<section class="workspace-leave-section workspace-leave-document-section"><div class="workspace-leave-section-heading"><h2>Dokumen pendukung <span class="text-danger {{ old('type', ($isDraft || $isRevision) ? $leaveRequest->type : 'leave') === 'sick' && !($hasSupportingDocument ?? false) ? '' : 'd-none' }}" data-supporting-required>*</span></h2></div>@if(($isDraft || $isRevision) && ($hasSupportingDocument ?? false))<div class="workspace-approval-panel workspace-supporting-document-compact mb-2"><div class="workspace-supporting-document-meta"><strong>Dokumen tersimpan</strong><span>{{ $supportingMimeType ?: 'Dokumen pendukung' }}</span></div><div class="workspace-supporting-document-actions">@if($canPreviewSupportingDocument)<button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#leave-draft-supporting-document-modal">Tampilkan</button>@endif<a href="{{ route('workspace.hris.leave-requests.supporting-document', $leaveRequest) }}" class="btn btn-sm btn-outline-secondary">Unduh</a></div></div>@endif<input type="file" name="supporting_document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" data-supporting-document aria-describedby="supporting-document-error"><div class="form-text">{{ (($isDraft || $isRevision) && ($hasSupportingDocument ?? false)) ? 'Opsional. Upload file baru jika ingin mengganti dokumen sebelumnya.' : 'Wajib untuk sakit. PDF/JPG/PNG, maksimal 10 MB.' }}</div><div class="invalid-feedback d-block" id="supporting-document-error" data-document-error hidden></div></section>
 <section class="workspace-leave-section workspace-leave-employee-section"><div class="workspace-leave-section-heading"><h2>Informasi karyawan</h2></div><div class="workspace-employee-summary"><div><span>Nama</span><strong>{{ $employee->full_name }}</strong></div><div><span>NIP</span><strong>{{ $employee->employee_number }}</strong></div><div><span>Jabatan</span><strong>{{ $employee->job_title ?? 'Belum diatur' }}</strong></div><div><span>Perusahaan</span><strong>{{ $employee->company?->name ?? '-' }}</strong></div></div></section>
 <section class="workspace-leave-section workspace-leave-manager-section"><div class="workspace-leave-section-heading"><h2>Informasi atasan</h2></div><div class="workspace-approval-panel">@if($employee->manager)<strong>{{ $employee->manager->full_name }}</strong><span>{{ $employee->manager->job_title ?? 'Atasan langsung' }} · {{ $employee->manager->employee_number }}</span>@else<span class="text-danger">Atasan langsung belum dikonfigurasi.</span>@endif</div></section>
 <section class="workspace-leave-section workspace-leave-hr-section"><div class="workspace-leave-section-heading"><h2>Informasi HR</h2></div><div class="workspace-approval-panel {{ $hasHrApprover ? '' : 'is-missing' }}">@forelse($hrApprovers as $approver)<div class="workspace-approval-person"><span class="workspace-approval-avatar">{{ strtoupper(substr($approver->user?->name ?? '?', 0, 1)) }}</span><span><strong>{{ $approver->user?->name }}</strong><small>{{ $approver->user?->email }}</small></span></div>@empty<span class="text-danger">Approver HR belum dikonfigurasi untuk perusahaan ini.</span>@endforelse</div></section>
 </div>
-<div class="workspace-leave-actions d-flex justify-content-end gap-2"><a href="{{ route('workspace.hris.leave-requests') }}" class="btn btn-light btn-sm">Batal</a><button class="btn btn-primary btn-sm" type="submit" @disabled(!$hasHrApprover)>Kirim pengajuan</button></div>
+<div class="workspace-leave-actions d-flex justify-content-end gap-2"><a href="{{ route('workspace.hris.leave-requests') }}" class="btn btn-light btn-sm">Batal</a><button class="btn btn-outline-secondary btn-sm" type="submit" name="action" value="draft">Simpan draft</button><button class="btn btn-primary btn-sm" type="submit" name="action" value="submit" @disabled(!$hasHrApprover)>Kirim pengajuan</button></div>
 </form>
+@if(($isDraft || $isRevision) && ($hasSupportingDocument ?? false) && ($canPreviewSupportingDocument ?? false))
+<div class="modal fade" id="leave-draft-supporting-document-modal" tabindex="-1" aria-labelledby="leave-draft-supporting-document-title" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="leave-draft-supporting-document-title">Preview dokumen pendukung</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">@if($supportingMimeType === 'application/pdf')<iframe src="{{ route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>@else<img src="{{ route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]) }}" alt="Dokumen pendukung" class="img-fluid d-block mx-auto" style="max-height:70vh">@endif</div></div></div></div>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('[data-leave-form]');
     if (!form) return;
-
     const list = form.querySelector('[data-date-list]');
     const addButton = form.querySelector('[data-add-leave-date]');
     const typeInputs = [...form.querySelectorAll('[data-leave-type]')];
@@ -41,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const documentError = form.querySelector('[data-document-error]');
     const reasonError = form.querySelector('[data-reason-error]');
     const remaining = Number(form.dataset.remainingLeave || 0);
+    const hasPreviousDocument = form.dataset.hasSupportingDocument === '1';
     const holidays = JSON.parse(form.dataset.holidays || '[]');
     const holidayByDate = new Map(holidays.map((holiday) => [holiday.date, holiday]));
 
@@ -108,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (reason.length > 2000) fail(reasonInput, 'Alasan maksimal 2.000 karakter.', reasonError);
 
         const file = documentInput.files[0];
-        if (type === 'sick' && !file) fail(documentInput, 'Surat pendukung wajib diunggah untuk pengajuan sakit.', documentError);
+        if (type === 'sick' && !file && !hasPreviousDocument) fail(documentInput, 'Surat pendukung wajib diunggah untuk pengajuan sakit.', documentError);
         if (file && (!/\.(pdf|jpe?g|png)$/i.test(file.name) || file.size > 10 * 1024 * 1024)) {
             fail(documentInput, 'Dokumen harus PDF/JPG/PNG dan maksimal 10 MB.', documentError);
         }
@@ -153,4 +163,16 @@ document.addEventListener('DOMContentLoaded', () => {
     refresh();
 });
 </script>
+@if($isDraft || $isRevision)
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const existingType = @json($leaveRequest->type);
+    const existingReason = @json($leaveRequest->reason);
+    const type = document.querySelector(`[data-leave-type][value="${existingType}"]`);
+    const reason = document.querySelector('[name="reason"]');
+    if (type) type.checked = true;
+    if (reason && !reason.value) reason.value = existingReason || '';
+});
+</script>
+@endif
 @endsection

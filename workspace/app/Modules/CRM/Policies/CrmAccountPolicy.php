@@ -29,6 +29,11 @@ class CrmAccountPolicy
 
     public function delete(User $user, CrmAccount $account): bool
     {
-        return ($user->hasRole('super_admin') || $user->can('delete_crm_account')) && $this->view($user, $account);
+        return ! $this->isIntegrated($account) && ($user->hasRole('super_admin') || $user->can('delete_crm_account')) && $this->view($user, $account);
+    }
+
+    private function isIntegrated(CrmAccount $account): bool
+    {
+        return (bool) $account->is_integrated || filled($account->source_system);
     }
 }

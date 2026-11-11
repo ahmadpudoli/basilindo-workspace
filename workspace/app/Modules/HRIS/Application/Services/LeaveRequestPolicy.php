@@ -17,7 +17,7 @@ class LeaveRequestPolicy
     public function create(User $user): bool { return $user->hasRole('super_admin') || $user->can('create_leave_request'); }
     public function update(User $user, LeaveRequest $request): bool
     {
-        return $request->status === 'needs_revision'
+        return in_array($request->status, ['draft', 'needs_revision'], true)
             && ((int) $request->requester_user_id === (int) $user->getKey() || (int) $request->created_by === (int) $user->getKey());
     }
 }

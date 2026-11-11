@@ -28,11 +28,14 @@
                 'label' => 'CRM', 'icon' => 'crm', 'url' => route('workspace.crm'), 'permission' => 'access_crm',
                 'items' => [
                     ['label' => 'Ringkasan', 'url' => route('workspace.crm'), 'permission' => 'view_any_crm_account'],
+                    ['label' => 'Pipeline Sales', 'url' => route('workspace.crm.pipeline'), 'permission' => 'view_any_crm_opportunity'],
                     ['label' => 'Account', 'url' => route('workspace.crm.resource', 'accounts'), 'permission' => 'view_any_crm_account'],
                     ['label' => 'Contact', 'url' => route('workspace.crm.resource', 'contacts'), 'permission' => 'view_any_crm_account'],
-                    ['label' => 'Lead', 'url' => route('workspace.crm.resource', 'leads'), 'permission' => 'view_any_crm_lead'],
-                    ['label' => 'Opportunity', 'url' => route('workspace.crm.resource', 'opportunities'), 'permission' => 'view_any_crm_opportunity'],
                     ['label' => 'Aktivitas', 'url' => route('workspace.crm.resource', 'activities'), 'permission' => 'view_any_crm_activity'],
+                    ['label' => 'Konfigurasi', 'url' => route('workspace.crm.pipeline.settings'), 'permission' => 'access_crm', 'items' => [
+                        ['label' => 'Stage Pipeline', 'url' => route('workspace.crm.pipeline.settings'), 'permission' => 'manage_crm_pipeline'],
+                        ['label' => 'Team Sales', 'url' => route('workspace.crm.pipeline.teams'), 'permission' => 'manage_crm_team'],
+                    ]],
                 ],
             ],
             'project-management' => [
@@ -73,13 +76,13 @@
                         ['label' => 'Ringkasan Cuti Karyawan', 'url' => route('workspace.hris.leave-summary'), 'permission' => 'view_hris_leave_summary'],
                         ['label' => 'Cuti & Sakit', 'url' => route('workspace.hris.leave-requests'), 'permission' => 'access_hris'],
                         ['label' => 'Ringkasan Lembur Karyawan', 'url' => route('workspace.hris.overtime-summary'), 'permission' => 'view_hris_overtime_summary'],
-                        ['label' => 'Lembur', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_any_overtime'],
+                        ['label' => 'Pengajuan Lembur', 'url' => route('workspace.hris.overtime'), 'permission' => 'view_any_overtime'],
                         ['label' => 'Hari Libur', 'url' => route('workspace.hris.holidays'), 'permission' => 'view_hris_holidays'],
                     ]],
                     ['label' => 'Manajemen Claim', 'icon' => 'document', 'items' => [
-                        ['label' => 'Ringkasan Reimbursement', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'reimbursement']), 'permission' => 'view_hris_reimbursement_summary'],
-                        ['label' => 'Ringkasan Cash Advance', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'cash_advance']), 'permission' => 'view_hris_cash_advance_summary'],
-                        ['label' => 'Reimbursement & Cash Advance', 'url' => route('workspace.hris.claims'), 'permission' => 'view_any_claim'],
+                        ['label' => 'Ringkasan Reimbursement', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'reimbursement']), 'active_key' => 'hris-claims-summary-reimbursement', 'permission' => 'view_hris_reimbursement_summary'],
+                        ['label' => 'Ringkasan Cash Advance', 'url' => route('workspace.hris.claims', ['view' => 'summary', 'type' => 'cash_advance']), 'active_key' => 'hris-claims-summary-cash-advance', 'permission' => 'view_hris_cash_advance_summary'],
+                        ['label' => 'Reimbursement & Cash Advance', 'url' => route('workspace.hris.claims'), 'active_key' => 'hris-claims-list', 'permission' => 'view_any_claim'],
                     ]],
                 ],
             ],
@@ -89,12 +92,19 @@
             'items' => [
                 ['label' => 'Ringkasan pengaturan', 'url' => route('workspace.settings')],
                 ['label' => 'Modul aktif', 'url' => route('workspace.settings.modules')],
+                ...(auth()->user()?->can('view_integration') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Integrasi Odoo', 'url' => route('workspace.core.integration'), 'permission' => 'view_integration', 'items' => [
+                    ['label' => 'Sinkronisasi Odoo', 'url' => route('workspace.core.integration'), 'permission' => 'view_integration'],
+                    ['label' => 'Mapping Perusahaan', 'url' => route('workspace.core.integration.company-mapping'), 'permission' => 'manage_integration'],
+                ]]] : []),
+                ...(auth()->user()?->can('view_queue_jobs') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Queue & Job', 'url' => route('workspace.core.queue-jobs'), 'permission' => 'view_queue_jobs']] : []),
                 ...(auth()->user()?->can('manage_hris_settings') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengaturan HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'manage_hris_settings', 'items' => [
                     ['label' => 'Parameter HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'manage_hris_settings'],
                     ['label' => 'Workflow Approval', 'url' => route('workspace.settings.hris.workflow'), 'permission' => 'manage_hris_settings'],
                 ]]] : []),
                 ...(auth()->user()?->can('view_any_user') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengguna & akses', 'url' => route('workspace.core.users')]] : []),
                 ...(auth()->user()?->can('view_any_role') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Role & permission', 'url' => route('workspace.core.roles')]] : []),
+                ...(auth()->user()?->can('view_any_organization_unit') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Struktur organisasi', 'url' => route('workspace.core.organization-units')]] : []),
+                ...(auth()->user()?->can('manage_numbering_rules') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Master penomoran', 'url' => route('workspace.core.numbering-rules')]] : []),
                 ...(auth()->user()?->can('view_audit_trail') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Audit trail', 'url' => route('workspace.core.audit-log')]] : []),
             ],
         ];
@@ -135,8 +145,8 @@
         $activeModuleDefinition = $activeModule ? $moduleDefinitions[$activeModule] : null;
         $navigationIcons = [
             'Ringkasan' => 'dashboard', 'Perusahaan' => 'company', 'Vendor' => 'vendor', 'Pengguna & akses' => 'users',
-            'Account' => 'account', 'Contact' => 'contact', 'Lead' => 'lead', 'Opportunity' => 'opportunity', 'Aktivitas' => 'activity',
-            'Project' => 'project', 'Ticket' => 'ticket', 'Board ticket' => 'board', 'Timeline' => 'timeline', 'Epic' => 'epic',
+            'Account' => 'account', 'Contact' => 'contact', 'Lead' => 'lead', 'Opportunity' => 'opportunity', 'Pipeline Sales' => 'pipeline', 'Aktivitas' => 'activity',
+              'Project' => 'project', 'Ticket' => 'ticket', 'Board ticket' => 'board', 'Timeline' => 'timeline', 'Epic' => 'epic', 'Integration' => 'integration', 'Dashboard' => 'dashboard', 'Sinkronisasi Odoo' => 'sync',
             'Catatan' => 'note', 'Komentar' => 'comment', 'Notifikasi' => 'notification', 'Kontribusi pengguna' => 'users',
             'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Dokumen' => 'document', 'Upload dokumen' => 'upload', 'Hari Libur' => 'calendar',
             'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Karyawan' => 'users', 'Daftar Karyawan' => 'users', 'Biodata' => 'users', 'Cuti & sakit' => 'calendar', 'Cuti & Sakit' => 'calendar', 'Lembur' => 'calendar', 'Reimbursement & cash advance' => 'document', 'Reimbursement & Cash Advance' => 'document', 'Pengaturan HRIS' => 'settings', 'Semua modul' => 'grid',
@@ -244,12 +254,17 @@
                         @php
                             $currentPath = parse_url(request()->url(), PHP_URL_PATH);
                             $navigationPath = $currentPath;
+                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.payment', 'workspace.hris.claims.payment.start', 'workspace.hris.claims.payment.store', 'workspace.hris.claims.complete')) {
+                                $navigationPath = request('view') === 'summary'
+                                    ? (request('type') === 'cash_advance' ? 'hris-claims-summary-cash-advance' : 'hris-claims-summary-reimbursement')
+                                    : 'hris-claims-list';
+                            }
                             if ($activeModule === 'documents' && request()->routeIs('workspace.documents.create', 'workspace.documents.show', 'workspace.documents.edit')) {
                                 $navigationPath = parse_url(route('workspace.documents.list'), PHP_URL_PATH);
                             }
                             $navigationPaths = function (array $items) use (&$navigationPaths): array {
                                 return collect($items)->flatMap(fn (array $item) => array_merge(
-                                    isset($item['url']) ? [parse_url($item['url'], PHP_URL_PATH)] : [],
+                                    isset($item['url']) ? [$item['active_key'] ?? parse_url($item['url'], PHP_URL_PATH)] : [],
                                     isset($item['items']) ? $navigationPaths($item['items']) : [],
                                 ))->all();
                             };
@@ -268,7 +283,7 @@
                 </aside>
             @endif
 
-            <main class="workspace-main">
+            <main class="workspace-main @if(!empty($wide)) workspace-main-wide @endif">
                 <div class="workspace-content">
                     @if (session('status'))
                         <div class="alert alert-success workspace-alert" role="alert">{{ session('status') }}</div>
@@ -297,6 +312,7 @@
         <div class="modal-dialog modal-dialog-centered modal-sm workspace-confirm-dialog"><div class="modal-content workspace-modal-content workspace-confirm-modal"><div class="modal-header workspace-modal-header"><div class="workspace-modal-heading"><span class="workspace-modal-icon workspace-modal-icon-warning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4Z"/><path d="M12 9v5M12 17h.01"/></svg></span><div><span class="workspace-modal-kicker">Perhatian</span><h5 class="modal-title" id="workspaceConfirmTitle">Konfirmasi tindakan</h5></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body workspace-confirm-body"><div data-workspace-confirm-message>Apakah Anda yakin ingin melanjutkan tindakan ini?</div><div class="workspace-confirm-comment-wrap d-none" data-workspace-confirm-comment-wrap><label for="workspaceConfirmComment" class="form-label">Catatan persetujuan <span class="text-secondary fw-normal">(opsional)</span></label><textarea id="workspaceConfirmComment" class="form-control" data-workspace-confirm-comment rows="3" maxlength="2000" placeholder="Tambahkan catatan jika diperlukan..."></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button><button type="button" class="btn btn-danger workspace-confirm-submit" data-workspace-confirm-submit>Lanjutkan</button></div></div></div>
     </div>
 
+    @stack('scripts')
     @livewireScripts
 </body>
 </html>

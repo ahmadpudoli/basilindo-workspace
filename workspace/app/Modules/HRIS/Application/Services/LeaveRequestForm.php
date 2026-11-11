@@ -12,7 +12,8 @@ class LeaveRequestForm extends FormRequest
     public function rules(): array
     {
         return [
-            'request_number' => ['nullable', 'string', 'regex:/^HRIS-LEAVE-[0-9]{8}-[A-Z0-9]{10}$/'],
+            'action' => ['nullable', 'in:draft,submit'],
+            'request_number' => ['nullable', 'string', 'max:100'],
             'type' => ['required', 'in:leave,sick'],
             'dates' => ['required', 'array', 'min:1'],
             'dates.*' => ['required', 'date', 'distinct'],

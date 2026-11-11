@@ -146,12 +146,67 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         const source = button.parentElement?.querySelector('[data-workspace-date-value]');
         if (!source) return;
-        if (typeof source.showPicker === 'function') source.showPicker();
-        else source.click();
+        try {
+            if (typeof source.showPicker === 'function') source.showPicker();
+            else source.click();
+        } catch (error) {
+            source.click();
+        }
     });
 
     enhanceFloatingFields();
     enhanceDateInputs();
+
+    const bindMobilePanelToggle = (toggle) => {
+        if (toggle.dataset.mobileToggleBound === 'true') return;
+        toggle.dataset.mobileToggleBound = 'true';
+        toggle.addEventListener('click', () => {
+            const panel = toggle.closest('[data-mobile-panel]');
+            if (!panel) return;
+            const expanded = panel.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            const icon = toggle.querySelector('[data-mobile-toggle-icon]');
+            if (icon) icon.textContent = expanded ? '−' : '+';
+        });
+    };
+
+    const enhanceMobileFilterPanels = () => {
+        if (!window.matchMedia('(max-width: 768px)').matches) return;
+
+        document.querySelectorAll('.workspace-content form[method="GET"], .workspace-content form.workspace-search-form:not([method])').forEach((form) => {
+            if (form.matches('[data-no-mobile-collapse]')) return;
+
+            let panel = form.closest('[data-mobile-panel]');
+            if (!panel) {
+                panel = document.createElement('section');
+                panel.className = 'workspace-mobile-panel workspace-auto-filter-panel';
+                panel.dataset.mobilePanel = '';
+
+                const toggle = document.createElement('button');
+                toggle.type = 'button';
+                toggle.className = 'workspace-mobile-panel-toggle';
+                toggle.dataset.mobileToggle = '';
+                toggle.setAttribute('aria-expanded', 'false');
+                const filterTitle = form.dataset.filterTitle
+                    || (window.location.pathname === '/workspace/hris/approvals' ? 'Filter pengajuan' : 'Filter data');
+                toggle.innerHTML = `${filterTitle}<span data-mobile-toggle-icon>+</span>`;
+
+                form.parentNode.insertBefore(panel, form);
+                form.classList.remove('mb-3', 'mt-3');
+                form.classList.add('workspace-mobile-panel-content');
+                panel.append(toggle, form);
+            }
+
+            panel.querySelectorAll('[data-mobile-toggle]').forEach(bindMobilePanelToggle);
+        });
+
+        document.querySelectorAll('[data-mobile-toggle]').forEach(bindMobilePanelToggle);
+    };
+
+    enhanceMobileFilterPanels();
+    window.matchMedia('(max-width: 768px)').addEventListener('change', (event) => {
+        if (event.matches) enhanceMobileFilterPanels();
+    });
 
     if (window.location.pathname === '/workspace/hris/leave-requests') {
         document.querySelectorAll('table tbody tr').forEach((row) => {
@@ -361,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmSubmit = document.querySelector('[data-workspace-confirm-submit]');
     const confirmModal = confirmModalElement ? bootstrap.Modal.getOrCreateInstance(confirmModalElement) : null;
     let pendingConfirmForm = null;
+    let pendingConfirmSubmitter = null;
     const loadingOverlay = document.querySelector('[data-workspace-loading]');
     const loadingMessage = loadingOverlay?.querySelector('[data-workspace-loading-message]');
     const showLoading = (message = 'Memproses...') => {
@@ -479,6 +535,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!allowedMetadataTypes.has(fieldType)) addError('metadata-type', 'Tipe input metadata tidak valid.', metadataType);
             });
         }
+        if (type === 'leave-request') {
+            form.querySelectorAll('[data-date-error], [data-document-error], [data-reason-error]').forEach((element) => {
+                element.textContent = '';
+                element.hidden = true;
+                element.classList.remove('d-block');
+            });
+            const selectedType = form.querySelector('[name="type"]:checked')?.value || '';
+            const dates = [...form.querySelectorAll('[data-date-list] input[type="date"]')];
+            const values = dates.map((input) => input.value.trim()).filter(Boolean);
+            const holidays = JSON.parse(form.dataset.holidays || '[]');
+            const holidayDates = new Map(holidays.map((holiday) => [holiday.date, holiday]));
+            if (!selectedType) addError('type', 'Jenis pengajuan wajib dipilih.', form.querySelector('[name="type"]'));
+            dates.forEach((input) => { if (!input.value) addError(input.name, 'Tanggal pengajuan wajib diisi.', input); });
+            if (values.length !== new Set(values).size) {
+                const seen = new Set();
+                const duplicate = dates.find((input) => input.value && (seen.has(input.value) || !seen.add(input.value)));
+                addError(duplicate?.name || 'dates', 'Tanggal pengajuan tidak boleh duplikat.', duplicate || dates[0]);
+            }
+            if (selectedType === 'leave' && values.length > Number(form.dataset.remainingLeave || 0)) addError('dates', `Jumlah tanggal tidak boleh melebihi sisa kuota (${form.dataset.remainingLeave || 0} hari).`, dates[0]);
+            const holidayInput = dates.find((input) => input.value && holidayDates.has(input.value));
+            if (holidayInput) addError(holidayInput.name, `Tanggal merupakan hari libur (${holidayDates.get(holidayInput.value).name}) dan tidak dapat dipilih.`, holidayInput);
+            if (!value('reason')) addError('reason', 'Alasan pengajuan wajib diisi.');
+            if (value('reason').length > 2000) addError('reason', 'Alasan maksimal 2.000 karakter.');
+            const file = field('supporting_document')?.files?.[0];
+            if (selectedType === 'sick' && !file && !form.dataset.hasSupportingDocument) addError('supporting_document', 'Surat pendukung wajib diunggah untuk pengajuan sakit.', field('supporting_document'));
+            if (file && (!/\.(pdf|jpe?g|png)$/i.test(file.name) || file.size > 10 * 1024 * 1024)) addError('supporting_document', 'Dokumen harus PDF/JPG/PNG dan maksimal 10 MB.', field('supporting_document'));
+        }
         if (errors.length) {
             errors[0].target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             errors[0].target.focus({ preventScroll: true });
@@ -508,10 +591,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('submit', (event) => {
         const form = event.target;
         if (!(form instanceof HTMLFormElement) || form.dataset.confirmHandled === 'true' || !form.dataset.confirm || !confirmModal) return;
+        if (form.dataset.confirmValue && event.submitter?.value !== form.dataset.confirmValue) return;
 
         event.preventDefault();
         event.stopImmediatePropagation();
         pendingConfirmForm = form;
+        pendingConfirmSubmitter = event.submitter;
         confirmMessage.textContent = form.dataset.confirm;
         confirmSubmit.textContent = form.dataset.confirmAction || 'Lanjutkan';
         const hasOptionalComment = form.dataset.confirmComment === 'optional';
@@ -526,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingConfirmForm = null;
         form.dataset.confirmHandled = 'true';
         form.removeAttribute('onsubmit');
-        const submitter = form.querySelector('button[name][value], input[type="submit"][name][value]');
+        const submitter = pendingConfirmSubmitter || form.querySelector('button[name][value], input[type="submit"][name][value]');
         if (submitter?.name && !form.querySelector(`[name="${CSS.escape(submitter.name)}"][data-workspace-confirm-value]`)) {
             const input = document.createElement('input');
             input.type = 'hidden';
@@ -549,6 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         confirmModal.hide();
         showLoading(formLoadingMessage(form));
+        pendingConfirmSubmitter = null;
         form.submit();
     });
 
@@ -560,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('click', (event) => {
         const link = event.target.closest('a[href]');
-        if (!link || event.defaultPrevented || link.target === '_blank' || link.dataset.workspacePreview || link.closest('.dropdown-menu') || link.getAttribute('href')?.startsWith('#')) return;
+        if (!link || event.defaultPrevented || link.dataset.workspaceNoLoading || link.target === '_blank' || link.dataset.workspacePreview || link.closest('.dropdown-menu') || link.getAttribute('href')?.startsWith('#')) return;
         if (link.origin === window.location.origin) showLoading('Memuat halaman...');
     });
 
@@ -829,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     confirmModalElement?.addEventListener('hidden.bs.modal', () => {
         pendingConfirmForm = null;
+        pendingConfirmSubmitter = null;
     });
 
     const metadataEditor = document.querySelector('[data-metadata-editor]');

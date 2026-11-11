@@ -15,6 +15,8 @@ class Company extends Model
 
     protected $fillable = [
         'name', 'code', 'entity_type', 'classification', 'roles', 'parent_company_id', 'status',
+        'street', 'street2', 'city', 'state', 'zip', 'country',
+        'source_system', 'source_database', 'external_id', 'is_integrated', 'last_synced_at',
         'logo_disk', 'logo_object_key', 'logo_mime_type', 'logo_file_size',
     ];
 
@@ -35,7 +37,7 @@ class Company extends Model
 
     protected function casts(): array
     {
-        return ['roles' => 'array'];
+        return ['roles' => 'array', 'is_integrated' => 'boolean', 'last_synced_at' => 'datetime'];
     }
 
     public function users()
@@ -61,6 +63,11 @@ class Company extends Model
     public function subsidiaries()
     {
         return $this->hasMany(self::class, 'parent_company_id');
+    }
+
+    public function organizationUnits()
+    {
+        return $this->hasMany(OrganizationUnit::class);
     }
 
     public function operationalVisibility()

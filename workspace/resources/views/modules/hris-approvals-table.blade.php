@@ -73,7 +73,7 @@
                                         @endif
                                     @endif
                                     <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reject-{{ $rowKey }}">Tolak</button>
-                                    @if ($row['type'] === 'leave')
+                                    @if (in_array($row['type'], ['leave', 'overtime'], true))
                                         <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#revision-{{ $rowKey }}">Minta revisi</button>
                                     @endif
                                 </div>
@@ -139,7 +139,7 @@
                             </div>
                         </div>
 
-                        @if ($row['type'] === 'leave')
+                        @if (in_array($row['type'], ['leave', 'overtime'], true))
                             <div class="modal fade" id="revision-{{ $rowKey }}" tabindex="-1" aria-labelledby="revision-title-{{ $rowKey }}" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">

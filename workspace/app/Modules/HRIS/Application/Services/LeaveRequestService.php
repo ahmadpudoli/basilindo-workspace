@@ -13,9 +13,59 @@ use App\Modules\HRIS\Domain\Models\LeaveRequestDate;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Modules\Core\Application\Services\NumberingService;
 
 class LeaveRequestService
 {
+    public function saveDraft(Employee $employee, array $data, int $actorId): LeaveRequest
+    {
+        return DB::connection('hris')->transaction(function () use ($employee, $data, $actorId): LeaveRequest {
+            $dates = collect($data['dates'] ?? [])
+                ->filter(fn ($date): bool => filled($date))
+                ->map(fn (string $date): string => CarbonImmutable::parse($date)->toDateString())
+                ->unique()
+                ->sort()
+                ->values();
+            $this->validateDraftDates($employee, $dates->all());
+            $request = LeaveRequest::create([
+                'request_number' => null,
+                'company_id' => $employee->company_id,
+                'employee_id' => $employee->getKey(),
+                'type' => $data['type'] ?? 'leave',
+                'total_days' => $dates->count(),
+                'reason' => $data['reason'] ?? null,
+                'supporting_document_id' => $data['supporting_document_id'] ?? null,
+                'requester_user_id' => $actorId,
+                'created_by' => $actorId,
+                'status' => 'draft',
+            ]);
+            $request->dates()->createMany($dates->map(fn (string $date): array => ['leave_date' => $date])->all());
+            return $request;
+        });
+    }
+
+    public function updateDraft(LeaveRequest $request, Employee $employee, array $data, int $actorId): LeaveRequest
+    {
+        $dates = collect($data['dates'] ?? [])
+            ->filter(fn ($date): bool => filled($date))
+            ->map(fn (string $date): string => CarbonImmutable::parse($date)->toDateString())
+            ->unique()
+            ->sort()
+            ->values();
+        $this->validateDraftDates($employee, $dates->all(), $request->getKey());
+        $request->dates()->delete();
+        $request->delete();
+        return $this->saveDraft($employee, $data, $actorId);
+    }
+
+    public function submitDraft(LeaveRequest $request, Employee $employee, array $data, int $actorId): LeaveRequest
+    {
+        $submitted = $this->submit($employee, $data, $actorId);
+        $request->dates()->delete();
+        $request->delete();
+        return $submitted;
+    }
+
     public function submit(Employee $employee, array $data, int $actorId): LeaveRequest
     {
         return DB::connection('hris')->transaction(function () use ($employee, $data, $actorId): LeaveRequest {
@@ -51,6 +101,7 @@ class LeaveRequestService
             }
 
             $request = LeaveRequest::create(array_merge($data, [
+                'request_number' => app(NumberingService::class)->next((int) $employee->company_id, 'hris_leave'),
                 'company_id' => $employee->company_id,
                 'employee_id' => $employee->getKey(),
                 'total_days' => $days,
@@ -102,7 +153,7 @@ class LeaveRequestService
                 : 'pending_manager';
             $resetApproval = $nextStatus === 'pending_manager' ? ['manager_approved_by' => null, 'manager_approved_at' => null] : [];
             $attributes = $data;
-            unset($attributes['dates']);
+            unset($attributes['dates'], $attributes['action'], $attributes['supporting_document']);
             $request->forceFill(array_merge($attributes, $resetApproval, [
                 'status' => $nextStatus,
                 'total_days' => $dates->count(),
@@ -145,6 +196,25 @@ class LeaveRequestService
 
         $details = $holidays->map(fn (HrisHoliday $holiday): string => $holiday->holiday_date->format('d/m/Y').' ('.$holiday->name.')')->implode(', ');
         throw ValidationException::withMessages(['dates' => 'Tanggal berikut merupakan hari libur dan tidak dapat dipilih: '.$details.'.']);
+    }
+
+    private function validateDraftDates(Employee $employee, array $dates, ?string $ignoreRequestId = null): void
+    {
+        if ($dates === []) {
+            return;
+        }
+
+        $year = CarbonImmutable::parse($dates[0])->year;
+        $this->validateHolidayDates($employee, $dates, $year);
+
+        $conflicts = LeaveRequestDate::query()
+            ->whereIn('leave_date', $dates)
+            ->when($ignoreRequestId, fn ($query) => $query->where('leave_request_id', '!=', $ignoreRequestId))
+            ->whereHas('leaveRequest', fn ($query) => $query->where('employee_id', $employee->getKey())->active())
+            ->exists();
+        if ($conflicts) {
+            throw new OverlappingLeaveRequest($this->overlapMessage($dates, $employee->getKey(), $ignoreRequestId));
+        }
     }
 
     /**

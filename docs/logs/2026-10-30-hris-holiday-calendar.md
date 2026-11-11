@@ -35,6 +35,8 @@
 - Menyesuaikan filter dan tabel agar kembali memakai lebar natural block/card seperti halaman Biodata; aturan `width: 100%` yang menyebabkan full-bleed terhadap container dihapus pada desktop.
 - Menemukan dan menghapus satu tag penutup `</div>` berlebih setelah panel KPI. Tag tersebut sebelumnya menutup `.workspace-content` terlalu awal sehingga Filter dan tabel dirender di luar container layout; Blade kemudian diverifikasi melalui `view:cache`.
 - Menambahkan jarak bawah 12px pada panel collapsible mobile agar panel Filter tidak menempel langsung ke tabel.
+- Dropdown Modul dan Notifikasi pada mobile diposisikan fixed dengan inset kanan 12px, lebar responsif, serta tinggi maksimum mengikuti viewport agar keduanya rata kanan dan tidak keluar layar.
+- Menambahkan enhancer global untuk mengubah seluruh form filter GET di Workspace menjadi panel expandable dengan kondisi awal collapsed pada mobile; Persetujuan HRIS memakai label `Filter pengajuan`.
 
 ## Verifikasi
 

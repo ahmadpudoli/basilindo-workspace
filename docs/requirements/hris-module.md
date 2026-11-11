@@ -29,9 +29,67 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Hari libur aktif tidak dapat dipilih pada pengajuan cuti maupun sakit;
   cuti bersama mengurangi kuota cuti tahunan efektif dan daftar cuti bersama
   tahun berjalan ditampilkan pada form pengajuan.
-- Reimbursement dan cash advance menjadi fase lanjutan.
+- Reimbursement dan cash advance menggunakan requirement khusus pada
+  `requirements/hris-reimbursement.md`; reimbursement memiliki rincian biaya,
+  approval Finance, threshold final per perusahaan, dan pembayaran terpisah.
 - Notifikasi in-app dikirim dengan metadata ID saja; Web Push PWA memakai
   subscription browser terenkripsi, job queue, service worker, dan VAPID.
+- Pengajuan lembur merupakan laporan realisasi setelah pekerjaan selesai, dapat
+  memuat beberapa rincian tanggal/jam dalam satu nomor pengajuan.
+- Workflow lembur adalah Karyawan -> Atasan -> HR. Atasan memverifikasi pekerjaan
+  dan waktu realisasi; HR menetapkan kelayakan serta durasi yang diakui untuk
+  penggajian. Setiap tahap mendukung setujui, tolak, dan minta revisi.
+- Persetujuan Head Finance merupakan workflow rekap penggajian terpisah. Hanya
+  lembur berstatus disetujui HR yang boleh menjadi sumber rekap tersebut.
+- Unit organisasi perusahaan operasional internal dimiliki Core. HRIS hanya
+  menyimpan referensi unit pada karyawan dan snapshot identitas organisasi pada
+  pengajuan agar histori tidak berubah ketika karyawan dimutasi.
+
+### Master struktur organisasi Core
+
+- Unit organisasi hanya dapat dibuat untuk perusahaan internal berperan sebagai
+  perusahaan operasional.
+- Unit mendukung kode, nama, tipe (direktorat/divisi/departemen/tim/unit), induk,
+  status aktif/nonaktif, serta urutan tampilan.
+- Induk unit wajib berasal dari perusahaan yang sama dan tidak boleh membentuk
+  siklus. Unit yang sudah dipakai karyawan dinonaktifkan, bukan dihapus.
+- Daftar unit mengikuti company scope, memiliki pencarian, filter perusahaan dan
+  status, sorting server-side, serta pagination 10/25/50/100.
+
+### Pengajuan Lembur
+
+- Layout form pengajuan lembur mengikuti pola form cuti/sakit: satu card utama,
+  dua kolom informasi, panel informasi karyawan/atasan, rincian terstruktur, dan
+  footer aksi konsisten.
+- Identitas pemohon tetap berasal dari akun aktif dan dikirim sebagai referensi
+  tersembunyi; field visual Pemohon tidak ditampilkan pada form.
+- External / Project menampilkan dropdown Project opsional dengan floating label;
+  Internal menyembunyikan dan menonaktifkan dropdown serta menyimpan project kosong.
+- Pilihan project dibatasi perusahaan pemohon dan akses lihat project (permission
+  `view_project` serta membership, atau super admin). Server menolak project di
+  luar scope atau tidak ada. Pilihan disimpan pada pengajuan dan tersedia saat revisi.
+- Acceptance criteria: external tanpa project tetap dapat dikirim, project valid
+  tersimpan, project lintas perusahaan/tanpa akses ditolak, dan pergantian ke internal
+  mengosongkan relasi. Kolom nullable incremental menjaga semua pengajuan lama.
+- Form menggunakan identitas karyawan dari akun pengguna yang sedang login; pemohon tidak memilih karyawan lain.
+- Alasan umum tidak wajib diisi terpisah karena uraian pekerjaan dicatat pada setiap rincian lembur.
+- Nomor pengajuan berasal dari master penomoran Core per perusahaan dan jenis form, dengan token `[no_urut]`, `[tahun]`, `[bulan]`, `[bulan_romawi]`, `[hari]` serta periode counter tahunan, bulanan, harian, atau global.
+
+- Pemohon memilih karyawan yang dapat diakses, jenis lembur internal atau
+  external/project, lokasi kerja, alasan umum, serta satu atau lebih rincian.
+- Setiap rincian berisi tanggal kerja, waktu mulai, waktu selesai, dan uraian
+  pekerjaan. Waktu selesai yang sama/lebih awal dari waktu mulai dianggap melewati
+  tengah malam.
+- Durasi dihitung server-side per rincian, menerapkan aturan pembulatan perusahaan,
+  lalu dijumlahkan. Batas maksimum diterapkan pada total satu pengajuan.
+- Pengajuan baru langsung berstatus `pending_manager`; pengajuan tanpa atasan aktif
+  ditolak pada boundary agar tidak tertahan tanpa approver.
+- Revisi substansi selalu kembali ke Atasan. Revisi administratif kembali ke tahap
+  yang meminta revisi. Pemohon adalah satu-satunya pihak yang dapat mengirim ulang.
+- Daftar lembur menyediakan filter status/periode/karyawan, pagination 10/25/50/100,
+  sorting server-side, detail rincian, dan indikator status berbahasa Indonesia.
+- Data lembur lama dibackfill menjadi satu rincian tanpa menghapus kolom atau data
+  lama; kolom lama dipertahankan sebagai kompatibilitas sementara.
 
 ## Acceptance criteria fase 1
 

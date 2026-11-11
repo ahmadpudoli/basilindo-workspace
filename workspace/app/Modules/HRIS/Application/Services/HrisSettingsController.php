@@ -123,12 +123,15 @@ class HrisSettingsController extends Controller
         $data = $request->validate([
             'company_id' => ['required', 'integer'],
             'workflow_key' => ['nullable', 'in:leave_sick,claim'],
+            'step' => ['nullable', 'in:hr,finance,final'],
             'user_id' => ['required', 'integer'],
         ]);
         abort_unless(User::query()->whereKey($data['user_id'])->exists(), 422, 'Approver yang dipilih tidak ditemukan.');
         $data['workflow_key'] = $data['workflow_key'] ?? 'leave_sick';
-        $step = $data['workflow_key'] === 'claim' ? 'finance' : 'hr';
+        $step = $data['workflow_key'] === 'claim' ? ($data['step'] ?? 'finance') : 'hr';
+        abort_unless($data['workflow_key'] !== 'leave_sick' || $step === 'hr', 422, 'Workflow cuti dan lembur hanya menggunakan tahap HR.');
         abort_unless(Company::query()->operationalFor($request->user())->whereKey($data['company_id'])->exists(), 403);
+        abort_unless(User::query()->whereKey($data['user_id'])->whereHas('companies', fn ($query) => $query->whereKey($data['company_id']))->exists(), 422, 'Approver harus memiliki akses ke perusahaan yang dipilih.');
         if (HrisWorkflowApprover::query()->where('company_id', $data['company_id'])->where('workflow_key', $data['workflow_key'])->where('step', $step)->exists()) {
             return back()->withInput()->withErrors(['company_id' => 'Perusahaan ini sudah memiliki konfigurasi workflow untuk jenis tersebut. Gunakan tombol Edit pada tabel.']);
         }
@@ -156,6 +159,7 @@ class HrisSettingsController extends Controller
         abort_unless(User::query()->whereKey($data['user_id'])->exists(), 422, 'Approver yang dipilih tidak ditemukan.');
         $allowed = Company::query()->operationalFor($request->user())->whereKey($data['company_id'])->exists();
         abort_unless($allowed && Company::query()->operationalFor($request->user())->whereKey($approver->company_id)->exists() && $approver->is_active, 403);
+        abort_unless(User::query()->whereKey($data['user_id'])->whereHas('companies', fn ($query) => $query->whereKey($data['company_id']))->exists(), 422, 'Approver harus memiliki akses ke perusahaan yang dipilih.');
         $duplicate = HrisWorkflowApprover::query()->where('company_id', $data['company_id'])->where('workflow_key', $approver->workflow_key)->where('step', $approver->step)->where($approver->getKeyName(), '!=', $approver->getKey())->exists();
         if ($duplicate) return back()->withInput()->withErrors(['company_id' => 'Perusahaan ini sudah memiliki konfigurasi workflow untuk jenis tersebut.']);
         $approver->update(['company_id' => $data['company_id'], 'user_id' => $data['user_id']]);
@@ -205,7 +209,8 @@ class HrisSettingsController extends Controller
     private function availableWorkflowCompanies($companies): array
     {
         return collect(['leave_sick', 'claim'])->mapWithKeys(function (string $workflowKey) use ($companies): array {
-            $configuredIds = HrisWorkflowApprover::query()->where('workflow_key', $workflowKey)->where('is_active', true)->pluck('company_id');
+            if ($workflowKey === 'claim') return [$workflowKey => $companies->values()];
+            $configuredIds = HrisWorkflowApprover::query()->where('workflow_key', $workflowKey)->where('step', 'hr')->where('is_active', true)->pluck('company_id');
             return [$workflowKey => $companies->whereNotIn('id', $configuredIds)->values()];
         })->all();
     }

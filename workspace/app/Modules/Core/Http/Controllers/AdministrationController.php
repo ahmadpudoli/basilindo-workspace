@@ -36,7 +36,7 @@ class AdministrationController extends Controller
     public function settingsModulesUpdate(Request $request, WorkspaceModuleRegistry $registry, AuditLogger $audit): RedirectResponse
     {
         $this->authorizeSettings();
-        $data = $request->validate(['active_modules' => ['required', 'array', 'min:1'], 'active_modules.*' => ['string', 'in:company,crm,project-management,documents']]);
+        $data = $request->validate(['active_modules' => ['required', 'array', 'min:1'], 'active_modules.*' => ['string', 'in:company,crm,project-management,documents,hris']]);
         $registry->saveEnabledKeys($data['active_modules']);
         $audit->record('workspace.modules.updated', null, null, ['active_modules' => array_values($data['active_modules'])]);
         return back()->with('status', 'Daftar modul aktif berhasil diperbarui.');

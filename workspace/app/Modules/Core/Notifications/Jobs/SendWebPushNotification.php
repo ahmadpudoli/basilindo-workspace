@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Modules\HRIS\Application\Services;
+namespace App\Modules\Core\Notifications\Jobs;
 
+use App\Modules\Core\Notifications\Models\WebPushSubscription;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -11,7 +13,7 @@ use Minishlink\WebPush\WebPush;
 
 class SendWebPushNotification implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
     public int $timeout = 30;
@@ -21,14 +23,14 @@ class SendWebPushNotification implements ShouldQueue
         public readonly string $title,
         public readonly string $message,
         public readonly array $data = [],
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     public function handle(): void
     {
         $config = config('services.webpush');
-        if (blank($config['public_key'] ?? null) || blank($config['private_key'] ?? null)) {
-            return;
-        }
+        if (blank($config['public_key'] ?? null) || blank($config['private_key'] ?? null)) return;
 
         $subscriptions = WebPushSubscription::query()->where('user_id', $this->userId)->get();
         if ($subscriptions->isEmpty()) return;

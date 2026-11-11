@@ -28,8 +28,10 @@ class LeaveRequestController extends Controller
         $user = $request->user();
         $summaryView = $request->string('view')->toString() === 'summary';
         $canViewAll = $user->hasRole('super_admin') || ($summaryView && $user->can('view_hris_leave_summary'));
-        $type = in_array($request->string('type')->toString(), ['leave', 'sick'], true) ? $request->string('type')->toString() : null;
-        $status = in_array($request->string('status')->toString(), ['pending_manager', 'pending_hr', 'needs_revision', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
+        $allowedTypes = ['leave', 'sick'];
+        $type = collect($request->input('type', []))->when(is_string($request->input('type')), fn ($values) => collect([$request->input('type')]))->filter(fn ($value) => in_array($value, $allowedTypes, true))->values()->all();
+        $allowedStatuses = ['draft', 'pending_manager', 'pending_hr', 'needs_revision', 'approved', 'rejected'];
+        $status = collect($request->input('status', []))->when(is_string($request->input('status')), fn ($values) => collect([$request->input('status')]))->filter(fn ($value) => in_array($value, $allowedStatuses, true))->values()->all();
         $yearInput = $request->string('year')->toString();
         $activeYear = (int) HrisSetting::resolve(null, 'hris.active_year', now()->year);
         $year = $yearInput === 'all' ? null : ($request->integer('year') ?: $activeYear);
@@ -47,7 +49,7 @@ class LeaveRequestController extends Controller
                 $q->where('created_by', $user->getKey())->orWhereHas('employee', fn (Builder $employee) => $employee->where('user_id', $user->getKey()));
             });
         }
-        $query->when($type, fn ($q) => $q->where('type', $type))->when($status, fn ($q) => $q->where('status', $status))->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)->when($month, fn ($dateQuery) => $dateQuery->whereMonth('leave_date', $month))));
+        $query->when($type !== [], fn ($q) => $q->whereIn('type', $type))->when($status !== [], fn ($q) => $q->whereIn('status', $status))->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)->when($month, fn ($dateQuery) => $dateQuery->whereMonth('leave_date', $month))));
         if ($sort === 'leave_date') {
             $query->orderBy(LeaveRequestDate::query()->select('leave_date')->whereColumn('leave_request_id', 'leave_requests.id')->orderBy('leave_date')->limit(1), $direction);
         } else {
@@ -125,7 +127,7 @@ class LeaveRequestController extends Controller
         abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('view_hris_leave_summary'), 403);
 
         $type = in_array($request->string('type')->toString(), ['leave', 'sick'], true) ? $request->string('type')->toString() : null;
-        $status = in_array($request->string('status')->toString(), ['pending_manager', 'pending_hr', 'needs_revision', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
+        $status = in_array($request->string('status')->toString(), ['draft', 'pending_manager', 'pending_hr', 'needs_revision', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
         $yearInput = $request->string('year')->toString();
         $year = $yearInput === 'all' ? null : ($request->integer('year') ?: now()->year);
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
@@ -135,6 +137,7 @@ class LeaveRequestController extends Controller
 
         $query = LeaveRequestModel::query()->with(['employee.company', 'dates'])
             ->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))
+            ->where('status', '!=', 'draft')
             ->when($type, fn ($q) => $q->where('type', $type))
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)));
@@ -145,7 +148,7 @@ class LeaveRequestController extends Controller
         }
 
         $requests = $query->paginate($perPage)->withQueryString();
-        $metricsQuery = LeaveRequestModel::query()->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)));
+        $metricsQuery = LeaveRequestModel::query()->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))->where('status', '!=', 'draft')->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)));
         $metrics = [
             'total' => (clone $metricsQuery)->count(),
             'pending' => (clone $metricsQuery)->whereIn('status', ['pending_manager', 'pending_hr'])->count(),
@@ -160,6 +163,22 @@ class LeaveRequestController extends Controller
         Gate::authorize('update', $leaveRequest);
         $leaveRequest->load(['employee.company', 'employee.manager', 'dates']);
         $employee = $leaveRequest->employee;
+        if ($leaveRequest->status === 'draft') {
+            $year = now()->year;
+            $baseQuota = (int) HrisSetting::resolveForYear($employee->company_id, 'hris.annual_leave_quota', $year, 12);
+            $collectiveHolidays = HrisHoliday::query()->where('is_active', true)->where('type', 'collective_leave')->where('deduct_annual_leave', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get();
+            $blockedHolidays = HrisHoliday::query()->where('is_active', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get(['holiday_date', 'name', 'type']);
+            $quota = max(0, $baseQuota - $collectiveHolidays->count());
+            $usedLeave = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count();
+            $sickDays = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'sick')->where('status', 'approved'))->count();
+            $hrApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'leave_sick', 'hr')->get();
+            $disk = Storage::disk(config('filesystems.default', 's3'));
+            $hasSupportingDocument = filled($leaveRequest->supporting_document_id) && $disk->exists((string) $leaveRequest->supporting_document_id);
+            $supportingMimeType = $hasSupportingDocument ? ($disk->mimeType((string) $leaveRequest->supporting_document_id) ?: 'application/octet-stream') : null;
+            $canPreviewSupportingDocument = $supportingMimeType === 'application/pdf' || str_starts_with((string) $supportingMimeType, 'image/');
+            $requestNumber = 'Nomor dibuat saat dikirim';
+            return view('modules.hris-leave-form-layout', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'requestNumber', 'collectiveHolidays', 'blockedHolidays', 'leaveRequest', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument'));
+        }
         $year = $leaveRequest->dates->first()?->leave_date?->year ?? now()->year;
         $baseQuota = (int) HrisSetting::resolveForYear($employee->company_id, 'hris.annual_leave_quota', $year, 12);
         $collectiveHolidays = HrisHoliday::query()->where('is_active', true)->where('type', 'collective_leave')->where('deduct_annual_leave', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get();
@@ -172,7 +191,8 @@ class LeaveRequestController extends Controller
         $supportingMimeType = $hasSupportingDocument ? ($disk->mimeType((string) $leaveRequest->supporting_document_id) ?: 'application/octet-stream') : null;
         $canPreviewSupportingDocument = $supportingMimeType === 'application/pdf' || str_starts_with((string) $supportingMimeType, 'image/');
         $blockedHolidays = HrisHoliday::query()->where('is_active', true)->forCompany((int) $employee->company_id)->whereYear('holiday_date', $year)->orderBy('holiday_date')->get(['holiday_date', 'name', 'type']);
-        return view('modules.hris-leave-revision-modern', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'leaveRequest', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument', 'collectiveHolidays', 'blockedHolidays'));
+        $requestNumber = $leaveRequest->request_number ?: 'Nomor dibuat saat dikirim';
+        return view('modules.hris-leave-form-layout', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'requestNumber', 'collectiveHolidays', 'blockedHolidays', 'leaveRequest', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument'));
     }
 
     public function create(Request $request): View
@@ -187,7 +207,7 @@ class LeaveRequestController extends Controller
         $usedLeave = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'leave')->where('status', 'approved'))->count();
         $sickDays = (int) LeaveRequestDate::query()->whereYear('leave_date', $year)->whereHas('leaveRequest', fn ($q) => $q->where('employee_id', $employee->getKey())->where('type', 'sick')->where('status', 'approved'))->count();
         $hrApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'leave_sick', 'hr')->get();
-        $requestNumber = LeaveRequestModel::generateRequestNumber();
+        $requestNumber = 'Nomor dibuat saat dikirim';
         return view('modules.hris-leave-form-layout', compact('employee', 'year', 'quota', 'usedLeave', 'sickDays', 'hrApprovers', 'requestNumber', 'collectiveHolidays', 'blockedHolidays'));
     }
 
@@ -196,6 +216,23 @@ class LeaveRequestController extends Controller
         Gate::authorize('create', LeaveRequestModel::class);
         $employee = Employee::query()->where('user_id', $request->user()->getKey())->where('status', 'active')->firstOrFail();
         $data = $request->validated();
+        if ($request->input('action') === 'draft') {
+            if ($request->hasFile('supporting_document')) {
+                $file = $request->file('supporting_document');
+                $key = 'hris/leave-supporting/'.$employee->getKey().'/'.Str::ulid().'.'.$file->extension();
+                Storage::disk(config('filesystems.default', 's3'))->putFileAs(dirname($key), $file, basename($key), ['visibility' => 'private']);
+                $data['supporting_document_id'] = $key;
+            }
+            unset($data['supporting_document']);
+            try {
+                $service->saveDraft($employee, $data, (int) $request->user()->getKey());
+            } catch (OverlappingLeaveRequest $exception) {
+                return back()->withInput()->withErrors(['dates' => $exception->getMessage()]);
+            }
+            return redirect()->route('workspace.hris.leave-requests')->with('status', 'Draft pengajuan cuti/sakit berhasil disimpan.');
+        }
+        $data['request_number'] = $request->session()->pull('hris.request_number.leave', null);
+        if (! is_string($data['request_number']) || str_starts_with($data['request_number'], 'Nomor dibuat')) unset($data['request_number']);
         if ($request->hasFile('supporting_document')) {
             $file = $request->file('supporting_document');
             $key = 'hris/leave-supporting/'.$employee->getKey().'/'.Str::ulid().'.'.$file->extension();
@@ -213,6 +250,24 @@ class LeaveRequestController extends Controller
         $employee = $leaveRequest->employee()->where('user_id', $request->user()->getKey())->where('status', 'active')->firstOrFail();
         $data = $request->validated();
         $disk = Storage::disk(config('filesystems.default', 's3'));
+        if ($leaveRequest->status === 'draft') {
+            if ($request->hasFile('supporting_document')) {
+                $file = $request->file('supporting_document');
+                $key = 'hris/leave-supporting/'.$employee->getKey().'/'.Str::ulid().'.'.$file->extension();
+                $disk->putFileAs(dirname($key), $file, basename($key), ['visibility' => 'private']);
+                $data['supporting_document_id'] = $key;
+            } elseif (filled($leaveRequest->supporting_document_id) && $disk->exists((string) $leaveRequest->supporting_document_id)) {
+                $data['supporting_document_id'] = $leaveRequest->supporting_document_id;
+            }
+            unset($data['supporting_document']);
+            try {
+                if ($request->input('action') === 'draft') $service->updateDraft($leaveRequest, $employee, $data, (int) $request->user()->getKey());
+                else $service->submitDraft($leaveRequest, $employee, $data, (int) $request->user()->getKey());
+            } catch (OverlappingLeaveRequest $exception) {
+                return back()->withInput()->withErrors(['dates' => $exception->getMessage()]);
+            }
+            return redirect()->route('workspace.hris.leave-requests')->with('status', $request->input('action') === 'draft' ? 'Draft berhasil diperbarui.' : 'Pengajuan berhasil dikirim.');
+        }
         $hasExistingSupportingDocument = filled($leaveRequest->supporting_document_id) && $disk->exists((string) $leaveRequest->supporting_document_id);
         if ($leaveRequest->type === 'sick' && ! $request->hasFile('supporting_document') && ! $hasExistingSupportingDocument) {
             return back()->withInput()->withErrors(['supporting_document' => 'Surat pendukung wajib tersedia untuk pengajuan sakit.']);
@@ -230,5 +285,13 @@ class LeaveRequestController extends Controller
             return back()->withInput()->withErrors(['dates' => $exception->getMessage()]);
         }
         return redirect()->route('workspace.hris.leave-requests.show', $leaveRequest)->with('status', 'Perubahan pengajuan berhasil dikirim ulang.');
+    }
+
+    public function destroy(Request $request, LeaveRequestModel $leaveRequest): RedirectResponse
+    {
+        Gate::authorize('update', $leaveRequest);
+        abort_unless($leaveRequest->status === 'draft', 404);
+        $leaveRequest->delete();
+        return redirect()->route('workspace.hris.leave-requests')->with('status', 'Draft pengajuan cuti/sakit berhasil dihapus.');
     }
 }

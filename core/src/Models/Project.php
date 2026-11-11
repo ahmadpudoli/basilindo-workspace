@@ -18,10 +18,11 @@ class Project extends Model
 
     protected $fillable = [
         'company_id', 'name', 'description', 'ticket_prefix', 'color', 'start_date', 'end_date', 'pinned_date',
+        'source_system', 'source_database', 'external_id', 'is_integrated', 'last_synced_at',
     ];
 
     protected $casts = [
-        'start_date' => 'date', 'end_date' => 'date', 'pinned_date' => 'datetime',
+        'start_date' => 'date', 'end_date' => 'date', 'pinned_date' => 'datetime', 'is_integrated' => 'boolean', 'last_synced_at' => 'datetime',
     ];
 
     public function company(): BelongsTo

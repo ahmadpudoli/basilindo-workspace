@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\HRIS\Application\Services;
+namespace App\Modules\Core\Notifications\Models;
 
 use Illuminate\Database\Eloquent\Model;
 

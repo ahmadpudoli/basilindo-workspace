@@ -27,6 +27,7 @@ class RoleSeeder extends Seeder
             'leave_request',
             'overtime',
             'claim',
+            'organization_unit',
         ];
 
         $actions = ['view', 'view_any', 'create', 'update', 'delete'];
@@ -45,7 +46,7 @@ class RoleSeeder extends Seeder
         }
         Permission::firstOrCreate(['name' => 'access_settings', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'view_document_audit_trail', 'guard_name' => 'web']);
-        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents'] as $permission) {
+        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents', 'access_integration', 'view_integration', 'manage_integration', 'run_integration_sync', 'view_queue_jobs', 'manage_crm_pipeline', 'manage_crm_team'] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
         foreach (['view_role', 'view_any_role', 'create_role', 'update_role', 'delete_role', 'view_audit_trail'] as $permission) {
@@ -60,6 +61,7 @@ class RoleSeeder extends Seeder
             'view_hris_overtime_summary',
             'view_hris_reimbursement_summary',
             'view_hris_cash_advance_summary',
+            'process_hris_payment',
         ] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
@@ -107,9 +109,13 @@ class RoleSeeder extends Seeder
             'view_crm_lead', 'view_any_crm_lead', 'create_crm_lead', 'update_crm_lead', 'delete_crm_lead',
             'view_crm_opportunity', 'view_any_crm_opportunity', 'create_crm_opportunity', 'update_crm_opportunity', 'delete_crm_opportunity',
             'view_crm_activity', 'view_any_crm_activity', 'create_crm_activity', 'update_crm_activity', 'delete_crm_activity',
+            'manage_crm_pipeline', 'manage_crm_team',
         ])->get();
         $crmAdmin->syncPermissions($crmPermissions);
         $crmMember->syncPermissions($crmPermissions->filter(fn ($permission) => str_starts_with($permission->name, 'view')));
+        $integrationPermissions = Permission::whereIn('name', ['access_integration', 'view_integration', 'manage_integration', 'run_integration_sync'])->get();
+        $admin->givePermissionTo($integrationPermissions);
+        $admin->givePermissionTo(Permission::where('name', 'view_queue_jobs')->first());
 
         $projectPermissions = Permission::whereIn('name', [
             'view_company', 'view_any_company', 'view_project', 'view_any_project', 'create_project', 'update_project', 'delete_project',
@@ -143,6 +149,7 @@ class RoleSeeder extends Seeder
             'access_project_management' => ['view_any_project', 'view_any_ticket'],
             'access_documents' => ['view_any_document', 'view_any_document_type'],
             'access_hris' => ['view_any_employee', 'view_any_leave_request'],
+            'access_integration' => ['view_integration'],
         ];
         foreach ([$admin, $member, $financeAdmin, $financeReviewer, $documentAdmin, $crmAdmin, $projectAdmin, $crmMember, $projectMember, $hrisAdmin, $hrisMember] as $role) {
             foreach ($moduleAccess as $modulePermission => $signals) {

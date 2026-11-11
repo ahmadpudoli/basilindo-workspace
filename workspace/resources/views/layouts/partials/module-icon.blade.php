@@ -14,6 +14,9 @@
     @case('settings')
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="m4.9 4.9 2 1.4M17.1 17.7l2 1.4M4 12H2M22 12h-2M4.9 19.1l2-1.4M17.1 6.3l2-1.4M12 4V2M12 22v-2"/></svg>
         @break
+    @case('integration')
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="m8.5 10.5 7-3M8.5 13.5l7 3"/></svg>
+        @break
     @default
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M3 9h18"/></svg>
 @endswitch

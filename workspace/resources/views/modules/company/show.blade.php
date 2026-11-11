@@ -18,7 +18,11 @@
             <div><h1 class="h3 mb-1">{{ $company->name }}</h1><p class="text-secondary mb-0 font-monospace">{{ $company->code }}</p></div>
         </div>
     </div>
-    <a href="{{ route('workspace.company.edit', $company) }}" class="btn btn-primary">Edit perusahaan</a>
+    @if($company->is_integrated || filled($company->source_system))
+        <div class="d-flex align-items-center gap-2"><span class="badge rounded-pill text-bg-info">Sumber Odoo · field sumber terkunci</span><a href="{{ route('workspace.company.edit', $company) }}" class="btn btn-outline-primary">Edit lokal</a></div>
+    @else
+        <a href="{{ route('workspace.company.edit', $company) }}" class="btn btn-primary">Edit perusahaan</a>
+    @endif
 </div>
 
 <div class="row g-3">

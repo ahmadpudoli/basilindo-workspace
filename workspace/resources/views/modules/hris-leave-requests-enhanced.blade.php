@@ -1,6 +1,7 @@
 @extends('layouts.app', ['title' => 'Cuti dan Sakit'])
 
 @section('content')
+@if($requests->where('status', 'draft')->isNotEmpty())<div class="alert alert-light border shadow-sm"><div class="fw-semibold mb-2">Draft pengajuan cuti/sakit</div><div class="d-flex flex-wrap gap-2">@foreach($requests->where('status', 'draft') as $draft)<a href="{{ route('workspace.hris.leave-requests.edit', $draft) }}" class="btn btn-sm btn-outline-primary">Lanjutkan draft · {{ $draft->created_at?->format('d/m/Y H:i') }}</a><form method="POST" action="{{ route('workspace.hris.leave-requests.destroy', $draft) }}" class="d-inline" data-confirm="Hapus draft cuti/sakit ini? Draft tidak dapat dipulihkan.">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Hapus draft</button></form>@endforeach</div></div>@endif
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div><div class="text-uppercase text-secondary small fw-semibold mb-2">Kehadiran</div><h1 class="h3 mb-1">{{ $summaryView ? 'Ringkasan Cuti & Sakit Karyawan' : 'Cuti & sakit' }}</h1><p class="text-secondary mb-0">{{ $canViewAll ? 'Daftar pengajuan dalam scope perusahaan Anda.' : 'Riwayat pengajuan cuti dan sakit Anda.' }}</p></div>
     @if($canCreate && ! $summaryView)<a href="{{ route('workspace.hris.leave-requests.create') }}" class="btn btn-primary">Ajukan cuti/sakit</a>@endif
@@ -21,8 +22,8 @@
 <button type="button" class="workspace-mobile-panel-toggle" data-mobile-toggle aria-expanded="false">Filter pengajuan <span data-mobile-toggle-icon>+</span></button>
 <form method="GET" class="card card-body border-0 shadow-sm workspace-mobile-panel-content workspace-list-filter-form">
     <div class="row g-2 align-items-end">
-        <div class="col-md-2"><label class="form-label">Jenis</label><select name="type" class="form-select"><option value="">Semua jenis</option><option value="leave" @selected($type === 'leave')>Cuti</option><option value="sick" @selected($type === 'sick')>Sakit</option></select></div>
-        <div class="col-md-2"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">Semua status</option>@foreach(['pending_manager'=>'Menunggu atasan','pending_hr'=>'Menunggu HR','needs_revision'=>'Revisi','approved'=>'Disetujui','rejected'=>'Ditolak'] as $key => $label)<option value="{{ $key }}" @selected($status === $key)>{{ $label }}</option>@endforeach</select></div>
+        <div class="col-md-2"><div class="workspace-dropdown-multiselect dropdown" data-searchable-dropdown data-dropdown-empty-label="Semua jenis"><button type="button" class="form-select text-start workspace-dropdown-trigger" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Filter jenis"><span data-dropdown-label>{{ count($type) ? count($type).' jenis dipilih' : 'Semua jenis' }}</span></button><div class="dropdown-menu workspace-dropdown-menu p-2"><div class="workspace-dropdown-options"><label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="type[]" value="leave" data-dropdown-item data-dropdown-value="Cuti" @checked(in_array('leave', $type, true))><span>Cuti</span></label><label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="type[]" value="sick" data-dropdown-item data-dropdown-value="Sakit" @checked(in_array('sick', $type, true))><span>Sakit</span></label></div></div></div><label class="form-label">Jenis</label></div>
+        <div class="col-md-2"><div class="workspace-dropdown-multiselect dropdown" data-searchable-dropdown data-dropdown-empty-label="Semua status"><button type="button" class="form-select text-start workspace-dropdown-trigger" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Filter status"><span data-dropdown-label>{{ count($status) ? count($status).' status dipilih' : 'Semua status' }}</span></button><div class="dropdown-menu workspace-dropdown-menu p-2"><div class="workspace-dropdown-options">@foreach(['draft'=>'Draft','pending_manager'=>'Menunggu atasan','pending_hr'=>'Menunggu HR','needs_revision'=>'Revisi','approved'=>'Disetujui','rejected'=>'Ditolak'] as $key => $label)<label class="workspace-dropdown-option" data-dropdown-option><input type="checkbox" name="status[]" value="{{ $key }}" data-dropdown-item data-dropdown-value="{{ $label }}" @checked(in_array($key, $status, true))><span>{{ $label }}</span></label>@endforeach</div></div></div><label class="form-label">Status</label></div>
         <div class="col-md-2"><label class="form-label">Tahun</label><select name="year" class="form-select" data-year-filter><option value="all" @selected($year === null)>Semua tahun</option>@foreach(range($activeYear - 2, $activeYear + 1) as $optionYear)<option value="{{ $optionYear }}" @selected($year === $optionYear)>{{ $optionYear }}{{ $optionYear === $activeYear ? ' (aktif)' : '' }}</option>@endforeach</select></div>
         <div class="col-md-2"><label class="form-label">Bulan</label><select name="month" class="form-select" @disabled($year === null)><option value="">Semua bulan</option>@foreach([1=>'Januari',2=>'Februari',3=>'Maret',4=>'April',5=>'Mei',6=>'Juni',7=>'Juli',8=>'Agustus',9=>'September',10=>'Oktober',11=>'November',12=>'Desember'] as $monthNumber => $monthName)<option value="{{ $monthNumber }}" @selected($month === $monthNumber)>{{ $monthName }}</option>@endforeach</select></div>
         <div class="col-md-2"><label class="form-label">Baris</label><select name="limit" class="form-select">@foreach([10,25,50,100] as $limit)<option value="{{ $limit }}" @selected($perPage === $limit)>{{ $limit }}</option>@endforeach</select></div>
@@ -32,14 +33,6 @@
 </section>
 
 <script>
-    document.querySelectorAll('[data-mobile-toggle]').forEach((toggle) => toggle.addEventListener('click', () => {
-        const panel = toggle.closest('[data-mobile-panel]');
-        const expanded = panel.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        const icon = toggle.querySelector('[data-mobile-toggle-icon]');
-        if (icon) icon.textContent = expanded ? '−' : '+';
-    }));
-
     document.querySelector('[data-year-filter]')?.addEventListener('change', (event) => {
         const month = document.querySelector('select[name="month"]');
         if (!month) return;
@@ -75,5 +68,20 @@
         document.getElementById('leaveKpiModalTitle').textContent = titles[key] || 'Rincian cuti';
         document.querySelectorAll('[data-kpi-detail]').forEach((detail) => detail.classList.toggle('d-none', detail.dataset.kpiDetail !== key));
     }));
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const drafts = [];
+    @foreach($requests->getCollection()->where('status', 'draft') as $draft)
+        drafts.push({ edit: @json(route('workspace.hris.leave-requests.edit', $draft)), delete: @json(route('workspace.hris.leave-requests.destroy', $draft)) });
+    @endforeach
+    [...document.querySelectorAll('table tbody tr')].filter((row) => row.querySelector('td:nth-child(5)')?.textContent.trim().toLowerCase().includes('draft')).forEach((row, index) => {
+        const action = row.lastElementChild;
+        const draft = drafts[index];
+        if (!action || !draft || action.dataset.draftActions) return;
+        action.dataset.draftActions = 'true';
+        action.insertAdjacentHTML('beforeend', `<a href="${draft.edit}" class="btn btn-sm btn-outline-primary">Edit draft</a><form method="POST" action="${draft.delete}" class="d-inline" data-confirm="Hapus draft cuti/sakit ini? Draft tidak dapat dipulihkan."><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="_method" value="DELETE"><button class="btn btn-sm btn-outline-danger">Hapus draft</button></form>`);
+    });
+});
 </script>
 @endsection

@@ -1,10 +1,16 @@
 # Domain Model Awal
 
+Pengajuan lembur HRIS untuk jenis `external_project` memiliki referensi pekerjaan
+opsional yang dapat menunjuk ke `Core\Models\Project` atau CRM opportunity. Referensi
+disimpan sebagai `project`, `opportunity`, atau `none`; nama dan status referensi juga
+disimpan sebagai snapshot agar histori pengajuan tetap dapat dibaca ketika data sumber
+berubah atau dihapus. Jenis internal tidak menyimpan relasi pekerjaan.
+
 ## Entitas inti
 
 ### Pemilik data
 
-- `core/`: users, companies, vendors, projects, project membership, external identities, dan settings general.
+- `core/`: users, companies, organization units, vendors, projects, project membership, external identities, dan settings general.
 - `app/file-organizer/` Workspace: Core/Identity, Company, CRM, Project Management, dan Document Management dalam satu modular monolith.
 - `project-sso/`: adapter OIDC opsional/future federation; bukan bagian dari runtime domain utama Workspace.
 
@@ -29,6 +35,15 @@
 - `crm_opportunities`: pipeline opportunity milik account yang dapat menghasilkan project.
 - `crm_activities`: call, meeting, email, task, atau note dengan due date dan completion state.
 - `tickets`: ticket/task milik project dengan status, priority, assignee, dan due date.
+- `organization_units`: hierarchy direktorat/divisi/departemen/tim/unit milik satu
+  perusahaan operasional internal; dimiliki Core dan dapat dipakai lintas modul.
+- `employees.organization_unit_id`: referensi opsional dari HRIS ke unit organisasi
+  Core. Konsistensi company scope divalidasi pada service karena koneksi memiliki
+  prefix tabel berbeda.
+- `overtime_requests`: header laporan realisasi lembur, pemohon, snapshot unit/jabatan,
+  jenis/lokasi, total durasi, dan status workflow Atasan -> HR.
+- `overtime_request_entries`: rincian tanggal, waktu mulai/selesai, uraian pekerjaan,
+  urutan, dan durasi hasil kebijakan pembulatan untuk satu pengajuan lembur.
 
 ## Aturan data
 

@@ -14,7 +14,9 @@ class CrmLead extends Model
     protected $connection = 'crm';
     protected $table = 'leads';
 
-    protected $fillable = ['company_id', 'account_id', 'name', 'email', 'phone', 'source', 'status', 'owner_user_id', 'notes'];
+    protected $fillable = ['company_id', 'account_id', 'contact_id', 'name', 'email', 'phone', 'source', 'status', 'owner_user_id', 'notes', 'converted_opportunity_id', 'converted_at'];
+
+    protected function casts(): array { return ['converted_at' => 'datetime']; }
 
     public function company()
     {
@@ -25,4 +27,7 @@ class CrmLead extends Model
     {
         return $this->belongsTo(CrmAccount::class);
     }
+
+    public function contact() { return $this->belongsTo(CrmContact::class); }
+    public function convertedOpportunity() { return $this->belongsTo(CrmOpportunity::class, 'converted_opportunity_id'); }
 }

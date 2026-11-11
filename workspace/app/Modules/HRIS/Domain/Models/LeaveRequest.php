@@ -6,9 +6,11 @@ use Core\Models\Company;
 use Core\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LeaveRequest extends Model
 {
+    use SoftDeletes;
     protected $connection = 'hris';
     protected $table = 'leave_requests';
     protected $keyType = 'string';
@@ -16,7 +18,7 @@ class LeaveRequest extends Model
     protected $fillable = ['request_number', 'employee_id', 'company_id', 'type', 'status', 'total_days', 'reason', 'supporting_document_id', 'created_by', 'requester_user_id', 'submitted_at', 'revision_requested_by', 'revision_requested_role', 'revision_type', 'revision_reason', 'revision_requested_at', 'revision_submitted_at', 'revision_number'];
     protected function casts(): array { return ['total_days' => 'integer', 'revision_number' => 'integer', 'submitted_at' => 'datetime', 'manager_approved_at' => 'datetime', 'hr_approved_at' => 'datetime', 'revision_requested_at' => 'datetime', 'revision_submitted_at' => 'datetime', 'cancelled_at' => 'datetime']; }
 
-    protected static function booted(): void { static::creating(function (self $request): void { $request->id ??= (string) Str::ulid(); $request->request_number ??= self::generateRequestNumber(); }); }
+    protected static function booted(): void { static::creating(function (self $request): void { $request->id ??= (string) Str::ulid(); if ($request->status !== 'draft') $request->request_number ??= self::generateRequestNumber(); }); }
     public static function generateRequestNumber(): string { return 'HRIS-LEAVE-'.now()->format('Ymd').'-'.Str::upper(Str::random(10)); }
     public function employee() { return $this->belongsTo(Employee::class); }
     public function requester() { return $this->belongsTo(User::class, 'requester_user_id'); }
@@ -28,5 +30,5 @@ class LeaveRequest extends Model
     public function getEndDateAttribute(): mixed { return collect($this->dates)->last()?->leave_date; }
     public function scopeActive($query) { return $query->whereIn('status', ['pending_manager', 'pending_hr', 'approved']); }
     public function scopeNeedsRevision($query) { return $query->where('status', 'needs_revision'); }
-    public function getStatusLabelAttribute(): string { return ['pending_manager' => 'Menunggu atasan', 'pending_hr' => 'Menunggu HR', 'needs_revision' => 'Revisi', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'][$this->status] ?? ucfirst(str_replace('_', ' ', (string) $this->status)); }
+    public function getStatusLabelAttribute(): string { return ['draft' => 'Draft', 'pending_manager' => 'Menunggu atasan', 'pending_hr' => 'Menunggu HR', 'needs_revision' => 'Revisi', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'][$this->status] ?? ucfirst(str_replace('_', ' ', (string) $this->status)); }
 }

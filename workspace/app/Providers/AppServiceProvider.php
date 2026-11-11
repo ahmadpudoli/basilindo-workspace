@@ -7,6 +7,13 @@ use Illuminate\Pagination\Paginator;
 use Livewire\Livewire;
 use App\Modules\DocumentManagement\Livewire\DocumentMetadataFields;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobQueued;
+use App\Modules\Core\Domain\Models\QueueJobLog;
 use Core\Models\Role;
 use Core\Models\Project;
 use Core\Models\User;
@@ -15,6 +22,7 @@ use App\Modules\Core\Application\Services\Audit\AuditLogger;
 use App\Modules\Core\Application\Services\Audit\AuditModelObserver;
 use App\Modules\Core\Policies\RolePolicy;
 use App\Modules\Core\Policies\UserPolicy;
+use App\Modules\Core\Policies\OrganizationUnitPolicy;
 use App\Modules\Company\Policies\CompanyPolicy;
 use App\Modules\Company\Policies\VendorPolicy;
 use Core\Models\Vendor;
@@ -61,9 +69,30 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+        Event::listen(JobQueued::class, function (JobQueued $event): void {
+            $jobName = is_object($event->job) ? $event->job::class : (string) ($event->job ?: 'Queued job');
+            QueueJobLog::create(['job_id' => $event->id, 'connection_name' => $event->connectionName, 'queue_name' => $event->queue, 'job_name' => $jobName, 'status' => 'queued', 'queued_at' => now()]);
+        });
+        Event::listen(JobProcessing::class, function (JobProcessing $event): void {
+            $job = $event->job; $log = QueueJobLog::query()->where('job_id', $job->getJobId())->latest()->first();
+            ($log ?: QueueJobLog::create(['job_id' => $job->getJobId(), 'connection_name' => $event->connectionName, 'queue_name' => $job->getQueue(), 'job_name' => $job->resolveName()]))->update(['status' => 'processing', 'started_at' => now(), 'attempts' => $job->attempts()]);
+        });
+        Event::listen(JobProcessed::class, function (JobProcessed $event): void {
+            $log = QueueJobLog::query()->where('job_id', $event->job->getJobId())->latest()->first();
+            $log?->update(['status' => 'succeeded', 'finished_at' => now(), 'attempts' => $event->job->attempts()]);
+        });
+        Event::listen(JobExceptionOccurred::class, function (JobExceptionOccurred $event): void {
+            $log = QueueJobLog::query()->where('job_id', $event->job->getJobId())->latest()->first();
+            $log?->update(['status' => 'failed', 'finished_at' => now(), 'attempts' => $event->job->attempts(), 'error_message' => substr($event->exception->getMessage(), 0, 2000)]);
+        });
+        Event::listen(JobFailed::class, function (JobFailed $event): void {
+            $log = QueueJobLog::query()->where('job_id', $event->job->getJobId())->latest()->first();
+            $log?->update(['status' => 'failed', 'finished_at' => now(), 'attempts' => $event->job->attempts(), 'error_message' => substr($event->exception->getMessage(), 0, 2000)]);
+        });
         Livewire::component('document-metadata-fields', DocumentMetadataFields::class);
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(\Core\Models\OrganizationUnit::class, OrganizationUnitPolicy::class);
         Gate::policy(Company::class, CompanyPolicy::class);
         Gate::policy(Vendor::class, VendorPolicy::class);
         Gate::policy(CrmAccount::class, CrmAccountPolicy::class);
@@ -97,10 +126,14 @@ class AppServiceProvider extends ServiceProvider
             \Core\Models\Company::class,
             \Core\Models\Vendor::class,
             \Core\Models\Project::class,
+            \Core\Models\OrganizationUnit::class,
             \App\Modules\CRM\Domain\Models\CrmAccount::class,
             \App\Modules\CRM\Domain\Models\CrmContact::class,
             \App\Modules\CRM\Domain\Models\CrmLead::class,
             \App\Modules\CRM\Domain\Models\CrmOpportunity::class,
+            \App\Modules\CRM\Domain\Models\CrmPipelineStage::class,
+            \App\Modules\CRM\Domain\Models\CrmClosingStatus::class,
+            \App\Modules\CRM\Domain\Models\CrmTeam::class,
             \App\Modules\CRM\Domain\Models\CrmActivity::class,
             \App\Modules\ProjectManagement\Domain\Models\Ticket::class,
             \App\Modules\ProjectManagement\Domain\Models\Epic::class,
@@ -114,6 +147,7 @@ class AppServiceProvider extends ServiceProvider
             \App\Modules\HRIS\Domain\Models\LeaveRequest::class,
             \App\Modules\HRIS\Domain\Models\LeaveRequestDate::class,
             \App\Modules\HRIS\Domain\Models\OvertimeRequest::class,
+            \App\Modules\HRIS\Domain\Models\OvertimeRequestEntry::class,
             \App\Modules\HRIS\Domain\Models\Claim::class,
             \App\Modules\HRIS\Domain\Models\HrisSetting::class,
             \App\Modules\HRIS\Domain\Models\HrisWorkflowApprover::class,

@@ -1,11 +1,11 @@
 @foreach($items as $item)
     @php
         $hasChildren = isset($item['items']) && $item['items'] !== [];
-        $itemUrl = isset($item['url']) ? parse_url($item['url'], PHP_URL_PATH) : null;
+        $itemUrl = isset($item['url']) ? ($item['active_key'] ?? parse_url($item['url'], PHP_URL_PATH)) : null;
         $itemActive = $itemUrl && $activeNavPath === $itemUrl;
         $hasActiveDescendant = function (array $children) use (&$hasActiveDescendant, $activeNavPath): bool {
             foreach ($children as $child) {
-                if (isset($child['url']) && parse_url($child['url'], PHP_URL_PATH) === $activeNavPath) return true;
+                if (isset($child['url']) && ($child['active_key'] ?? parse_url($child['url'], PHP_URL_PATH)) === $activeNavPath) return true;
                 if (isset($child['items']) && $hasActiveDescendant($child['items'])) return true;
             }
             return false;

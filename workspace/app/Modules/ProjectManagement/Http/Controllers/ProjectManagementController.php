@@ -16,6 +16,7 @@ use Core\Models\Project;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Arr;
 use Illuminate\View\View;
 
 class ProjectManagementController extends Controller
@@ -42,6 +43,9 @@ class ProjectManagementController extends Controller
         $record = $model::query()->findOrFail($id);
         $this->authorizeRecord($record, 'update');
         $data = $this->validated($request, $resource);
+        if ($record instanceof Project && ((bool) $record->is_integrated || filled($record->source_system))) {
+            $data = Arr::only($data, ['description', 'ticket_prefix', 'color', 'start_date', 'end_date']);
+        }
         $assignees = $data['assignees'] ?? [];
         unset($data['assignees']);
         $record->update($data);

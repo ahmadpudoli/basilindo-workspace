@@ -29,7 +29,7 @@
                         <h2 class="h5 mb-0">{{ $model->employee?->full_name ?? '-' }}</h2>
                         <div class="small text-primary mt-1">Nomor pengajuan: {{ $model->request_number }}</div>
                     </div>
-                    <span class="badge rounded-pill {{ $step === 'hr' ? 'text-bg-info' : 'text-bg-warning' }}">Tahap {{ $stage }}</span>
+                    <span class="badge rounded-pill {{ in_array($step, ['hr', 'finance', 'final'], true) ? 'text-bg-info' : 'text-bg-warning' }}">Tahap {{ $stage }}</span>
                 </div>
                 <div class="card-body py-3">
                     <div class="row g-3">
@@ -44,13 +44,15 @@
                             <div class="col-md-6"><div class="small text-secondary">Jumlah hari</div><div class="fw-semibold">{{ $model->total_days ?? '-' }} hari</div></div>
                             <div class="col-12"><div class="small text-secondary">Alasan</div><div class="fw-semibold">{{ $model->reason ?: '-' }}</div></div>
                         @elseif ($type === 'overtime')
-                            <div class="col-md-6"><div class="small text-secondary">Tanggal kerja</div><div class="fw-semibold">{{ $model->work_date?->format('d/m/Y') ?? '-' }}</div></div>
-                            <div class="col-md-6"><div class="small text-secondary">Jam</div><div class="fw-semibold">{{ $model->start_time ?? '-' }} - {{ $model->end_time ?? '-' }}</div></div>
-                            <div class="col-md-6"><div class="small text-secondary">Durasi</div><div class="fw-semibold">{{ $model->duration_minutes ? $model->duration_minutes.' menit' : '-' }}</div></div>
+                            <div class="col-md-6"><div class="small text-secondary">Divisi / unit</div><div class="fw-semibold">{{ $model->organization_unit_name ?: '-' }}</div></div>
+                            <div class="col-md-6"><div class="small text-secondary">Jenis / lokasi</div><div class="fw-semibold">{{ $model->overtime_type === 'external_project' ? 'External / Project' : 'Internal' }} · {{ $model->work_location ?: '-' }}</div></div>
+                            <div class="col-md-6"><div class="small text-secondary">Total durasi</div><div class="fw-semibold">{{ intdiv($model->duration_minutes, 60) }} jam {{ $model->duration_minutes % 60 }} menit</div></div>
                             <div class="col-12"><div class="small text-secondary">Alasan</div><div class="fw-semibold">{{ $model->reason ?: '-' }}</div></div>
+                            <div class="col-12"><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Tanggal</th><th>Jenis hari</th><th>Jam</th><th>Durasi</th><th>Pekerjaan</th></tr></thead><tbody>@foreach($model->entries as $entry)<tr><td>{{ $entry->work_date?->format('d/m/Y') }}</td><td><span class="badge {{ $entry->day_type === 'holiday' ? 'text-bg-danger' : 'text-bg-light' }}">{{ $entry->day_type === 'holiday' ? 'Hari Libur' : 'Hari Kerja' }}</span></td><td>{{ substr($entry->start_time,0,5) }}–{{ substr($entry->end_time,0,5) }}</td><td>{{ $entry->duration_minutes }} menit</td><td>{{ $entry->work_description }}</td></tr>@endforeach</tbody></table></div></div>
                         @else
                             <div class="col-md-6"><div class="small text-secondary">Kategori</div><div class="fw-semibold">{{ $model->category ?: '-' }}</div></div>
                             <div class="col-md-6"><div class="small text-secondary">Nominal</div><div class="fw-semibold">{{ $model->currency ?? 'IDR' }} {{ $model->amount !== null ? number_format((float) $model->amount, 2, ',', '.') : '-' }}</div></div>
+                            @if($model->relationLoaded('expenseItems') && $model->expenseItems->isNotEmpty())<div class="col-12"><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>#</th><th>Tanggal nota</th><th>Jenis kebutuhan</th><th>Deskripsi</th><th class="text-end">Nominal</th></tr></thead><tbody>@foreach($model->expenseItems as $item)<tr><td>{{ $item->line_number }}</td><td>{{ $item->receipt_date?->format('d/m/Y') ?: '-' }}</td><td>{{ $item->category }}</td><td>{{ $item->description }}</td><td class="text-end">{{ $item->currency }} {{ number_format((float) $item->amount, 2, ',', '.') }}</td></tr>@endforeach</tbody></table></div></div>@endif
                             <div class="col-12"><div class="small text-secondary">Keperluan</div><div class="fw-semibold">{{ $model->purpose ?: '-' }}</div></div>
                         @endif
 
@@ -69,7 +71,7 @@
                     </div>
                 </div>
             </section>
-            @if ($type === 'leave')
+            @if (in_array($type, ['leave', 'overtime'], true))
                 <section class="card border-0 shadow-sm">
                     <div class="card-header"><strong>Timeline pengajuan</strong><div class="small text-secondary">Riwayat proses pengajuan.</div></div>
                     <div class="card-body">
@@ -114,7 +116,7 @@
                         <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#approval-reject-modal">Tolak pengajuan</button>
                     </div>
 
-                    @if ($type === 'leave')
+                    @if (in_array($type, ['leave', 'overtime'], true))
                         <div class="border rounded-3 p-3">
                             <div class="fw-semibold text-warning-emphasis mb-1">Minta revisi</div>
                             <div class="small text-secondary mb-3">Pemohon akan diminta memperbaiki pengajuan sebelum diproses kembali.</div>
@@ -159,7 +161,7 @@
         </div>
     </div>
 
-    @if ($type === 'leave')
+    @if (in_array($type, ['leave', 'overtime'], true))
         <div class="modal fade" id="approval-revision-modal" tabindex="-1" aria-labelledby="approval-revision-title" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">

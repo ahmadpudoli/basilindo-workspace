@@ -2,6 +2,7 @@
 
 namespace App\Modules\HRIS\Application\Services;
 
+use App\Modules\Core\Notifications\Jobs\SendWebPushNotification;
 use App\Modules\HRIS\Domain\Models\ApprovalEvent;
 use App\Modules\HRIS\Domain\Models\Claim;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
@@ -26,7 +27,8 @@ class HrisWorkflowService
     {
         $allowed = ['approve', 'reject', 'request_revision'];
         if (! in_array($action, $allowed, true)) throw ValidationException::withMessages(['action' => 'Aksi approval tidak valid.']);
-        if ($action === 'request_revision' && ($requestType !== 'leave' || blank($comment))) throw ValidationException::withMessages(['comment' => 'Alasan revisi wajib diisi.']);
+        if ($action === 'reject' && blank($comment)) throw ValidationException::withMessages(['comment' => 'Alasan penolakan wajib diisi.']);
+        if ($action === 'request_revision' && (! in_array($requestType, ['leave', 'overtime'], true) || blank($comment))) throw ValidationException::withMessages(['comment' => 'Alasan revisi wajib diisi.']);
         if ($action === 'request_revision' && ! in_array($revisionType, ['substantive', 'administrative'], true)) throw ValidationException::withMessages(['revision_type' => 'Jenis revisi wajib dipilih.']);
         return DB::connection('hris')->transaction(function () use ($request, $requestType, $step, $action, $actor, $comment, $revisionType): object {
             $statusMap = [
@@ -40,8 +42,9 @@ class HrisWorkflowService
             ];
             $key = $requestType.'_'.$step;
             if (! isset($statusMap[$key])) throw ValidationException::withMessages(['step' => 'Tahap workflow tidak valid.']);
-            if ($requestType === 'leave' && (($step === 'manager' && $request->status !== 'pending_manager') || ($step === 'hr' && $request->status !== 'pending_hr'))) throw ValidationException::withMessages(['step' => 'Pengajuan tidak berada pada tahap approval yang sesuai.']);
-            $workflowKey = $requestType === 'leave' ? 'leave_sick' : $requestType;
+            $expectedClaimStatus = ['manager' => 'pending_manager', 'finance' => 'pending_finance', 'final' => 'pending_final'][$step] ?? null;
+            if (($requestType === 'claim' && $request->status !== $expectedClaimStatus) || (in_array($requestType, ['leave', 'overtime'], true) && (($step === 'manager' && $request->status !== 'pending_manager') || ($step === 'hr' && $request->status !== 'pending_hr')))) throw ValidationException::withMessages(['step' => 'Pengajuan tidak berada pada tahap approval yang sesuai.']);
+            $workflowKey = in_array($requestType, ['leave', 'overtime'], true) ? 'leave_sick' : $requestType;
             $configuredStep = $requestType === 'claim' && $step === 'finance' ? 'finance' : $step;
             if (in_array($configuredStep, ['hr', 'finance'], true) && ! in_array((int) $actor->getKey(), HrisWorkflowApprover::approverIds((int) $request->company_id, $workflowKey, $configuredStep), true)) {
                 throw ValidationException::withMessages(['step' => 'Anda bukan approver yang ditetapkan untuk perusahaan ini.']);
@@ -59,8 +62,14 @@ class HrisWorkflowService
             }
             $nextStatus = $statusMap[$key][$action];
             if ($requestType === 'claim' && $step === 'finance' && $action === 'approve') {
-                $nextStatus = $request->type === 'cash_advance' ? 'awaiting_accountability' : (app(ClaimService::class)->requiresFinalApproval($request) ? 'pending_final' : 'approved');
+                $claimService = app(ClaimService::class);
+                if ($request->type === 'cash_advance') $nextStatus = 'awaiting_accountability';
+                elseif ($claimService->requiresFinalApproval($request)) {
+                    if (! $claimService->finalApproverConfigured($request)) throw ValidationException::withMessages(['step' => 'Approver final untuk threshold perusahaan ini belum dikonfigurasi.']);
+                    $nextStatus = 'pending_final';
+                } else $nextStatus = 'approved';
             }
+            if ($requestType === 'claim' && $step === 'final' && $action === 'approve') $nextStatus = 'approved';
             $request->status = $nextStatus;
             $field = $step.'_approved_by'; $time = $step.'_approved_at';
             if ($action === 'approve') $request->forceFill([$field => $actor->getKey(), $time => now()]);
@@ -80,6 +89,9 @@ class HrisWorkflowService
                 foreach (HrisWorkflowApprover::approverIds((int) $request->company_id, $workflowKey, $configuredStep) as $approverId) {
                     $this->notify($approverId, "{$requestLabel} menunggu approval {$nextStepLabel}", "{$requestLabel} disetujui oleh {$actorName} sebagai Atasan dan sekarang menunggu persetujuan {$nextStepLabel}.", ['request_type' => $requestType, 'request_id' => $request->getKey(), 'status' => $request->status, 'action' => 'pending_approval', 'approval' => true, 'actor_id' => $actor->getKey(), 'actor_name' => $actorName, 'step' => $configuredStep]);
                 }
+            }
+            if ($action === 'approve' && $requestType === 'claim' && $step === 'finance' && $request->status === 'pending_final') {
+                foreach (HrisWorkflowApprover::approverIds((int) $request->company_id, 'claim', 'final') as $approverId) $this->notify($approverId, "{$requestLabel} menunggu approval final", "{$requestLabel} memerlukan approval final berdasarkan threshold nominal.", ['request_type' => 'claim', 'request_id' => $request->getKey(), 'status' => $request->status, 'action' => 'pending_approval', 'approval' => true, 'step' => 'final']);
             }
             return $request;
         });

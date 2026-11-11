@@ -14,7 +14,8 @@ class CrmOpportunityPolicy
 
     public function view(User $user, CrmOpportunity $opportunity): bool
     {
-        return ($user->hasRole('super_admin') || $user->can('view_crm_opportunity')) && $user->companies()->whereKey($opportunity->account?->company_id)->exists();
+        $companyId = $opportunity->company_id ?: $opportunity->account?->company_id;
+        return ($user->hasRole('super_admin') || $user->can('view_crm_opportunity')) && $companyId !== null && $user->companies()->whereKey($companyId)->exists();
     }
 
     public function create(User $user): bool
@@ -29,13 +30,18 @@ class CrmOpportunityPolicy
 
     public function delete(User $user, CrmOpportunity $opportunity): bool
     {
-        return ($user->hasRole('super_admin') || $user->can('delete_crm_opportunity')) && $this->view($user, $opportunity);
+        return ! $this->isIntegrated($opportunity) && ($user->hasRole('super_admin') || $user->can('delete_crm_opportunity')) && $this->view($user, $opportunity);
     }
 
     public function convertToProject(User $user, CrmOpportunity $opportunity): bool
     {
         return $this->view($user, $opportunity)
             && $opportunity->project_id === null
-            && $opportunity->stage !== 'lost';
+            && $opportunity->closingStatus?->is_lost !== true;
+    }
+
+    private function isIntegrated(CrmOpportunity $opportunity): bool
+    {
+        return (bool) $opportunity->is_integrated || filled($opportunity->source_system);
     }
 }
