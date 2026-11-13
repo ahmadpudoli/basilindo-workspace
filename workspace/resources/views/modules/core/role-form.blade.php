@@ -11,7 +11,32 @@
         'access_documents' => 'Document Management',
         'access_hris' => 'HRIS',
         'approve_hris_request' => 'HRIS',
-        'manage_hris_settings' => 'HRIS',
+        'view_hris_settings' => 'Core & Pengaturan',
+        'create_hris_settings' => 'Core & Pengaturan',
+        'update_hris_settings' => 'Core & Pengaturan',
+        'delete_hris_settings' => 'Core & Pengaturan',
+        'view_hris_workflow' => 'Core & Pengaturan',
+        'create_hris_workflow' => 'Core & Pengaturan',
+        'update_hris_workflow' => 'Core & Pengaturan',
+        'delete_hris_workflow' => 'Core & Pengaturan',
+        'view_hris_expense_categories' => 'Core & Pengaturan',
+        'create_hris_expense_categories' => 'Core & Pengaturan',
+        'update_hris_expense_categories' => 'Core & Pengaturan',
+        'delete_hris_expense_categories' => 'Core & Pengaturan',
+        'manage_workspace_modules' => 'Core & Pengaturan',
+        'access_integration' => 'Core & Pengaturan',
+        'view_integration' => 'Core & Pengaturan',
+        'manage_integration' => 'Core & Pengaturan',
+        'run_integration_sync' => 'Core & Pengaturan',
+        'view_queue_jobs' => 'Core & Pengaturan',
+        'view_numbering_rules' => 'Core & Pengaturan',
+        'create_numbering_rules' => 'Core & Pengaturan',
+        'update_numbering_rules' => 'Core & Pengaturan',
+        'view_organization_unit' => 'Core & Pengaturan',
+        'view_any_organization_unit' => 'Core & Pengaturan',
+        'create_organization_unit' => 'Core & Pengaturan',
+        'update_organization_unit' => 'Core & Pengaturan',
+        'delete_organization_unit' => 'Core & Pengaturan',
         'view_hris_approvals' => 'HRIS',
         'view_hris_leave_summary' => 'HRIS',
         'view_hris_overtime_summary' => 'HRIS',
@@ -58,7 +83,7 @@
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center mb-2"><label class="form-label mb-0">Permission role</label><span class="text-secondary small">Kelompokkan berdasarkan modul</span></div>
                 @include('modules.partials.permission-assignment-groups', ['permissionGroups' => $permissionGroups, 'permissionPanelPrefix' => 'rolePermissionGroup', 'selectedPermissions' => $selectedPermissions, 'isProtected' => $isProtectedSuperAdminRole])
-                <div class="form-text mt-3">Role <code>super_admin</code> selalu dipulihkan ke seluruh permission. Untuk menampilkan menu HRIS, centang <code>access_hris</code>; permission fitur tetap mengatur halaman dan aksi secara granular.@if($isProtectedSuperAdminRole) Permission role ini dikunci dan tidak dapat dikurangi.@endif</div>
+                <div class="form-text mt-3">Role <code>super_admin</code> selalu dipulihkan ke seluruh permission. Untuk menampilkan menu HRIS, centang <code>access_hris</code>. Untuk membuka modul Pengaturan, centang <code>access_settings</code>; menu seperti Modul aktif dan master kategori tetap memerlukan permission pengelolaan masing-masing.@if($isProtectedSuperAdminRole) Permission role ini dikunci dan tidak dapat dikurangi.@endif</div>
             </div>
         </div>
     </div>

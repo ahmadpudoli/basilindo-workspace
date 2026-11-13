@@ -88,7 +88,7 @@ class OvertimeService
             ])->save();
             $request->entries()->delete();
             foreach ($normalized as $entry) $request->entries()->create($entry);
-            if ($resubmission) \App\Modules\HRIS\Domain\Models\ApprovalEvent::create(['request_type' => 'overtime', 'request_id' => $request->getKey(), 'step' => 'employee', 'action' => 'resubmit', 'actor_id' => $actorId, 'comment' => null]);
+            if ($resubmission) \App\Modules\HRIS\Domain\Models\ApprovalEvent::create(['request_type' => 'overtime', 'request_id' => $request->getKey(), 'step' => 'employee', 'action' => 'resubmit', 'actor_id' => $actorId, 'comment' => null, 'created_at' => now('UTC')]);
             if ($draft) return $request;
             $workflow = app(HrisWorkflowService::class);
             $workflow->notify($actorId, $resubmission ? 'Revisi pengajuan lembur ['.$request->request_number.'] terkirim' : 'Pengajuan lembur ['.$request->request_number.'] terkirim', $resubmission ? 'Revisi pengajuan lembur nomor '.$request->request_number.' berhasil dikirim untuk pemeriksaan ulang.' : 'Pengajuan lembur nomor '.$request->request_number.' berhasil dikirim.', ['request_type' => 'overtime', 'request_id' => $request->id, 'status' => $request->status, 'action' => $resubmission ? 'resubmit' : 'submit']);

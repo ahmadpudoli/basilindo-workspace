@@ -1,6 +1,9 @@
 import './bootstrap';
 import * as bootstrap from 'bootstrap';
 
+// Inline Blade widgets use Bootstrap's modal/dropdown API as well.
+window.bootstrap = bootstrap;
+
 const themeStorageKey = 'basilindo-workspace-theme';
 const sidebarStorageKey = 'basilindo-workspace-sidebar-collapsed';
 const savedTheme = window.localStorage.getItem(themeStorageKey);
@@ -364,13 +367,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const previewModalElement = document.querySelector('#workspacePreviewModal');
     const previewStage = document.querySelector('[data-workspace-preview-stage]');
+    const previewFrame = previewStage?.querySelector('[data-workspace-preview-frame]');
     const previewTitle = document.querySelector('#workspacePreviewTitle');
     const previewFallback = document.querySelector('[data-workspace-preview-fallback]');
     const previewModal = previewModalElement ? bootstrap.Modal.getOrCreateInstance(previewModalElement) : null;
 
     document.addEventListener('click', (event) => {
         const trigger = event.target.closest('[data-workspace-preview]');
-        if (!trigger || !previewModal || !previewStage) return;
+        if (!trigger || !previewModal || !previewStage || !previewFrame) return;
 
         event.preventDefault();
         const url = trigger.dataset.previewUrl || trigger.href;
@@ -378,26 +382,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const title = trigger.dataset.previewTitle || 'Preview dokumen';
         previewTitle.textContent = title;
         previewFallback.href = trigger.dataset.previewFallbackUrl || url;
-        previewStage.replaceChildren();
+        previewStage.querySelector('.workspace-preview-unavailable')?.remove();
+        previewFrame.hidden = false;
+        previewFrame.title = `Preview dokumen: ${title}`;
+        previewFrame.onload = hideLoading;
         showLoading('Memuat dokumen...');
 
         if (mime === 'application/pdf') {
-            const frame = document.createElement('iframe');
-            frame.src = `${url}#toolbar=1&view=FitH`;
-            frame.title = `Preview PDF: ${title}`;
-            frame.addEventListener('load', hideLoading, { once: true });
-            previewStage.append(frame);
+            previewFrame.title = `Preview PDF: ${title}`;
+            previewFrame.src = `${url}#toolbar=1&view=FitH`;
         } else if (mime.startsWith('image/')) {
-            const image = document.createElement('img');
-            image.src = url;
-            image.alt = title;
-            image.addEventListener('load', hideLoading, { once: true });
-            previewStage.append(image);
+            previewFrame.src = url;
         } else {
             const message = document.createElement('div');
-            message.className = 'workspace-preview-loading';
+            message.className = 'workspace-preview-loading workspace-preview-unavailable';
             message.textContent = 'Format file ini tidak dapat ditampilkan langsung. Gunakan tombol buka di tab baru.';
             previewStage.append(message);
+            previewFrame.hidden = true;
             hideLoading();
         }
 
@@ -405,7 +406,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     previewModalElement?.addEventListener('hidden.bs.modal', () => {
-        previewStage?.replaceChildren();
+        if (previewFrame) {
+            previewFrame.onload = null;
+            previewFrame.src = 'about:blank';
+            previewFrame.hidden = false;
+        }
+        previewStage?.querySelector('.workspace-preview-unavailable')?.remove();
         if (previewFallback) previewFallback.removeAttribute('href');
     });
 
@@ -425,6 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingOverlay.classList.add('is-visible');
         loadingOverlay.setAttribute('aria-hidden', 'false');
     };
+    window.addEventListener('workspace:show-loading', (event) => showLoading(event.detail || 'Memproses...'));
     const formLoadingMessage = (form) => {
         const method = (form.querySelector('input[name="_method"]')?.value || form.method || 'GET').toUpperCase();
         const actionText = form.querySelector('button[type="submit"], button')?.textContent?.trim().toLowerCase() || '';
@@ -437,6 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingOverlay?.classList.remove('is-visible');
         loadingOverlay?.setAttribute('aria-hidden', 'true');
     };
+    window.addEventListener('workspace:hide-loading', hideLoading);
 
     const validateWorkspaceForm = (form) => {
         const type = form.dataset.clientValidation;
@@ -488,6 +496,54 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'hris-workflow') {
             if (!value('company_id')) addError('company_id', 'Perusahaan operasional wajib dipilih.');
             if (!value('user_id')) addError('user_id', 'Approver wajib dipilih.');
+        }
+        if (type === 'hris-claim') {
+            const scope = form.querySelector('[name="expense_scope"]:checked')?.value || '';
+            const reference = form.querySelector('[name="work_reference_type"]:checked')?.value || '';
+            const items = [...form.querySelectorAll('#claim-items .claim-item')];
+            const selectedAttachments = items.map((item) => item.querySelector('[data-claim-attachment-input]')?.files?.[0]).filter(Boolean);
+            if (!['internal', 'external_project'].includes(scope)) addError('expense_scope', 'Keperluan wajib dipilih.', form.querySelector('.workspace-claim-scope-grid'));
+            if (!items.length) addError('items', 'Tambahkan minimal satu rincian biaya.', form.querySelector('#claim-items'));
+            let selectedCurrency = '';
+            items.forEach((item, index) => {
+                const category = item.querySelector('[name$="[expense_category_id]"]');
+                const categoryPicker = category?.parentElement?.querySelector('.workspace-select-picker, [data-select-picker], .dropdown button') || category;
+                if (!category?.value) addError(category?.name || 'items', `Rincian ${index + 1}: kategori biaya wajib dipilih.`, categoryPicker);
+                const amountField = item.querySelector('[name$="[amount]"]');
+                const rawAmount = amountField?.value?.trim() || '';
+                const canonicalAmount = rawAmount.includes(',') ? rawAmount.replace(/\./g, '').replace(',', '.') : rawAmount;
+                if (!rawAmount) addError(amountField?.name || 'items', `Rincian ${index + 1}: nominal wajib diisi.`, amountField);
+                else if (!/^\d+(?:\.\d{1,2})?$/.test(canonicalAmount) || Number(canonicalAmount) <= 0) addError(amountField.name, `Rincian ${index + 1}: nominal harus lebih dari 0 dengan maksimal 2 desimal.`, amountField);
+                const description = item.querySelector('[name$="[description]"]');
+                if (!description?.value?.trim()) addError(description?.name || 'items', `Rincian ${index + 1}: deskripsi wajib diisi.`, description);
+                else if (description.value.trim().length > 2000) addError(description.name, `Rincian ${index + 1}: deskripsi maksimal 2.000 karakter.`, description);
+                const attachment = item.querySelector('[data-claim-attachment-input]')?.files?.[0];
+                const attachmentToken = item.querySelector('[data-claim-attachment-token]')?.value || '';
+                if (!attachment && !attachmentToken && item.dataset.hasExistingAttachment !== 'true') addError('items', `Rincian ${index + 1}: bukti nota wajib dilampirkan.`, item.querySelector('[data-choose-claim-file]'));
+                if (attachment && attachment.size > 10 * 1024 * 1024) addError('items', `Rincian ${index + 1}: ukuran bukti maksimal 10 MB.`, item.querySelector('[data-choose-claim-file]'));
+                if (attachment && !/\.(pdf|jpe?g|png|webp|heic|heif)$/i.test(attachment.name)) addError('items', `Rincian ${index + 1}: pilih file PDF atau gambar yang didukung.`, item.querySelector('[data-choose-claim-file]'));
+                const currency = item.querySelector('[name$="[currency]"]')?.value || '';
+                if (!['IDR', 'USD', 'SGD'].includes(currency)) addError(item.querySelector('[name$="[currency]"]')?.name || 'items', `Rincian ${index + 1}: mata uang tidak valid.`, item.querySelector('[name$="[currency]"]'));
+                else if (selectedCurrency && selectedCurrency !== currency) addError('items', 'Satu pengajuan hanya dapat menggunakan satu mata uang.', item.querySelector('[name$="[currency]"]'));
+                else selectedCurrency = currency;
+            });
+            if (selectedAttachments.reduce((total, file) => total + file.size, 0) > 50 * 1024 * 1024) addError('items', 'Total ukuran seluruh bukti nota maksimal 50 MB per pengajuan.', items.find((item) => item.querySelector('[data-claim-attachment-input]')?.files?.[0])?.querySelector('[data-choose-claim-file]'));
+            if (scope === 'external_project') {
+                const referenceRadios = form.querySelector('#claim-reference-field .d-flex');
+                if (!['project', 'opportunity', 'none'].includes(reference)) addError('work_reference_type', 'Pilih jenis referensi pekerjaan.', referenceRadios);
+                if (reference === 'project' && !value('project_id')) addError('project_id', 'Project wajib dipilih.', form.querySelector('#claim-project-field [data-opportunity-table-picker] button, #claim-project-field button, #claim-project-field select'));
+                const opportunityId = value('opportunity_id');
+                if (reference === 'opportunity' && !opportunityId) addError('opportunity_id', 'Opportunity wajib dipilih.', form.querySelector('#claim-opportunity-field [data-opportunity-table-picker] button, #claim-opportunity-field button, #claim-opportunity-field select'));
+                else if (reference === 'opportunity' && opportunityId.length > 36) addError('opportunity_id', 'ID opportunity maksimal 36 karakter.', form.querySelector('#claim-opportunity-field [data-opportunity-table-picker] button, #claim-opportunity-field button, #claim-opportunity-field select'));
+            }
+            const purpose = value('purpose');
+            if (purpose.length > 2000) addError('purpose', 'Keterangan umum maksimal 2.000 karakter.');
+            const poNumber = value('po_number');
+            if (poNumber.length > 100) addError('po_number', 'Nomor PO maksimal 100 karakter.');
+            form.querySelectorAll('[name^="items["][name$="[receipt_date]"], [name^="items["][name$="[activity_date]"]').forEach((dateField) => {
+                if (dateField.name.endsWith('[receipt_date]') && !dateField.value) addError(dateField.name, 'Tanggal nota wajib diisi.', dateField);
+                else if (dateField.value && Number.isNaN(Date.parse(dateField.value))) addError(dateField.name, 'Format tanggal tidak valid.', dateField);
+            });
         }
         if (type === 'document') {
             if (!value('title')) addError('title', 'Judul dokumen wajib diisi.');
@@ -590,8 +646,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('submit', (event) => {
         const form = event.target;
-        if (!(form instanceof HTMLFormElement) || form.dataset.confirmHandled === 'true' || !form.dataset.confirm || !confirmModal) return;
+        if (!(form instanceof HTMLFormElement) || form.dataset.confirmHandled === 'true' || !form.dataset.confirm) return;
         if (form.dataset.confirmValue && event.submitter?.value !== form.dataset.confirmValue) return;
+
+        // Keep destructive/submit confirmations effective even if the shared modal
+        // is unavailable on a page (for example, during a partial layout render).
+        if (!confirmModal) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (!window.confirm(form.dataset.confirm)) return;
+            form.dataset.confirmHandled = 'true';
+            form.requestSubmit(event.submitter || undefined);
+            return;
+        }
 
         event.preventDefault();
         event.stopImmediatePropagation();
@@ -633,6 +700,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         confirmModal.hide();
+        const beforeConfirmedSubmit = new CustomEvent('workspace:before-confirmed-submit', {
+            cancelable: true,
+            detail: { submitter, submit: () => form.submit() },
+        });
+        if (!form.dispatchEvent(beforeConfirmedSubmit)) {
+            pendingConfirmSubmitter = null;
+            return;
+        }
         showLoading(formLoadingMessage(form));
         pendingConfirmSubmitter = null;
         form.submit();
@@ -641,7 +716,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('submit', (event) => {
         const form = event.target;
         if (event.defaultPrevented) return;
-        if (form instanceof HTMLFormElement && form.dataset.confirmHandled !== 'true' && !form.dataset.confirm) showLoading(formLoadingMessage(form));
+        const confirmationWasSkipped = form instanceof HTMLFormElement && form.dataset.confirmValue && event.submitter?.value !== form.dataset.confirmValue;
+        if (form instanceof HTMLFormElement && form.dataset.confirmHandled !== 'true' && (!form.dataset.confirm || confirmationWasSkipped)) showLoading(formLoadingMessage(form));
     });
 
     document.addEventListener('click', (event) => {
@@ -650,24 +726,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (link.origin === window.location.origin) showLoading('Memuat halaman...');
     });
 
-    document.querySelectorAll('[data-permission-group-toggle]').forEach((toggle) => {
-        const group = toggle.closest('.workspace-permission-group');
-        const items = [...(group?.querySelectorAll('[data-permission-item]') ?? [])];
+    document.querySelectorAll('.workspace-permission-group').forEach((group) => {
+        const items = [...group.querySelectorAll('[data-permission-item]')];
+        const groupToggle = group.querySelector('[data-permission-group-toggle]');
+        const groupCounter = group.querySelector('[data-permission-group-count]');
+        const subgroups = [...group.querySelectorAll('.workspace-permission-subgroup')];
         const sync = () => {
-            toggle.checked = items.length > 0 && items.every((item) => item.checked);
-            toggle.indeterminate = items.some((item) => item.checked) && !toggle.checked;
+            const selectedCount = items.filter((item) => item.checked).length;
+            if (groupToggle) {
+                groupToggle.checked = items.length > 0 && selectedCount === items.length;
+                groupToggle.indeterminate = selectedCount > 0 && !groupToggle.checked;
+            }
+            if (groupCounter) groupCounter.textContent = `${selectedCount} dipilih`;
+            subgroups.forEach((subgroup) => {
+                const subgroupItems = [...subgroup.querySelectorAll('[data-permission-item]')];
+                const subgroupToggle = subgroup.querySelector('[data-permission-subgroup-toggle]');
+                const counter = subgroup.querySelector('.workspace-permission-subgroup-title em');
+                const subgroupSelected = subgroupItems.filter((item) => item.checked).length;
+                if (subgroupToggle) {
+                    subgroupToggle.checked = subgroupItems.length > 0 && subgroupSelected === subgroupItems.length;
+                    subgroupToggle.indeterminate = subgroupSelected > 0 && !subgroupToggle.checked;
+                }
+                if (counter) counter.textContent = `${subgroupSelected} dipilih`;
+            });
         };
-        toggle.addEventListener('change', () => items.forEach((item) => { item.checked = toggle.checked; }));
-        items.forEach((item) => item.addEventListener('change', sync));
-        sync();
-    });
-
-    document.querySelectorAll('.workspace-permission-subgroup').forEach((subgroup) => {
-        const items = [...subgroup.querySelectorAll('[data-permission-item]')];
-        const counter = subgroup.querySelector('.workspace-permission-subgroup-title em');
-        const sync = () => {
-            if (counter) counter.textContent = `${items.filter((item) => item.checked).length} dipilih`;
+        const setChecked = (targets, checked) => {
+            targets.forEach((item) => { item.checked = checked; });
+            sync();
         };
+        groupToggle?.addEventListener('change', () => setChecked(items, groupToggle.checked));
+        subgroups.forEach((subgroup) => {
+            const subgroupToggle = subgroup.querySelector('[data-permission-subgroup-toggle]');
+            const subgroupItems = [...subgroup.querySelectorAll('[data-permission-item]')];
+            subgroupToggle?.addEventListener('change', () => setChecked(subgroupItems, subgroupToggle.checked));
+        });
         items.forEach((item) => item.addEventListener('change', sync));
         sync();
     });
@@ -697,7 +789,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const selected = items.filter((item) => item.checked);
             const selectedLabels = selected.map((item) => item.dataset.dropdownValue || item.closest('[data-dropdown-option]')?.querySelector('span')?.textContent.trim() || item.value);
             if (label) {
-                label.textContent = selectedLabels.length ? selectedLabels.join(', ') : (wrapper.dataset.dropdownEmptyLabel || 'Pilih dari daftar');
+                label.textContent = selectedLabels.length
+                    ? (wrapper.dataset.dropdownSummary === 'count' ? `${selectedLabels.length} dipilih` : selectedLabels.join(', '))
+                    : (wrapper.dataset.dropdownEmptyLabel || 'Pilih dari daftar');
                 label.title = selectedLabels.join(', ');
             }
             const query = search?.value.trim().toLowerCase() || '';
@@ -979,6 +1073,72 @@ document.addEventListener('DOMContentLoaded', () => {
             document.documentElement.dataset.theme = nextTheme;
             window.localStorage.setItem(themeStorageKey, nextTheme);
         });
+    });
+
+    document.querySelectorAll('[data-claim-image-viewer]').forEach((viewer) => {
+        const frame = viewer.querySelector('iframe');
+        const toolbar = viewer.querySelector('[data-claim-image-zoom-toolbar]');
+        const levelLabel = viewer.querySelector('[data-claim-zoom-level]');
+        if (!frame || !toolbar || !levelLabel) return;
+
+        let image = null;
+        let stage = null;
+        let scale = 1;
+        const applyScale = (nextScale) => {
+            if (!image || !stage) return;
+            if (!image.naturalWidth || !image.naturalHeight) return;
+            scale = Math.min(4, Math.max(1, Math.round(nextScale * 100) / 100));
+            levelLabel.textContent = `${Math.round(scale * 100)}%`;
+            const document = frame.contentDocument;
+            const viewportWidth = Math.max(1, frame.clientWidth - 24);
+            const viewportHeight = Math.max(1, frame.clientHeight - 24);
+            const fitScale = Math.min(viewportWidth / image.naturalWidth, viewportHeight / image.naturalHeight);
+            const imageWidth = Math.max(1, Math.round(image.naturalWidth * fitScale * scale));
+            const imageHeight = Math.max(1, Math.round(image.naturalHeight * fitScale * scale));
+
+            if (!document?.body) return;
+            document.body.style.margin = '0';
+            document.body.style.overflow = 'auto';
+            stage.style.display = 'grid';
+            stage.style.placeItems = 'center';
+            stage.style.width = `${Math.max(viewportWidth, imageWidth)}px`;
+            stage.style.height = `${Math.max(viewportHeight, imageHeight)}px`;
+            image.style.maxWidth = 'none';
+            image.style.maxHeight = 'none';
+            image.style.width = `${imageWidth}px`;
+            image.style.height = `${imageHeight}px`;
+            image.style.objectFit = 'fill';
+        };
+        const fitToViewport = () => { if (image) applyScale(scale); };
+
+        const loadImageDocument = () => {
+            try {
+                image = frame.contentDocument?.querySelector('img') ?? null;
+            } catch {
+                image = null;
+            }
+            toolbar.hidden = !image;
+            if (image) {
+                stage = frame.contentDocument.createElement('div');
+                stage.append(image);
+                frame.contentDocument.body.replaceChildren(stage);
+            } else {
+                stage = null;
+            }
+            scale = 1;
+            requestAnimationFrame(() => applyScale(1));
+        };
+        frame.addEventListener('load', loadImageDocument);
+        try {
+            if (frame.contentDocument?.readyState === 'complete') loadImageDocument();
+        } catch {
+            toolbar.hidden = true;
+        }
+        viewer.querySelector('[data-claim-zoom-in]')?.addEventListener('click', () => applyScale(scale + 0.25));
+        viewer.querySelector('[data-claim-zoom-out]')?.addEventListener('click', () => applyScale(scale - 0.25));
+        viewer.querySelector('[data-claim-zoom-reset]')?.addEventListener('click', () => applyScale(1));
+        viewer.closest('.modal')?.addEventListener('shown.bs.modal', fitToViewport);
+        window.addEventListener('resize', fitToViewport);
     });
 
     const appShell = document.querySelector('.workspace-app-shell');

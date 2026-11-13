@@ -29,17 +29,23 @@ class AdministrationController extends Controller
 
     public function settingsModules(): View
     {
-        $this->authorizeSettings();
+        $this->authorizeManageModules();
         return view('modules.core.settings-modules', ['enabledModules' => app(WorkspaceModuleRegistry::class)->enabledKeys()]);
     }
 
     public function settingsModulesUpdate(Request $request, WorkspaceModuleRegistry $registry, AuditLogger $audit): RedirectResponse
     {
-        $this->authorizeSettings();
+        $this->authorizeManageModules();
         $data = $request->validate(['active_modules' => ['required', 'array', 'min:1'], 'active_modules.*' => ['string', 'in:company,crm,project-management,documents,hris']]);
         $registry->saveEnabledKeys($data['active_modules']);
         $audit->record('workspace.modules.updated', null, null, ['active_modules' => array_values($data['active_modules'])]);
         return back()->with('status', 'Daftar modul aktif berhasil diperbarui.');
+    }
+
+    private function authorizeManageModules(): void
+    {
+        $user = auth()->user();
+        abort_unless($user?->hasRole('super_admin') || ($user?->can('access_settings') && $user?->can('manage_workspace_modules')), 403);
     }
 
     private function authorizeSettings(): void

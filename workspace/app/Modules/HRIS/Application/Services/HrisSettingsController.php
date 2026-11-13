@@ -17,7 +17,7 @@ class HrisSettingsController extends Controller
 {
     public function index(Request $request): View
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'view_hris_settings');
         $perPage = in_array((int) $request->integer('per_page', 10), [10, 25, 50, 100], true) ? (int) $request->integer('per_page', 10) : 10;
         $sort = in_array($request->string('sort')->toString(), ['company_id', 'key', 'effective_from', 'is_active', 'created_at'], true) ? $request->string('sort')->toString() : 'effective_from';
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
@@ -32,7 +32,7 @@ class HrisSettingsController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'create_hris_settings');
         $data = $this->validated($request);
         $normalized = $this->normalized($request, $data);
         $this->ensureUniqueCutoffYear($normalized);
@@ -42,7 +42,7 @@ class HrisSettingsController extends Controller
 
     public function workflow(Request $request): View
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'view_hris_workflow');
         $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get();
         $availableCompanies = $this->availableWorkflowCompanies($companies);
         return view('modules.hris-workflow-settings-paginated', [
@@ -60,7 +60,7 @@ class HrisSettingsController extends Controller
 
     public function workflowEdit(Request $request, HrisWorkflowApprover $approver): View
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'update_hris_workflow');
         $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get();
         abort_unless($approver->is_active && $companies->contains('id', $approver->company_id), 404);
         $availableCompanies = $this->availableWorkflowCompanies($companies);
@@ -81,7 +81,7 @@ class HrisSettingsController extends Controller
 
     public function edit(Request $request, HrisSetting $setting): View
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'update_hris_settings');
         abort_unless($this->visibleSettings($request)->whereKey($setting->getKey())->exists(), 404);
         $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get();
         return view('modules.hris-settings-index', ['settings' => $this->visibleSettings($request)->whereKey($setting->getKey())->paginate(10), 'companies' => $companies, 'users' => User::query()->orderBy('name')->get(), 'workflowApprovers' => collect(), 'editing' => $setting, 'perPage' => 10]);
@@ -89,7 +89,7 @@ class HrisSettingsController extends Controller
 
     public function update(Request $request, HrisSetting $setting): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'update_hris_settings');
         abort_unless($this->visibleSettings($request)->whereKey($setting->getKey())->exists(), 404);
         $normalized = $this->normalized($request, $this->validated($request), false);
         $this->ensureUniqueCutoffYear($normalized, $setting);
@@ -99,7 +99,7 @@ class HrisSettingsController extends Controller
 
     public function archive(Request $request, HrisSetting $setting): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'delete_hris_settings');
         abort_unless($this->visibleSettings($request)->whereKey($setting->getKey())->exists(), 404);
         $setting->update(['is_active' => false, 'archived_at' => now(), 'archived_by' => $request->user()->getKey()]);
         return back()->with('status', 'Parameter HRIS berhasil diarsipkan.');
@@ -107,7 +107,7 @@ class HrisSettingsController extends Controller
 
     public function restore(Request $request, HrisSetting $setting): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'delete_hris_settings');
         abort_unless($this->visibleSettings($request)->whereKey($setting->getKey())->exists(), 404);
         $this->ensureUniqueCutoffYear([
             'key' => $setting->key,
@@ -119,7 +119,7 @@ class HrisSettingsController extends Controller
 
     public function workflowStore(Request $request): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'create_hris_workflow');
         $data = $request->validate([
             'company_id' => ['required', 'integer'],
             'workflow_key' => ['nullable', 'in:leave_sick,claim'],
@@ -154,7 +154,7 @@ class HrisSettingsController extends Controller
 
     public function workflowUpdate(Request $request, HrisWorkflowApprover $approver): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'update_hris_workflow');
         $data = $request->validate(['company_id' => ['required', 'integer'], 'user_id' => ['required', 'integer']]);
         abort_unless(User::query()->whereKey($data['user_id'])->exists(), 422, 'Approver yang dipilih tidak ditemukan.');
         $allowed = Company::query()->operationalFor($request->user())->whereKey($data['company_id'])->exists();
@@ -168,15 +168,15 @@ class HrisSettingsController extends Controller
 
     public function workflowArchive(Request $request, HrisWorkflowApprover $approver): RedirectResponse
     {
-        $this->authorizeSettings($request);
+        $this->authorizeSettings($request, 'delete_hris_workflow');
         abort_unless($approver->is_active && Company::query()->operationalFor($request->user())->whereKey($approver->company_id)->exists(), 403);
         $approver->delete();
         return back()->with('status', 'Workflow approval berhasil diarsipkan.');
     }
 
-    private function authorizeSettings(Request $request): void
+    private function authorizeSettings(Request $request, string $permission): void
     {
-        abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('manage_hris_settings'), 403);
+        abort_unless($request->user()->hasRole('super_admin') || $request->user()->can($permission), 403);
     }
 
     private function visibleSettings(Request $request): \Illuminate\Database\Eloquent\Builder

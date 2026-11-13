@@ -168,7 +168,7 @@ class LeaveRequestService
                 'revision_reason' => null,
                 'revision_requested_at' => null,
             ]))->save();
-            ApprovalEvent::create(['request_type' => 'leave', 'request_id' => $request->getKey(), 'step' => 'requester', 'action' => 'resubmitted', 'actor_id' => $actorId, 'comment' => 'Pengajuan hasil revisi dikirim ulang.']);
+            ApprovalEvent::create(['request_type' => 'leave', 'request_id' => $request->getKey(), 'step' => 'requester', 'action' => 'resubmitted', 'actor_id' => $actorId, 'comment' => 'Pengajuan hasil revisi dikirim ulang.', 'created_at' => now('UTC')]);
             if ($nextStatus === 'pending_manager' && $employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Pengajuan cuti/sakit hasil revisi', 'Pengajuan hasil revisi menunggu verifikasi ulang.', ['request_type' => 'leave', 'request_id' => $request->id, 'approval' => true, 'step' => 'manager']);
             if ($nextStatus === 'pending_hr') foreach (HrisWorkflowApprover::approverIds((int) $employee->company_id, 'leave_sick', 'hr') as $approverId) app(HrisWorkflowService::class)->notify($approverId, 'Pengajuan cuti/sakit hasil revisi', 'Pengajuan administrasi hasil revisi menunggu pemeriksaan HR.', ['request_type' => 'leave', 'request_id' => $request->id, 'approval' => true, 'step' => 'hr']);
             return $request;

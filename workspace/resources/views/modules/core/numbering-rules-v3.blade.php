@@ -3,7 +3,7 @@
 @php($sortLink=function($column) use($sort,$direction){return request()->fullUrlWithQuery(['sort'=>$column,'direction'=>$sort===$column&&$direction==='asc'?'desc':'asc','page'=>null]);})
 <div class="mb-4"><div class="text-uppercase text-secondary small fw-semibold mb-2">Core · Master data</div><h1 class="h3 mb-1">Master Penomoran</h1><p class="text-secondary mb-0">Atur format nomor dan counter per perusahaan.</p></div>
 @php($counterScopes = ['yearly' => 'Tahunan', 'monthly' => 'Bulanan', 'daily' => 'Harian', 'global' => 'Global'])
-<div class="card border-0 shadow-sm mb-4">
+    @can('create_numbering_rules')<div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
         <h2 class="h6 mb-4">Tambah master penomoran</h2>
         <form method="POST" action="{{ route('workspace.core.numbering-rules.store') }}">
@@ -51,7 +51,7 @@
             </div>
         </form>
     </div>
-</div>
+</div>@endcan
 <form method="GET" class="workspace-list-filter-form card card-body border-0 shadow-sm mb-3">
     <input type="hidden" name="sort" value="{{ $sort }}">
     <input type="hidden" name="direction" value="{{ $direction }}">

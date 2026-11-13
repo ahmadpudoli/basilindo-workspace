@@ -87,7 +87,7 @@
                     @if ($supportingMimeType === 'application/pdf')
                         <iframe src="{{ route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>
                     @else
-                        <img src="{{ route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]) }}" alt="Dokumen pendukung" class="img-fluid d-block mx-auto" style="max-height:70vh">
+                        @include('modules.partials.image-zoom-viewer', ['src' => route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]), 'title' => 'Dokumen pendukung'])
                     @endif
                 </div></div></div>
             </div>

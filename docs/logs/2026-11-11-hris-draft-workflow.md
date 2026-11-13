@@ -39,6 +39,21 @@
 - Mengganti native browser confirm pada form lembur dengan dialog konfirmasi template global yang hanya aktif untuk tombol Kirim pengajuan.
 - Memperbaiki konflik nomor saat submit draft lembur: draft tidak memakai kembali nomor lama dan allocator memeriksa kandidat terhadap nomor lembur yang sudah tersimpan.
 - Menghilangkan panel ringkasan draft di bagian atas daftar lembur agar halaman lebih ringkas; aksi Edit draft dan Hapus draft tetap tersedia pada baris tabel.
+- Menyamakan layout form reimbursement/cash advance dengan form cuti/sakit menggunakan heading halaman, satu card dua kolom, rincian biaya di kiri, jenis transaksi serta informasi karyawan/approver di kanan, tanpa mengubah employee scope dari sesi login.
+- Menghapus field Department dari form claim dan menambahkan pilihan keperluan Internal atau External / Project yang mengikuti pola form lembur, termasuk referensi Project/Opportunity, lokasi kegiatan, validasi scope, snapshot referensi, dan migration field claim yang incremental.
+- Menjaga Cash advance sebagai tahap pengembangan terpisah pada UI reimbursement, serta mengubah pemilihan Project/Opportunity menjadi dropdown tabel dengan tombol Pilih seperti pada form lembur.
+- Mengunci service claim agar pengajuan baru Cash Advance tidak dapat disimpan sebelum workflow khususnya tersedia, serta menjalankan migration field referensi pekerjaan claim.
+- Menyamakan dropdown referensi claim dengan pola form lembur: tombol dropdown, pencarian, tabel referensi, kolom konteks, dan tombol Pilih.
+- Memperbaiki ParseError form claim dengan memindahkan transformasi detail referensi dari ekspresi nested Blade ke controller, lalu mengompilasi ulang view.
+- Memperbaiki error `getKey()` pada collection metadata referensi claim dengan mengganti `mapWithKeys()` Eloquent menjadi loop array eksplisit.
+- Menyamakan interaksi dropdown Project/Opportunity claim dengan form lembur, termasuk detail referensi terpilih, badge status/jenis, perusahaan pemilik, dan client.
+- Merapikan input pencarian dropdown agar ikon dan field tetap satu baris, memperluas pencarian ke metadata referensi, serta memastikan Project dan Opportunity menggunakan renderer tabel yang sama.
+- Menambahkan inisialisasi ulang renderer dropdown saat radio referensi berubah agar Opportunity yang awalnya tersembunyi tidak kembali tampil sebagai native select.
+- Menambahkan fallback renderer khusus Opportunity yang memaksa native select diganti dropdown tabel bila komponen awal belum ter-render.
+- Menambahkan fallback window-load untuk Opportunity agar native select tidak dapat tampil bila inisialisasi DOMContentLoaded terlambat atau terlewat.
+- Mengunci renderer final Opportunity reimbursement agar fallback lama dibersihkan, tombol Pilih dihapus, klik baris langsung memilih referensi, dan detail menampilkan badge Sales/Prospek, Stage, Closing, Client, serta Kontak seperti form lembur.
+- Memperbaiki dropdown Opportunity ganda dengan menandai select sebagai sudah diinisialisasi setelah renderer final dibuat.
+- Menghapus duplikasi dropdown yang berasal dari fallback window-load dan memastikan select native tetap tersembunyi.
 
 ## Verifikasi
 

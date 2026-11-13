@@ -9,6 +9,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('workspace:cleanup-temp-uploads')->hourly();
+Schedule::command('hris:cleanup-claim-temp-uploads')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('integration:sync-odoo')
     ->everyMinute()
     ->withoutOverlapping()

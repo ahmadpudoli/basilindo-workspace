@@ -4,13 +4,16 @@ namespace App\Modules\HRIS\Application\Services;
 
 use App\Http\Controllers\Controller;
 use App\Modules\HRIS\Domain\Models\Claim;
+use App\Modules\HRIS\Domain\Models\ClaimExpenseItem;
 use App\Modules\HRIS\Domain\Models\ApprovalEvent;
 use App\Modules\HRIS\Domain\Models\Employee;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
 use App\Modules\HRIS\Domain\Models\OvertimeRequest;
 use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
+use App\Modules\HRIS\Domain\Models\HrisExpenseCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -84,7 +87,7 @@ class HrisOperationsController extends Controller
         $model = match ($type) {
             'leave' => LeaveRequest::query()->with(['employee.company', 'employee.manager', 'dates', 'approvalEvents'])->findOrFail($id),
             'overtime' => OvertimeRequest::query()->with(['employee.company', 'employee.manager', 'entries', 'approvalEvents'])->findOrFail($id),
-            'claim' => Claim::query()->with(['employee.company', 'employee.manager', 'expenseItems'])->findOrFail($id),
+            'claim' => Claim::query()->with(['employee.company', 'employee.manager', 'expenseItems', 'project'])->findOrFail($id),
             default => abort(404),
         };
 
@@ -99,9 +102,37 @@ class HrisOperationsController extends Controller
         $expectedStatus = match ($step) { 'manager' => 'pending_manager', 'hr' => 'pending_hr', 'finance' => 'pending_finance', 'final' => 'pending_final', default => null };
         abort_unless($model->status === $expectedStatus, 404);
         $supportingDisk = Storage::disk(config('filesystems.default', 's3'));
-        $hasSupportingDocument = filled($model->supporting_document_id) && $supportingDisk->exists((string) $model->supporting_document_id);
+        $hasSupportingDocument = $type !== 'claim' && filled($model->supporting_document_id) && $supportingDisk->exists((string) $model->supporting_document_id);
         $supportingMimeType = $hasSupportingDocument ? ($supportingDisk->mimeType((string) $model->supporting_document_id) ?: 'application/octet-stream') : null;
         $canPreviewSupportingDocument = $supportingMimeType === 'application/pdf' || str_starts_with((string) $supportingMimeType, 'image/');
+        $approvalTimeline = collect();
+        if ($type === 'claim') {
+            $model->load('approvalEvents.actor');
+            $approvalTimeline->push([
+                'action' => 'submitted', 'label' => 'Pengajuan dibuat', 'step' => 'Pemohon',
+                'actor' => $model->employee?->full_name ?? 'Pemohon',
+                'at' => $model->submitted_at ?: $model->created_at, 'comment' => null, 'state' => 'is-done',
+            ]);
+            foreach ($model->approvalEvents as $event) {
+                $stepLabel = match ($event->step) {
+                    'manager' => 'Atasan', 'finance' => 'Finance', 'final' => 'Approver final',
+                    'requester' => 'Pemohon', 'payment' => 'Pembayaran', default => ucfirst((string) $event->step),
+                };
+                [$actionLabel, $state] = match ($event->action) {
+                    'approve' => ['Menyetujui pengajuan', 'is-done'],
+                    'reject' => ['Menolak pengajuan', 'is-danger'],
+                    'request_revision' => ['Meminta revisi', 'is-warning'],
+                    'resubmitted' => ['Pengajuan dikirim ulang', 'is-warning'],
+                    default => [ucfirst(str_replace('_', ' ', (string) $event->action)), 'is-done'],
+                };
+                $approvalTimeline->push([
+                    'action' => $event->action, 'label' => $actionLabel, 'step' => $stepLabel,
+                    'actor' => $event->actor?->name ?? 'Pengguna', 'at' => $event->created_at,
+                    'comment' => $event->comment, 'state' => $state,
+                ]);
+            }
+            $approvalTimeline = $approvalTimeline->sortBy('at')->values();
+        }
         $typeLabel = match ($type) {
             'leave' => $model->type === 'sick' ? 'Sakit' : 'Cuti',
             'overtime' => 'Lembur',
@@ -109,7 +140,7 @@ class HrisOperationsController extends Controller
         };
         $stage = match ($step) { 'manager' => 'Atasan', 'hr' => 'HR', 'finance' => 'Finance', 'final' => 'Approver final', default => ucfirst($step) };
 
-        return view('modules.hris-approval-detail', compact('model', 'type', 'step', 'stage', 'typeLabel', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument'));
+        return view('modules.hris-approval-detail', compact('model', 'type', 'step', 'stage', 'typeLabel', 'hasSupportingDocument', 'supportingMimeType', 'canPreviewSupportingDocument', 'approvalTimeline'));
     }
 
     public function overtime(Request $request): View
@@ -165,21 +196,65 @@ class HrisOperationsController extends Controller
         } else {
             Gate::authorize('viewAny', Claim::class);
         }
-        $status = in_array($request->string('status')->toString(), ['draft', 'submitted', 'pending_manager', 'pending_finance', 'pending_final', 'pending_payment', 'paid', 'completed', 'awaiting_accountability', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
+        $statusOptions = [
+            'draft' => 'Draft', 'submitted' => 'Diajukan', 'pending_manager' => 'Menunggu persetujuan atasan',
+            'pending_finance' => 'Menunggu persetujuan Finance', 'pending_final' => 'Menunggu persetujuan final',
+            'pending_payment' => 'Menunggu pembayaran', 'awaiting_accountability' => 'Menunggu pertanggungjawaban',
+            'needs_revision' => 'Perlu revisi', 'approved' => 'Disetujui', 'paid' => 'Dibayar',
+            'completed' => 'Selesai', 'rejected' => 'Ditolak',
+        ];
+        $selectedStatuses = is_array($request->query('statuses'))
+            ? array_values(array_unique(array_filter($request->query('statuses'), fn ($value) => is_string($value) && array_key_exists($value, $statusOptions))))
+            : [];
+        $typeOptions = ['reimbursement' => 'Reimbursement', 'cash_advance' => 'Cash Advance'];
+        $selectedTypes = is_array($request->query('types'))
+            ? array_values(array_unique(array_filter($request->query('types'), fn ($value) => is_string($value) && array_key_exists($value, $typeOptions))))
+            : [];
+        if ($summaryView) {
+            $selectedTypes = [$type];
+        } elseif ($selectedTypes === [] && $type !== null) {
+            $selectedTypes = [$type];
+        }
+        $activeTabType = ! $summaryView && count($selectedTypes) === 1 ? $selectedTypes[0] : ($summaryView ? $type : null);
+        $isValidDate = static function ($value): bool {
+            if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) return false;
+            [$year, $month, $day] = array_map('intval', explode('-', $value));
+            return checkdate($month, $day, $year);
+        };
+        $periodFrom = $isValidDate($request->query('from')) ? $request->query('from') : now()->startOfMonth()->toDateString();
+        $periodTo = $isValidDate($request->query('to')) ? $request->query('to') : now()->toDateString();
+        if ($periodFrom > $periodTo) [$periodFrom, $periodTo] = [$periodTo, $periodFrom];
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
         $sort = in_array($request->string('sort')->toString(), ['type', 'amount', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
-        $items = Claim::query()
+        $visibleClaims = Claim::query()
             ->when($summaryView && ! $request->user()->hasRole('super_admin'), fn ($query) => $query->whereIn('company_id', $request->user()->companies()->pluck('companies.id')))
+            ->when($summaryView, fn ($query) => $query->where('status', '!=', 'draft'))
             ->when(! $summaryView, fn ($query) => $query->visibleTo($request->user()))
-            ->when(! $summaryView, fn ($query) => $query->where(fn ($draftQuery) => $draftQuery->where('status', '!=', 'draft')->orWhere('created_by', $request->user()->getKey())))
+            ->when(! $summaryView, fn ($query) => $query->where(fn ($draftQuery) => $draftQuery->where('status', '!=', 'draft')->orWhere('created_by', $request->user()->getKey())));
+        $categoryOptions = ClaimExpenseItem::query()
+            ->whereHas('claim', fn ($query) => $query->whereIn('id', (clone $visibleClaims)->select('id')))
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category')
+            ->all();
+        $selectedCategories = is_array($request->query('categories'))
+            ? array_values(array_unique(array_filter($request->query('categories'), fn ($value) => is_string($value) && in_array($value, $categoryOptions, true))))
+            : [];
+        $items = (clone $visibleClaims)
             ->with('employee')
-            ->when($type, fn ($q) => $q->where('type', $type))
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->with('expenseItems')
+            ->whereDate('created_at', '>=', $periodFrom)
+            ->whereDate('created_at', '<=', $periodTo)
+            ->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))
+            ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
+            ->when($selectedCategories !== [], fn ($q) => $q->whereHas('expenseItems', fn ($detail) => $detail->whereIn('category', $selectedCategories)))
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
-        return view('modules.hris-claims-enhanced', compact('items', 'type', 'status', 'perPage', 'sort', 'direction', 'summaryView'));
+        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView'));
     }
     public function claimCreate(Request $request): View
     {
@@ -188,7 +263,11 @@ class HrisOperationsController extends Controller
         $requestNumber = 'Nomor dibuat saat dikirim';
         $financeApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'claim', 'finance')->get();
         $finalApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'claim', 'final')->get();
-        return view('modules.hris-claim-form', ['employee' => $employee, 'employees' => collect([$employee]), 'financeApprovers' => $financeApprovers, 'finalApprovers' => $finalApprovers, 'selectedType' => $request->string('type')->toString(), 'requestNumber' => $requestNumber, 'isDraft' => false, 'claimData' => [], 'draftItems' => [], 'claimAction' => route('workspace.hris.claims.store')]);
+        $expenseCategories = HrisExpenseCategory::query()->active()->orderBy('sort_order')->orderBy('name')->get();
+        $projects = app(OvertimeProjectService::class)->available($employee, $request->user())->with('clients')->orderBy('name')->get();
+        $opportunities = app(OvertimeWorkReferenceService::class)->availableOpportunities($employee, $request->user())->with(['account', 'contact'])->latest()->get();
+        $referenceDetails = $this->claimReferenceDetails($projects, $opportunities);
+        return view('modules.hris-claim-form-layout', compact('employee', 'financeApprovers', 'finalApprovers', 'projects', 'opportunities', 'referenceDetails', 'expenseCategories') + ['employees' => collect([$employee]), 'selectedType' => 'reimbursement', 'requestNumber' => $requestNumber, 'isDraft' => false, 'claimData' => [], 'draftItems' => [], 'claimAction' => route('workspace.hris.claims.store')]);
     }
 
     public function claimStore(ClaimRequestForm $request, ClaimService $service): RedirectResponse
@@ -212,9 +291,114 @@ class HrisOperationsController extends Controller
         $employee = $claim->employee;
         $financeApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'claim', 'finance')->get();
         $finalApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'claim', 'final')->get();
-        $claimData = ['department' => $claim->department, 'project_id' => $claim->project_id, 'po_number' => $claim->po_number, 'purpose' => $claim->purpose, 'type' => $claim->type];
-        $draftItems = $claim->expenseItems->map(fn ($item): array => ['receipt_date' => $item->receipt_date?->format('Y-m-d'), 'activity_date' => $item->activity_date?->format('Y-m-d'), 'category' => $item->category, 'description' => $item->description, 'currency' => $item->currency, 'amount' => $item->amount, 'attachment_reference' => $item->attachment_reference])->values();
-        return view('modules.hris-claim-form', ['claim' => $claim, 'employee' => $employee, 'employees' => collect([$employee]), 'financeApprovers' => $financeApprovers, 'finalApprovers' => $finalApprovers, 'selectedType' => $claim->type, 'requestNumber' => 'Nomor dibuat saat dikirim', 'isDraft' => true, 'claimData' => $claimData, 'draftItems' => $draftItems, 'claimAction' => route('workspace.hris.claims.update', $claim)]);
+        $expenseCategories = HrisExpenseCategory::query()->where(fn ($query) => $query->active()->orWhereIn('id', $claim->expenseItems->pluck('expense_category_id')->filter()))->orderBy('sort_order')->orderBy('name')->get();
+        $projects = app(OvertimeProjectService::class)->available($employee, $request->user())->with('clients')->orderBy('name')->get();
+        $opportunities = app(OvertimeWorkReferenceService::class)->availableOpportunities($employee, $request->user())->with(['account', 'contact'])->latest()->get();
+        $referenceDetails = $this->claimReferenceDetails($projects, $opportunities);
+        $claimData = ['expense_scope' => $claim->expense_scope, 'work_reference_type' => $claim->work_reference_type, 'opportunity_id' => $claim->opportunity_id, 'department' => $claim->department, 'project_id' => $claim->project_id, 'po_number' => $claim->po_number, 'purpose' => $claim->purpose, 'type' => $claim->type];
+        $draftItems = $claim->expenseItems->map(fn ($item): array => ['id' => $item->getKey(), 'receipt_date' => $item->receipt_date?->format('Y-m-d'), 'activity_date' => $item->activity_date?->format('Y-m-d'), 'expense_category_id' => $item->expense_category_id, 'category' => $item->category, 'description' => $item->description, 'currency' => $item->currency, 'amount' => $item->amount, 'attachment_reference' => $item->attachment_reference, 'attachment_object_key' => $item->attachment_object_key])->values();
+        $isRevision = $claim->status === 'needs_revision';
+        return view('modules.hris-claim-form-layout', compact('claim', 'employee', 'financeApprovers', 'finalApprovers', 'projects', 'opportunities', 'referenceDetails', 'expenseCategories', 'isRevision') + ['employees' => collect([$employee]), 'selectedType' => $claim->type, 'requestNumber' => $claim->request_number, 'isDraft' => true, 'claimData' => $claimData, 'draftItems' => $draftItems, 'claimAction' => route('workspace.hris.claims.update', $claim)]);
+    }
+
+    public function claimShow(Request $request, Claim $claim): View
+    {
+        Gate::authorize('view', $claim);
+        $claim->load(['employee.company', 'project.clients', 'opportunity.account', 'opportunity.contact', 'expenseItems']);
+        $canViewAuditTrail = Gate::allows('viewAuditTrail', $claim);
+        $statusTimeline = collect();
+        if ($claim->status !== 'draft') {
+            $statusTimeline->push(['label' => 'Pengajuan dikirim', 'state' => 'done', 'at' => $claim->submitted_at ?: $claim->created_at]);
+            $managerState = $claim->status === 'needs_revision' && $claim->revision_requested_role === 'manager'
+                ? 'revision'
+                : ($claim->manager_approved_at || in_array($claim->status, ['pending_finance', 'pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true) ? 'done' : ($claim->status === 'pending_manager' ? 'current' : 'upcoming'));
+            $statusTimeline->push(['label' => 'Pemeriksaan Atasan', 'state' => $managerState, 'at' => $claim->manager_approved_at ?: ($managerState === 'revision' ? $claim->revision_requested_at : null)]);
+            $financeState = $claim->status === 'needs_revision' && $claim->revision_requested_role === 'finance'
+                ? 'revision'
+                : ($claim->finance_approved_at || in_array($claim->status, ['pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true) ? 'done' : ($claim->status === 'pending_finance' ? 'current' : 'upcoming'));
+            $statusTimeline->push(['label' => 'Pemeriksaan Finance', 'state' => $financeState, 'at' => $claim->finance_approved_at ?: ($financeState === 'revision' ? $claim->revision_requested_at : null)]);
+            if ($claim->status === 'pending_final' || $claim->final_approved_at) {
+                $statusTimeline->push(['label' => 'Persetujuan akhir', 'state' => $claim->final_approved_at ? 'done' : 'current', 'at' => $claim->final_approved_at]);
+            }
+            if ($claim->status === 'rejected') {
+                $statusTimeline->push(['label' => 'Pengajuan ditolak', 'state' => 'rejected', 'at' => $claim->updated_at]);
+            }
+        }
+        $timelineEntries = collect();
+        if ($claim->status !== 'draft' && filled($claim->request_number)) {
+            $timelineEntries->push([
+                'kind' => 'event', 'action' => 'submitted', 'step' => 'requester',
+                'actor' => $claim->employee?->full_name ?? 'Pemohon',
+                'at' => $claim->submitted_at ?: $claim->created_at, 'comment' => null,
+            ]);
+        }
+        $claim->load($canViewAuditTrail ? 'approvalEvents.actor' : 'approvalEvents');
+        foreach ($claim->approvalEvents as $event) {
+            $timelineEntries->push([
+                'kind' => 'event', 'action' => $event->action, 'step' => $event->step,
+                'actor' => $canViewAuditTrail ? ($event->actor?->name ?? 'Pengguna') : null,
+                'at' => $event->created_at, 'comment' => $canViewAuditTrail ? $event->comment : null,
+            ]);
+        }
+        if ($canViewAuditTrail) {
+            $snapshots = DB::connection('hris')->table('claim_revision_snapshots')->where('claim_id', $claim->getKey())->get();
+            foreach ($snapshots as $snapshot) {
+                $timelineEntries->push([
+                    'kind' => 'snapshot', 'revision_number' => $snapshot->revision_number,
+                    'revision_type' => $snapshot->revision_type, 'requested_role' => $snapshot->requested_role,
+                    'reason' => $snapshot->revision_reason, 'item_count' => count(json_decode($snapshot->expense_items_snapshot, true) ?: []),
+                    'at' => \Illuminate\Support\Carbon::parse($snapshot->created_at),
+                ]);
+            }
+            $timelineEntries = $timelineEntries->sortBy('at')->values();
+        }
+
+        return view('modules.hris-claim-detail', compact('claim', 'statusTimeline', 'timelineEntries', 'canViewAuditTrail'));
+    }
+
+    public function claimPrint(Request $request, Claim $claim): View
+    {
+        Gate::authorize('view', $claim);
+        abort_unless(
+            $claim->type === 'reimbursement'
+                && $claim->finance_approved_at !== null
+                && in_array($claim->status, ['pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true),
+            404,
+        );
+
+        $claim->load(['employee.company', 'project.clients', 'opportunity.account', 'opportunity.contact', 'expenseItems', 'managerApprover', 'financeApprover', 'finalApprover']);
+        $attachmentDisk = Storage::disk((string) config('hris.claim_attachment_disk', 's3'));
+        $printAttachments = $claim->expenseItems
+            ->filter(fn (ClaimExpenseItem $item): bool => filled($item->attachment_object_key))
+            ->map(function (ClaimExpenseItem $item) use ($claim, $attachmentDisk): array {
+                try {
+                    $mimeType = $attachmentDisk->mimeType((string) $item->attachment_object_key) ?: 'application/octet-stream';
+                } catch (\Throwable) {
+                    $mimeType = 'application/octet-stream';
+                }
+
+                return [
+                    'item' => $item,
+                    'mime_type' => $mimeType,
+                    'url' => route('workspace.hris.claims.expense-items.attachment', ['claim' => $claim, 'item' => $item, 'preview' => 1]),
+                ];
+            })
+            ->values();
+
+        $attachmentPages = [];
+        foreach ($printAttachments as $attachment) {
+            $pageType = str_starts_with($attachment['mime_type'], 'image/') ? 'images' : ($attachment['mime_type'] === 'application/pdf' ? 'pdf' : 'unsupported');
+            $lastPageIndex = array_key_last($attachmentPages);
+
+            if ($pageType === 'images' && $lastPageIndex !== null && $attachmentPages[$lastPageIndex]['type'] === 'images') {
+                $attachmentPages[$lastPageIndex]['attachments'][] = $attachment;
+                continue;
+            }
+
+            $attachmentPages[] = ['type' => $pageType, 'attachments' => [$attachment]];
+        }
+
+        return view('modules.hris-claim-print', compact('claim', 'printAttachments', 'attachmentPages'));
     }
 
     public function claimUpdate(ClaimRequestForm $request, Claim $claim, ClaimService $service): RedirectResponse
@@ -222,6 +406,15 @@ class HrisOperationsController extends Controller
         Gate::authorize('update', $claim);
         $employee = $claim->employee()->where('user_id', $request->user()->getKey())->where('status', 'active')->firstOrFail();
         $data = $request->validated();
+        if ($claim->status === 'needs_revision') {
+            if ($request->input('action') === 'draft') {
+                $service->saveRevisionDraft($claim, $employee, $data, (int) $request->user()->getKey());
+                return redirect()->route('workspace.hris.claims.edit', $claim)->with('status', 'Perubahan revisi berhasil disimpan. Anda dapat melanjutkan dan mengirimnya nanti.');
+            }
+            abort_unless($request->input('action') === 'submit', 422, 'Aksi revisi tidak valid.');
+            $service->resubmit($claim, $employee, $data, (int) $request->user()->getKey());
+            return redirect()->route('workspace.hris.claims')->with('status', 'Revisi pengajuan claim berhasil dikirim untuk pemeriksaan ulang.');
+        }
         if ($request->input('action') === 'draft') $service->updateDraft($claim, $employee, $data, (int) $request->user()->getKey());
         else $service->submitDraft($claim, $employee, $data, (int) $request->user()->getKey());
         return redirect()->route('workspace.hris.claims')->with('status', $request->input('action') === 'draft' ? 'Draft berhasil diperbarui.' : 'Pengajuan claim berhasil dikirim.');
@@ -233,6 +426,37 @@ class HrisOperationsController extends Controller
         abort_unless($claim->status === 'draft', 404);
         $claim->delete();
         return redirect()->route('workspace.hris.claims')->with('status', 'Draft pengajuan reimbursement berhasil dihapus.');
+    }
+
+    public function claimExpenseAttachment(Request $request, Claim $claim, ClaimExpenseItem $item): StreamedResponse
+    {
+        abort_unless((string) $item->claim_id === (string) $claim->getKey(), 404);
+        $user = $request->user();
+        $isOwner = (int) $claim->created_by === (int) $user->getKey() || (int) $claim->employee?->user_id === (int) $user->getKey();
+        $isCompanyViewer = $user->can('view_any_claim') && $user->companies()->whereKey($claim->company_id)->exists();
+        $isManager = $claim->status === 'pending_manager' && (int) $claim->employee?->manager?->user_id === (int) $user->getKey();
+        $isFinanceApprover = $claim->status === 'pending_finance' && in_array((int) $user->getKey(), HrisWorkflowApprover::approverIds((int) $claim->company_id, 'claim', 'finance'), true);
+        $isFinalApprover = $claim->status === 'pending_final' && in_array((int) $user->getKey(), HrisWorkflowApprover::approverIds((int) $claim->company_id, 'claim', 'final'), true);
+        abort_unless($user->hasRole('super_admin') || $isOwner || $isCompanyViewer || $isManager || $isFinanceApprover || $isFinalApprover, 403);
+
+        $objectKey = (string) $item->attachment_object_key;
+        $disk = Storage::disk((string) config('hris.claim_attachment_disk', 's3'));
+        abort_unless($objectKey !== '' && $disk->exists($objectKey), 404);
+        $stream = $disk->readStream($objectKey);
+        abort_unless(is_resource($stream), 404);
+
+        $mimeType = $disk->mimeType($objectKey) ?: 'application/octet-stream';
+        $disposition = $request->boolean('preview') ? 'inline' : 'attachment';
+
+        return response()->stream(function () use ($stream): void {
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => $disposition.'; filename="bukti-nota-'.$item->line_number.'"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     public function claimPayment(Request $request, string $id): View
@@ -251,7 +475,7 @@ class HrisOperationsController extends Controller
         abort_unless($request->user()->hasRole('super_admin') || $request->user()->companies()->whereKey($claim->company_id)->exists(), 403);
         abort_unless($claim->status === 'approved', 422, 'Pengajuan belum disetujui sepenuhnya.');
         $claim->update(['status' => 'pending_payment']);
-        ApprovalEvent::create(['request_type' => 'claim', 'request_id' => $claim->getKey(), 'step' => 'payment', 'action' => 'pending_payment', 'actor_id' => $request->user()->getKey(), 'comment' => null]);
+        ApprovalEvent::create(['request_type' => 'claim', 'request_id' => $claim->getKey(), 'step' => 'payment', 'action' => 'pending_payment', 'actor_id' => $request->user()->getKey(), 'comment' => null, 'created_at' => now('UTC')]);
         return redirect()->route('workspace.hris.claims.payment', $claim->id);
     }
 
@@ -359,5 +583,31 @@ class HrisOperationsController extends Controller
         $request->validate(['accountability_document_id' => ['required', 'string', 'max:100']]);
         $claim->update(['accountability_document_id' => $request->string('accountability_document_id')->toString(), 'status' => 'pending_finance_accountability']);
         return back()->with('status', 'Laporan pertanggungjawaban berhasil dikirim.');
+    }
+
+    private function claimReferenceDetails($projects, $opportunities): array
+    {
+        $details = [];
+        foreach ($projects as $project) {
+            $details[(string) $project->id] = [
+                'company' => $project->company?->name ?: '—',
+                'client' => $project->clients->first()?->name ?: '—',
+                'status' => 'Aktif',
+            ];
+        }
+        foreach ($opportunities as $opportunity) {
+            $status = app(OvertimeWorkReferenceService::class)->statusParts($opportunity);
+            $details[(string) $opportunity->id] = [
+                'company' => $opportunity->company?->name ?: '—',
+                'client' => $opportunity->account?->name ?: '—',
+                'contact' => $opportunity->contact?->name ?: ($opportunity->email ?: '—'),
+                'kind' => 'opportunity',
+                'classification' => $status['classification'],
+                'stage' => $status['stage'],
+                'closing' => $status['closing'],
+                'status' => $status['classification'],
+            ];
+        }
+        return $details;
     }
 }

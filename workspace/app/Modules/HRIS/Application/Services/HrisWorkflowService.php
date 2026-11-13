@@ -28,8 +28,9 @@ class HrisWorkflowService
         $allowed = ['approve', 'reject', 'request_revision'];
         if (! in_array($action, $allowed, true)) throw ValidationException::withMessages(['action' => 'Aksi approval tidak valid.']);
         if ($action === 'reject' && blank($comment)) throw ValidationException::withMessages(['comment' => 'Alasan penolakan wajib diisi.']);
-        if ($action === 'request_revision' && (! in_array($requestType, ['leave', 'overtime'], true) || blank($comment))) throw ValidationException::withMessages(['comment' => 'Alasan revisi wajib diisi.']);
+        if ($action === 'request_revision' && (! in_array($requestType, ['leave', 'overtime', 'claim'], true) || blank($comment))) throw ValidationException::withMessages(['comment' => 'Alasan revisi wajib diisi.']);
         if ($action === 'request_revision' && ! in_array($revisionType, ['substantive', 'administrative'], true)) throw ValidationException::withMessages(['revision_type' => 'Jenis revisi wajib dipilih.']);
+        if ($action === 'request_revision' && $requestType === 'claim' && ! in_array($step, ['manager', 'finance'], true)) throw ValidationException::withMessages(['step' => 'Revisi claim hanya dapat diminta oleh Atasan atau Finance.']);
         return DB::connection('hris')->transaction(function () use ($request, $requestType, $step, $action, $actor, $comment, $revisionType): object {
             $statusMap = [
                 'leave_manager' => ['approve' => 'pending_hr', 'reject' => 'rejected'],
@@ -51,12 +52,13 @@ class HrisWorkflowService
             }
             if ($action === 'request_revision') {
                 $request->forceFill(['status' => 'needs_revision', 'revision_requested_by' => $actor->getKey(), 'revision_requested_role' => $step, 'revision_type' => $revisionType, 'revision_reason' => $comment, 'revision_requested_at' => now(), 'decision_reason' => $comment])->save();
-                ApprovalEvent::create(['request_type' => $requestType, 'request_id' => $request->getKey(), 'step' => $step, 'action' => 'request_revision', 'actor_id' => $actor->getKey(), 'comment' => $comment]);
-                if ($request->requester_user_id) {
+                ApprovalEvent::create(['request_type' => $requestType, 'request_id' => $request->getKey(), 'step' => $step, 'action' => 'request_revision', 'actor_id' => $actor->getKey(), 'comment' => $comment, 'created_at' => now('UTC')]);
+                $requesterUserId = $request->requester_user_id ?: $request->employee?->user_id;
+                if ($requesterUserId) {
                     $requestLabel = $this->requestLabel($requestType, $request);
                     $actorName = $actor->name ?: $actor->email;
                     $stepLabel = $this->stepLabel($step);
-                    $this->notify((int) $request->requester_user_id, "{$requestLabel} perlu direvisi", "{$requestLabel} diminta revisi oleh {$actorName} sebagai {$stepLabel}. Catatan: {$comment}", ['request_type' => $requestType, 'request_id' => $request->getKey(), 'status' => 'needs_revision', 'action' => 'request_revision', 'actor_id' => $actor->getKey(), 'actor_name' => $actorName, 'step' => $step]);
+                    $this->notify((int) $requesterUserId, "{$requestLabel} perlu direvisi", "{$requestLabel} diminta revisi oleh {$actorName} sebagai {$stepLabel}. Catatan: {$comment}", ['request_type' => $requestType, 'request_id' => $request->getKey(), 'status' => 'needs_revision', 'action' => 'request_revision', 'actor_id' => $actor->getKey(), 'actor_name' => $actorName, 'step' => $step]);
                 }
                 return $request;
             }
@@ -75,7 +77,7 @@ class HrisWorkflowService
             if ($action === 'approve') $request->forceFill([$field => $actor->getKey(), $time => now()]);
             $request->forceFill(['decision_reason' => $comment]);
             $request->save();
-            ApprovalEvent::create(['request_type' => $requestType, 'request_id' => $request->getKey(), 'step' => $step, 'action' => $action, 'actor_id' => $actor->getKey(), 'comment' => $comment]);
+            ApprovalEvent::create(['request_type' => $requestType, 'request_id' => $request->getKey(), 'step' => $step, 'action' => $action, 'actor_id' => $actor->getKey(), 'comment' => $comment, 'created_at' => now('UTC')]);
             $requestLabel = $this->requestLabel($requestType, $request);
             $actorName = $actor->name ?: $actor->email;
             $stepLabel = $this->stepLabel($step);

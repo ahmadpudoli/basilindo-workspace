@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         __DIR__.'/../app/Modules/Integration/Console/Commands',
         __DIR__.'/../app/Modules/DocumentManagement/Console/Commands',
+        \App\Modules\HRIS\Application\Services\CleanupClaimTemporaryUploads::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         //

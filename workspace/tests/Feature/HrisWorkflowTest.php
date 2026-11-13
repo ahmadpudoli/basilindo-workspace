@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\HRIS\Application\Services\ClaimService;
+use App\Modules\HRIS\Application\Services\ClaimPolicy;
 use App\Modules\HRIS\Application\Services\HrisWorkflowService;
 use App\Modules\HRIS\Application\Services\OvertimeService;
 use App\Modules\HRIS\Domain\Models\Claim;
@@ -12,6 +13,7 @@ use App\Modules\CRM\Domain\Models\CrmAccount;
 use App\Modules\CRM\Domain\Models\CrmOpportunity;
 use Core\Models\Company;
 use Core\Models\Role;
+use Core\Models\Permission;
 use Core\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -144,9 +146,77 @@ it('routes substantive overtime revision back to manager', function () {
 
 it('routes a manager claim approval to finance and records the event', function () {
     [$user, $company, $employee] = hrisEmployeeForTest('HRIS-CLAIM');
-    $claim = app(ClaimService::class)->submit($employee, ['type' => 'reimbursement', 'category' => 'Transport', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $user->id);
+    $claim = app(ClaimService::class)->submit($employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $user->id);
     $result = app(HrisWorkflowService::class)->decide($claim, 'claim', 'manager', 'approve', $user, 'Disetujui atasan');
     expect($result->status)->toBe('pending_finance')->and($result->manager_approved_by)->toBe($user->id)->and(DB::connection('hris')->table('approval_events')->where('request_id', $claim->id)->count())->toBe(1);
+});
+
+it('supports substantive claim revisions from the manager and resubmits them for manager approval', function () {
+    [$manager, $company, $employee] = hrisEmployeeForTest('HRIS-CLAIM-REV-MANAGER');
+    $requester = User::factory()->create();
+    $employee->update(['user_id' => $requester->id]);
+    $claim = app(ClaimService::class)->submit($employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Perjalanan awal', 'amount' => 100000, 'currency' => 'IDR'], $requester->id);
+
+    app(HrisWorkflowService::class)->decide($claim, 'claim', 'manager', 'request_revision', $manager, 'Nominal dan keperluan perlu diperbaiki.', 'substantive');
+    expect($claim->fresh()->status)->toBe('needs_revision')->and($claim->fresh()->revision_requested_role)->toBe('manager');
+    $outsider = User::factory()->create();
+    $auditPermission = Permission::firstOrCreate(['name' => 'view_claim_audit_trail', 'guard_name' => 'web']);
+    $requester->givePermissionTo($auditPermission);
+    $outsider->givePermissionTo($auditPermission);
+    $policy = new ClaimPolicy;
+    expect($policy->update($requester, $claim->fresh()))->toBeTrue()
+        ->and($policy->update($outsider, $claim->fresh()))->toBeFalse()
+        ->and($policy->viewAuditTrail($requester, $claim->fresh()))->toBeTrue()
+        ->and($policy->viewAuditTrail($outsider, $claim->fresh()))->toBeFalse();
+
+    $resubmitted = app(ClaimService::class)->resubmit($claim->fresh(), $employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Perjalanan diperbaiki', 'amount' => 120000, 'currency' => 'IDR'], $requester->id);
+    expect($resubmitted->status)->toBe('pending_manager')
+        ->and($resubmitted->request_number)->toBe($claim->request_number)
+        ->and($resubmitted->revision_number)->toBe(1)
+        ->and($resubmitted->purpose)->toBe('Perjalanan diperbaiki')
+        ->and($resubmitted->expenseItems()->count())->toBe(1)
+        ->and(DB::connection('hris')->table('claim_revision_snapshots')->where('claim_id', $claim->id)->count())->toBe(1)
+        ->and(json_decode(DB::connection('hris')->table('claim_revision_snapshots')->where('claim_id', $claim->id)->value('expense_items_snapshot'), true)[0]['description'])->toBe('Perjalanan awal');
+});
+
+it('routes an administrative claim revision requested by Finance back to Finance', function () {
+    [$financeUser, $company, $employee] = hrisEmployeeForTest('HRIS-CLAIM-REV-FINANCE');
+    $requester = User::factory()->create();
+    $employee->update(['user_id' => $requester->id]);
+    HrisWorkflowApprover::create(['company_id' => $company->id, 'workflow_key' => 'claim', 'step' => 'finance', 'user_id' => $financeUser->id, 'is_active' => true]);
+    $claim = app(ClaimService::class)->submit($employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $requester->id);
+    app(HrisWorkflowService::class)->decide($claim, 'claim', 'manager', 'approve', $financeUser);
+    app(HrisWorkflowService::class)->decide($claim->fresh(), 'claim', 'finance', 'request_revision', $financeUser, 'Bukti nota perlu diperjelas.', 'administrative');
+
+    $resubmitted = app(ClaimService::class)->resubmit($claim->fresh(), $employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $requester->id);
+    expect($resubmitted->status)->toBe('pending_finance')
+        ->and($resubmitted->manager_approved_by)->toBe($financeUser->id)
+        ->and($resubmitted->finance_approved_by)->toBeNull()
+        ->and($resubmitted->revision_requested_role)->toBeNull();
+});
+
+it('routes an administrative claim revision requested by the manager back to the manager', function () {
+    [$manager, $company, $employee] = hrisEmployeeForTest('HRIS-CLAIM-REV-MANAGER-ADMIN');
+    $requester = User::factory()->create();
+    $employee->update(['user_id' => $requester->id]);
+    $claim = app(ClaimService::class)->submit($employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $requester->id);
+    app(HrisWorkflowService::class)->decide($claim, 'claim', 'manager', 'request_revision', $manager, 'Lampiran administrasi perlu dilengkapi.', 'administrative');
+
+    $resubmitted = app(ClaimService::class)->resubmit($claim->fresh(), $employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $requester->id);
+    expect($resubmitted->status)->toBe('pending_manager');
+});
+
+it('routes a substantive claim revision requested by Finance back through the manager', function () {
+    [$manager, $company, $employee] = hrisEmployeeForTest('HRIS-CLAIM-REV-FINANCE-SUBSTANTIVE');
+    $requester = User::factory()->create();
+    $employee->update(['user_id' => $requester->id]);
+    HrisWorkflowApprover::create(['company_id' => $company->id, 'workflow_key' => 'claim', 'step' => 'finance', 'user_id' => $manager->id, 'is_active' => true]);
+    $claim = app(ClaimService::class)->submit($employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 100000, 'currency' => 'IDR'], $requester->id);
+    app(HrisWorkflowService::class)->decide($claim, 'claim', 'manager', 'approve', $manager);
+    app(HrisWorkflowService::class)->decide($claim->fresh(), 'claim', 'finance', 'request_revision', $manager, 'Perubahan nilai memerlukan pemeriksaan atasan.', 'substantive');
+
+    $resubmitted = app(ClaimService::class)->resubmit($claim->fresh(), $employee, ['type' => 'reimbursement', 'category' => 'Transportasi', 'purpose' => 'Meeting', 'amount' => 125000, 'currency' => 'IDR'], $requester->id);
+    expect($resubmitted->status)->toBe('pending_manager')->and($resubmitted->manager_approved_by)->toBeNull();
 });
 
 it('routes a claim above the company threshold to the configured final approver', function () {

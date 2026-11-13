@@ -121,6 +121,9 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Atasan atau HR dapat meminta revisi dengan alasan wajib dan klasifikasi
   `substantive` atau `administrative`; pemohon menjadi satu-satunya pihak yang
   mengubah isi pengajuan.
+- Atasan dan Finance dapat meminta revisi reimbursement/cash advance dari tabel
+  inbox maupun detail approval. Aksi inbox wajib menampilkan dialog jenis dan
+  alasan revisi, dan backend memvalidasi tahap serta approver aktif.
 - Revisi substansi selalu kembali ke approval atasan. Revisi administratif
   kembali ke pihak yang meminta revisi; untuk HR berarti langsung ke HR.
 - Setiap permintaan revisi dan pengiriman ulang disimpan sebagai approval event
@@ -146,6 +149,8 @@ audit, dan layout aplikasi yang sudah tersedia.
   jenis file lain tetap tersedia sebagai unduhan.
 - Detail approval HRIS menggunakan dialog preview untuk dokumen pendukung PDF/gambar;
   tipe file lain tetap menggunakan unduhan.
+- Dialog preview gambar pada daftar/detail approval menggunakan toolbar zoom bersama;
+  PDF tetap memakai viewer PDF tanpa toolbar zoom gambar.
 - Header halaman persetujuan menggunakan label “Kehadiran & Claim”.
 - Detail dari Ringkasan Cuti Karyawan menggunakan route dan controller khusus
   Ringkasan, tetapi tetap memakai resource view detail cuti/sakit yang sama.
@@ -220,7 +225,9 @@ audit, dan layout aplikasi yang sudah tersedia.
   approval; data approval manager dibatasi pada bawahan langsung user.
 - Dashboard HRIS menampilkan early warning daftar approval yang menunggu jika
   user memiliki `view_hris_approvals`; setiap item mengikuti scope inbox dan
-  mengarah ke detail approval yang terotorisasi.
+  mengarah ke detail approval yang terotorisasi. Daftar ini mencakup seluruh
+  tahap yang tersedia di inbox: atasan, HR, Finance, dan approver final untuk
+  cuti/sakit, lembur, reimbursement, serta cash advance.
 - Menu Hari Libur menyediakan CRUD terotorisasi, filter tahun/jenis/status,
   assignment perusahaan, audit trail, serta opsi pengurang kuota cuti untuk
   setiap tanggal cuti bersama.

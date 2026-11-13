@@ -1,4 +1,53 @@
 # Feature Checklist
+- [x] Daftar reimbursement dan cash advance menampilkan aksi Detail untuk semua pengajuan yang diizinkan policy, termasuk status menunggu persetujuan.
+- [x] Reimbursement yang telah disetujui Finance menyediakan tombol cetak di daftar/detail dengan kop nama perusahaan, status workflow terkini, dan rincian pengajuan.
+- [x] Dokumen cetak reimbursement menampilkan tanggal pengajuan awal, identitas/waktu persetujuan Atasan dan Finance, serta tanda persetujuan hijau pada blok tanda tangan.
+- [x] Ringkasan cetak tidak mengulang rincian persetujuan dan footer menyediakan blok tanda tangan pemohon.
+- [x] Nama perusahaan tidak diulang dalam ringkasan dokumen cetak karena sudah tampil sebagai kop.
+- [x] Kolom tanggal pengajuan awal tersedia melalui migration incremental dan pengajuan lama non-draft di-backfill dari tanggal pembuatan.
+- [x] Lebar kolom kategori daftar klaim dibatasi dan badge kategori membungkus dalam batas kolom.
+- [x] Lebar kolom Status klaim dibatasi dan ruang kolom Aksi diperbesar untuk menampung tombol.
+- [x] Tombol aksi baris draft klaim ditampilkan satu baris pada kolom Aksi seperempat lebar tabel dengan lebar minimum 360 px.
+- [x] Aksi draft dinamis berada dalam container tombol yang sama agar tetap sebaris dan memiliki ruang vertikal.
+- [x] Halaman cetak klaim menggunakan lembar A4; gambar proporsional dengan batas tinggi 90 mm dan dapat berbagi halaman, sedangkan tiap halaman PDF dirender lokal sebagai lembar A4 terpisah tanpa PDF viewer.
+- [x] Lembar PDF menyesuaikan tinggi area cetak A4 setelah margin sehingga tiap halaman PDF tidak menimbulkan halaman kosong akibat overflow.
+- [x] Lembar PDF dicetak sebagai elemen mandiri di luar wadah lampiran A4 agar tidak menambah halaman kosong dari overflow wadah induk.
+- [x] Lampiran gambar tidak dipaksa ke halaman baru; beberapa lampiran dapat mengisi halaman A4 yang sama secara proporsional.
+- [x] Gambar-gambar berurutan ditampilkan bersama pada satu lembar preview lampiran, mengikuti susunan hasil cetak.
+- [x] Approval Atasan dan Finance dapat meminta revisi claim dengan tipe substansi/administrasi; pemohon dapat memperbarui dan mengirim ulang ke tahap sesuai tipe, dengan snapshot historis serta bukti lama tetap terjaga.
+- [x] Riwayat revisi claim memakai permission granular `view_claim_audit_trail`, policy subject scope, dan pemeriksaan controller/Blade.
+- [x] Label status claim menampilkan “Menunggu persetujuan atasan” dan “Menunggu persetujuan Finance” untuk tahap workflow terkait.
+- [x] Pilih semua pada grup permission dan tiap subgrup memperbarui checkbox, penghitung jumlah pilihan, dan status terpilih sebagian secara konsisten.
+- [x] Filter Role di daftar pengguna memakai floating label; tombol Reset dan Terapkan sejajar dengan field filter.
+- [x] Form reimbursement menampilkan pengingat bergaya peringatan di bawah accordion informasi karyawan agar bukti fisik diserahkan kepada Finance pada akhir bulan pengajuan.
+- [x] Halaman detail claim menjaga submenu Reimbursement & Cash Advance aktif dan grup Manajemen Claim terbuka.
+- [x] Panel kiri detail approval klaim menampilkan konteks ringkas tanpa kartu terpisah per field; bukti nota dibuka melalui popup dua panel “Preview Bukti Dokumen”.
+- [x] Filter daftar reimbursement dan cash advance merapat dalam satu baris pada desktop lebar tanpa ruang kosong setelah field jumlah baris.
+- [x] Panel konteks detail reimbursement menampilkan nama client sesuai project/opportunity dan kontak opportunity beserta email jika tersedia.
+- [x] Referensi opportunity reimbursement menerima UUID CRM maksimal 36 karakter; validasi client/server dan kolom database konsisten.
+- [x] Halaman detail reimbursement memakai ringkasan dan tabel compact, menampilkan tanggal kegiatan, serta menyediakan Preview Bukti Dokumen dengan dialog verifikasi dua panel.
+- [x] Dialog preview bukti reimbursement pada form edit menampilkan detail rincian biaya di kiri dan gambar/PDF di kanan, serta menjadi susunan vertikal pada layar kecil.
+- [x] Daftar reimbursement tidak menampilkan panel draft duplikat; aksi Detail, Edit draft, dan Hapus draft tetap tersedia pada baris draft. Pengiriman dari edit draft menampilkan konfirmasi sesudah validasi client-side lolos.
+- [x] Reimbursement mewajibkan tanggal nota dan bukti per rincian; file bisa dipilih dari perangkat atau kamera, diunggah per file ke MinIO private, dan temporary object dibersihkan pada TTL 30 menit.
+- [x] Tombol Ambil foto membuka kamera browser dengan pratinjau langsung, fallback kamera/file native untuk konteks non-secure, thumbnail foto, ikon file, dan aksi hapus lampiran yang tetap divalidasi wajib pada client/server.
+- [x] Bukti nota terlampir menyediakan tombol Preview di samping Hapus dan membuka pratinjau gambar/PDF dalam modal.
+- [x] Tanggal nota wajib diisi pada setiap rincian reimbursement dan divalidasi pada client serta server.
+- [x] Textarea Keterangan umum dan Deskripsi reimbursement compact dengan tinggi awal tepat dua baris dan tetap dapat diperbesar manual.
+- [x] Form reimbursement memvalidasi Simpan draft dan Kirim pengajuan di client sebelum submit, serta memvalidasi ulang rincian dan referensi kondisional di server.
+- [x] Submit draft mempertahankan nilai tombol aksi setelah unggah lampiran, menampilkan popup loading, dan daftar draft menyediakan detail, edit, serta hapus dengan authorization pemohon.
+- [x] Dropdown Project menggunakan susunan pencarian tetap dan scrollbar tabel yang sama dengan dropdown Opportunity.
+- [x] Kartu opsi Keperluan reimbursement dibuat lebih compact dengan padding, ikon, tipografi, dan jarak yang proporsional.
+- [x] Header accordion informasi reimbursement memakai ikon karyawan yang relevan dan ukuran compact.
+- [x] Dropdown opportunity reimbursement menjaga area pencarian tetap terlihat dan membatasi scrollbar vertikal/horizontal pada tabel hasil.
+- [x] Accordion informasi karyawan dan alur persetujuan berada di kolom kiri setelah Nomor PO, dengan gradasi lembut pada header saat tertutup.
+
+- [x] Form reimbursement mengatur kolom kiri untuk Informasi pengajuan, Keperluan, Nomor PO, dan accordion informasi; kolom kanan untuk Tujuan/keterangan di atas Rincian biaya, tanpa ruang kosong akibat tinggi baris yang dipaksa sama.
+
+- [x] Informasi karyawan, atasan, Finance, dan approver final pada form reimbursement dikelompokkan dalam satu panel accordion.
+
+- [x] Input nominal reimbursement menerima angka maksimal dua desimal, menampilkan format `id-ID`, dan menormalisasi nilai lokal pada server; referensi nota berlabel opsional dengan contoh nomor nota.
+
+- [x] Hak akses Pengaturan HRIS dipisah per submenu (Parameter, Workflow Approval, Kategori biaya) dan per aksi lihat/tambah/ubah/arsip; Master penomoran dipisah untuk lihat/tambah/ubah.
 
 - [x] Pengajuan/revisi lembur External / Project memiliki dropdown Project opsional dengan scope perusahaan dan akses project serta validasi server
 - [x] Form pengajuan lembur memakai susunan dua kolom dan card/footer yang konsisten dengan form cuti/sakit
@@ -385,6 +434,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Filter daftar cuti mendukung opsi Semua tahun
 - [x] Approval inbox HRIS memiliki permission khusus dan cakupan bawahan langsung
 - [x] Approval inbox HRIS menggunakan satu tabel terpadu dengan modal alasan untuk tolak dan minta revisi
+- [x] Approval reimbursement/cash advance pada tahap Atasan dan Finance menyediakan aksi Minta revisi dari tabel inbox
 - [x] Aksi Setujui pada approval HRIS menggunakan modal konfirmasi sebelum submit
 - [x] Popup konfirmasi Setujui menyediakan catatan persetujuan opsional
 - [x] Approval inbox HRIS memiliki filter, sorting, dan pagination dengan state query string
@@ -394,8 +444,17 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Popup minta revisi menampilkan panduan jenis revisi secara langsung
 - [x] Sidebar HRIS mendukung menu bertingkat untuk Biodata, Kehadiran, dan Claim
 - [x] Sidebar HRIS menampilkan menu Pegawai berdasarkan permission `view_any_employee`
+- [x] Preview bukti foto reimbursement menyediakan zoom in/out pada form dan detail tanpa mengubah preview PDF
+- [x] Modal preview bukti reimbursement pada detail approval manager/Finance memakai kontrol zoom gambar yang sama
+- [x] Semua modal preview gambar Workspace memakai kontrol zoom bersama; toolbar tersembunyi untuk PDF dan format non-gambar
 - [x] Label menu Pegawai menggunakan nama bisnis Daftar Karyawan
-- [x] Dashboard HRIS menampilkan early warning approval sesuai permission dan scope inbox
+- [x] Dashboard HRIS menampilkan early warning semua tahap approval (atasan, HR, Finance, final) sesuai permission dan scope inbox
+- [x] Foto bukti reimbursement dari kamera dan galeri dikompresi di client sebelum upload, dengan PDF tetap utuh dan fallback ke file asli
+- [x] Foto bukti reimbursement memiliki kompresi bertahap dengan target 1,5 MB; zoom 100% menyesuaikan gambar ke area preview
+- [x] Detail approval reimbursement menampilkan accordion riwayat tertutup di bawah rincian biaya dan tidak menampilkan panel dokumen pendukung umum
+- [x] Timeline claim pada detail persetujuan tampil tanpa permission audit tambahan dan tetap mengikuti otorisasi halaman approval
+- [x] Accordion timeline approval claim memakai ikon, header compact, dan latar gradasi
+- [x] Timestamp event HRIS disimpan konsisten dalam UTC dan ditampilkan dalam zona waktu aplikasi
 - [x] Biodata karyawan menampilkan atasan dan treeview bawahan bertingkat
 - [x] Biodata personal mengambil data berdasarkan relasi akun tanpa scope daftar karyawan/company
 - [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
@@ -468,6 +527,13 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Filter Account CRM mendukung multiple select untuk tipe, status, perusahaan pemilik, dan client/partner
 - [x] Pengajuan lembur External / Project dapat mereferensikan project atau CRM opportunity dengan snapshot nama/status dan validasi scope
 - [x] Dropdown referensi pekerjaan memiliki input pencarian tetap dan overflow vertikal/horizontal hanya pada tabel
+- [x] Daftar klaim memiliki filter multi-select status, jenis, kategori, rentang tanggal default bulan berjalan, dan menampilkan kategori distinct per pengajuan
+- [x] Dropdown Opportunity reimbursement identik dengan pola lembur: tabel searchable, tanpa tombol Pilih, klik baris memilih data, dan detail status/client/kontak tampil setelah pemilihan
+- [x] Renderer dropdown Opportunity reimbursement ditandai siap agar tidak membuat wrapper dropdown ganda setelah perubahan pilihan
+- [x] Dropdown native dan fallback Opportunity reimbursement disembunyikan/dicegah agar hanya satu komponen tampil
+- [x] Dropdown native dan fallback Opportunity reimbursement disembunyikan/dicegah agar hanya satu komponen tampil
+- [x] Renderer dropdown Opportunity reimbursement ditandai siap agar tidak membuat wrapper dropdown ganda setelah perubahan pilihan
+- [x] Dropdown Opportunity reimbursement identik dengan pola lembur: tabel searchable, tanpa tombol Pilih, klik baris memilih data, dan detail status/client/kontak tampil setelah pemilihan
 - [x] Form lembur, reimbursement/cash advance, dan cuti/sakit mendukung draft, konfirmasi submit, penghapusan draft, serta alokasi nomor master saat dikirim
 - [x] Form revisi cuti/sakit mempertahankan layout dua kolom dan panel alasan revisi tidak masuk ke grid field
 - [x] Form edit draft cuti/sakit merender atribut form dengan benar dan tidak menampilkan directive method sebagai teks
@@ -485,6 +551,35 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
 - [x] Daftar lembur memakai rentang tanggal default awal bulan sampai hari ini dan panel ringkasan jumlah serta total durasi sesuai filter
 - [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
+- [x] Form reimbursement/cash advance memakai layout dua kolom dan pola informasi pengajuan, rincian, karyawan, serta approver yang konsisten dengan form cuti/sakit
+- [x] Form reimbursement/cash advance menghapus field Department dan memakai pilihan keperluan Internal atau External / Project beserta referensi pekerjaan berscope perusahaan
+- [x] Cash advance pada form claim ditandai sebagai tahap pengembangan berikutnya dan referensi Project/Opportunity ditampilkan sebagai dropdown tabel seperti form lembur
+- [x] Backend claim mengunci pengajuan baru pada Reimbursement sampai workflow Cash Advance dikembangkan
+- [x] Form pengajuan reimbursement menampilkan jenis transaksi sebagai informasi tetap pada panel kiri dan menggunakan kartu pilihan keperluan yang lebih jelas serta responsif
+- [x] Nomor PO pada form reimbursement hanya tampil untuk keperluan project/client; keterangan umum berada setelah Keperluan di panel kanan dan lokasi kegiatan dihapus
+- [x] Informasi jenis reimbursement memakai ikon struk, bukan huruf inisial
+- [x] Kategori biaya reimbursement berasal dari master HRIS dengan dropdown, migrasi backfill kategori lama, serta pengelolaan terotorisasi di Pengaturan
+- [x] Permission menu Pengaturan yang belum terkatalog, Modul aktif, dan kategori reimbursement tersedia di Core & Pengaturan; permission Integrasi Odoo dikelompokkan sebagai submodul Integrasi Odoo
+- [x] Dropdown referensi claim menampilkan pencarian dan tabel kolom referensi, perusahaan, client, status, serta aksi pilih seperti form lembur
+- [x] Template form claim tidak memakai ekspresi Blade nested yang menyebabkan ParseError saat dibuka
+- [x] Pembentukan metadata dropdown claim memakai array biasa agar kompatibel dengan Eloquent Collection
+- [x] Dropdown Project/Opportunity claim mengikuti komponen lembur dan menampilkan panel detail referensi setelah dipilih
+- [x] Input pencarian dropdown referensi claim tetap satu baris dan mencari nama, perusahaan, client, serta status; Project dan Opportunity memakai renderer yang sama
+- [x] Dropdown Opportunity claim tetap menggunakan renderer tabel yang sama saat field awalnya tersembunyi dan baru dipilih
+- [x] Opportunity claim memiliki fallback renderer agar native select tidak tampil ketika inisialisasi komponen terlambat
+- [x] Opportunity claim memiliki fallback saat window load untuk menjamin komponen tabel tampil seperti form lembur
+- [x] Opportunity claim memiliki fallback saat window load untuk menjamin komponen tabel tampil seperti form lembur
+- [x] Opportunity claim memiliki fallback renderer agar native select tidak tampil ketika inisialisasi komponen terlambat
+- [x] Dropdown Opportunity claim tetap menggunakan renderer tabel yang sama saat field awalnya tersembunyi dan baru dipilih
+- [x] Input pencarian dropdown referensi claim tetap satu baris dan mencari nama, perusahaan, client, serta status; Project dan Opportunity memakai renderer yang sama
+- [x] Dropdown Project/Opportunity claim mengikuti komponen lembur dan menampilkan panel detail referensi setelah dipilih
+- [x] Pembentukan metadata dropdown claim memakai array biasa agar kompatibel dengan Eloquent Collection
+- [x] Template form claim tidak memakai ekspresi Blade nested yang menyebabkan ParseError saat dibuka
+- [x] Dropdown referensi claim menampilkan pencarian dan tabel kolom referensi, perusahaan, client, status, serta aksi pilih seperti form lembur
+- [x] Backend claim mengunci pengajuan baru pada Reimbursement sampai workflow Cash Advance dikembangkan
+- [x] Cash advance pada form claim ditandai sebagai tahap pengembangan berikutnya dan referensi Project/Opportunity ditampilkan sebagai dropdown tabel seperti form lembur
+- [x] Form reimbursement/cash advance menghapus field Department dan memakai pilihan keperluan Internal atau External / Project beserta referensi pekerjaan berscope perusahaan
+- [x] Form reimbursement/cash advance memakai layout dua kolom dan pola informasi pengajuan, rincian, karyawan, serta approver yang konsisten dengan form cuti/sakit
 - [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
 - [x] Form edit draft lembur tidak menampilkan judul atau catatan revisi; pesan revisi hanya tampil untuk status non-draft yang perlu diperbaiki
 - [x] Simpan draft lembur kembali ke daftar lembur dengan pesan draft, bukan ke detail dengan pesan revisi
@@ -498,3 +593,5 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Edit draft cuti/sakit menampilkan dokumen pendukung tersimpan, menyediakan preview/unduh, dan hanya mewajibkan upload jika dokumen belum ada
 - [x] Form lembur, reimbursement/cash advance, dan cuti/sakit mendukung draft, konfirmasi submit, penghapusan draft, serta alokasi nomor master saat dikirim
 - [x] Dropdown referensi pekerjaan memiliki input pencarian tetap dan overflow vertikal/horizontal hanya pada tabel
+- [x] Pemohon dapat menyimpan perubahan revisi claim tanpa mengirimkannya; Kirim revisi tetap memakai dialog konfirmasi dan memulai ulang approval setelah disetujui
+- [x] Detail claim menampilkan semua siklus workflow secara kronologis; identitas pelaku, komentar, dan snapshot dibatasi permission audit trail claim

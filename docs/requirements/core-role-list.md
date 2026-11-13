@@ -29,3 +29,4 @@ Admin dapat menemukan role dengan cepat dan mengelola role melalui daftar tabel 
   seluruh modul, dengan urutan permission CRUD per resource.
 - Subkelompok fitur menggunakan panel expandable yang tertutup secara default,
   menampilkan jumlah permission dan jumlah pilihan secara ringkas.
+- Pilih semua pada grup modul dan subgrup fitur menyinkronkan status seluruh checkbox serta jumlah permission terpilih, termasuk status sebagian terpilih.

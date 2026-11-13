@@ -46,7 +46,7 @@ class RoleSeeder extends Seeder
         }
         Permission::firstOrCreate(['name' => 'access_settings', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'view_document_audit_trail', 'guard_name' => 'web']);
-        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents', 'access_integration', 'view_integration', 'manage_integration', 'run_integration_sync', 'view_queue_jobs', 'manage_crm_pipeline', 'manage_crm_team'] as $permission) {
+        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents', 'access_integration', 'view_integration', 'manage_integration', 'run_integration_sync', 'view_queue_jobs', 'manage_workspace_modules', 'manage_hris_expense_categories', 'manage_crm_pipeline', 'manage_crm_team'] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
         foreach (['view_role', 'view_any_role', 'create_role', 'update_role', 'delete_role', 'view_audit_trail'] as $permission) {
@@ -128,6 +128,9 @@ class RoleSeeder extends Seeder
         // 2026_10_26_000006_reconcile_hris_role_permission_master.
         $hrisAdmin = Role::query()->where('name', 'hris_admin')->where('guard_name', 'web')->first();
         $hrisMember = Role::query()->where('name', 'hris_member')->where('guard_name', 'web')->first();
+        $claimAuditPermission = Permission::firstOrCreate(['name' => 'view_claim_audit_trail', 'guard_name' => 'web']);
+        $superAdmin->givePermissionTo($claimAuditPermission);
+        $hrisAdmin?->givePermissionTo($claimAuditPermission);
 
         // Member hanya melihat katalog dan metadata dokumen.
         $memberPermissions = Permission::where(function($q) {

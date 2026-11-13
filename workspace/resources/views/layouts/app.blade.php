@@ -91,20 +91,25 @@
             'label' => 'Pengaturan', 'icon' => 'settings', 'url' => route('workspace.settings'),
             'items' => [
                 ['label' => 'Ringkasan pengaturan', 'url' => route('workspace.settings')],
-                ['label' => 'Modul aktif', 'url' => route('workspace.settings.modules')],
+                ...(auth()->user()?->can('manage_workspace_modules') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Modul aktif', 'url' => route('workspace.settings.modules'), 'permission' => 'manage_workspace_modules']] : []),
                 ...(auth()->user()?->can('view_integration') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Integrasi Odoo', 'url' => route('workspace.core.integration'), 'permission' => 'view_integration', 'items' => [
                     ['label' => 'Sinkronisasi Odoo', 'url' => route('workspace.core.integration'), 'permission' => 'view_integration'],
                     ['label' => 'Mapping Perusahaan', 'url' => route('workspace.core.integration.company-mapping'), 'permission' => 'manage_integration'],
                 ]]] : []),
                 ...(auth()->user()?->can('view_queue_jobs') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Queue & Job', 'url' => route('workspace.core.queue-jobs'), 'permission' => 'view_queue_jobs']] : []),
-                ...(auth()->user()?->can('manage_hris_settings') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengaturan HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'manage_hris_settings', 'items' => [
-                    ['label' => 'Parameter HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'manage_hris_settings'],
-                    ['label' => 'Workflow Approval', 'url' => route('workspace.settings.hris.workflow'), 'permission' => 'manage_hris_settings'],
+                ...(auth()->user()?->hasAnyPermission(['view_hris_settings', 'create_hris_settings', 'update_hris_settings', 'delete_hris_settings', 'view_hris_workflow', 'create_hris_workflow', 'update_hris_workflow', 'delete_hris_workflow', 'view_hris_expense_categories', 'create_hris_expense_categories', 'update_hris_expense_categories', 'delete_hris_expense_categories']) || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengaturan HRIS', 'url' => route('workspace.settings.hris'), 'items' => [
+                    ...(auth()->user()?->hasAnyPermission(['view_hris_settings', 'create_hris_settings', 'update_hris_settings', 'delete_hris_settings']) || auth()->user()?->hasRole('super_admin') ? [
+                        ['label' => 'Parameter HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'view_hris_settings'],
+                    ] : []),
+                    ...(auth()->user()?->hasAnyPermission(['view_hris_workflow', 'create_hris_workflow', 'update_hris_workflow', 'delete_hris_workflow']) || auth()->user()?->hasRole('super_admin') ? [
+                        ['label' => 'Workflow Approval', 'url' => route('workspace.settings.hris.workflow'), 'permission' => 'view_hris_workflow'],
+                    ] : []),
+                    ['label' => 'Kategori biaya reimbursement', 'url' => route('workspace.settings.hris.expense-categories'), 'permission' => 'view_hris_expense_categories'],
                 ]]] : []),
                 ...(auth()->user()?->can('view_any_user') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengguna & akses', 'url' => route('workspace.core.users')]] : []),
                 ...(auth()->user()?->can('view_any_role') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Role & permission', 'url' => route('workspace.core.roles')]] : []),
                 ...(auth()->user()?->can('view_any_organization_unit') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Struktur organisasi', 'url' => route('workspace.core.organization-units')]] : []),
-                ...(auth()->user()?->can('manage_numbering_rules') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Master penomoran', 'url' => route('workspace.core.numbering-rules')]] : []),
+                ...(auth()->user()?->hasAnyPermission(['view_numbering_rules', 'create_numbering_rules', 'update_numbering_rules']) || auth()->user()?->hasRole('super_admin') ? [['label' => 'Master penomoran', 'url' => route('workspace.core.numbering-rules')]] : []),
                 ...(auth()->user()?->can('view_audit_trail') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Audit trail', 'url' => route('workspace.core.audit-log')]] : []),
             ],
         ];
@@ -148,7 +153,7 @@
             'Account' => 'account', 'Contact' => 'contact', 'Lead' => 'lead', 'Opportunity' => 'opportunity', 'Pipeline Sales' => 'pipeline', 'Aktivitas' => 'activity',
               'Project' => 'project', 'Ticket' => 'ticket', 'Board ticket' => 'board', 'Timeline' => 'timeline', 'Epic' => 'epic', 'Integration' => 'integration', 'Dashboard' => 'dashboard', 'Sinkronisasi Odoo' => 'sync',
             'Catatan' => 'note', 'Komentar' => 'comment', 'Notifikasi' => 'notification', 'Kontribusi pengguna' => 'users',
-            'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Dokumen' => 'document', 'Upload dokumen' => 'upload', 'Hari Libur' => 'calendar',
+            'Leaderboard' => 'leaderboard', 'Status & prioritas' => 'settings', 'Ringkasan pengaturan' => 'settings', 'Modul aktif' => 'toggle', 'Role & permission' => 'settings', 'Kategori biaya reimbursement' => 'document', 'Dokumen' => 'document', 'Upload dokumen' => 'upload', 'Hari Libur' => 'calendar',
             'Tipe dokumen' => 'document-type', 'Verifikasi' => 'verification', 'Bundel' => 'bundle', 'Karyawan' => 'users', 'Daftar Karyawan' => 'users', 'Biodata' => 'users', 'Cuti & sakit' => 'calendar', 'Cuti & Sakit' => 'calendar', 'Lembur' => 'calendar', 'Reimbursement & cash advance' => 'document', 'Reimbursement & Cash Advance' => 'document', 'Pengaturan HRIS' => 'settings', 'Semua modul' => 'grid',
         ];
         $userName = auth()->user()?->name ?: auth()->user()?->email;
@@ -254,7 +259,7 @@
                         @php
                             $currentPath = parse_url(request()->url(), PHP_URL_PATH);
                             $navigationPath = $currentPath;
-                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.payment', 'workspace.hris.claims.payment.start', 'workspace.hris.claims.payment.store', 'workspace.hris.claims.complete')) {
+                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.show', 'workspace.hris.claims.payment', 'workspace.hris.claims.payment.start', 'workspace.hris.claims.payment.store', 'workspace.hris.claims.complete')) {
                                 $navigationPath = request('view') === 'summary'
                                     ? (request('type') === 'cash_advance' ? 'hris-claims-summary-cash-advance' : 'hris-claims-summary-reimbursement')
                                     : 'hris-claims-list';
@@ -303,7 +308,7 @@
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content workspace-modal-content">
                 <div class="modal-header workspace-modal-header"><div class="workspace-modal-heading"><span class="workspace-modal-icon workspace-modal-icon-document"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 13h6M9 17h6"/></svg></span><div><span class="workspace-modal-kicker">Dokumen</span><h5 class="modal-title" id="workspacePreviewTitle">Preview dokumen</h5></div></div><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div>
-                <div class="modal-body p-0"><div class="workspace-preview-stage" data-workspace-preview-stage><div class="workspace-preview-loading">Memuat preview...</div></div></div>
+                  <div class="modal-body p-0"><div class="claim-image-viewer workspace-preview-viewer" data-claim-image-viewer><div class="claim-image-zoom-toolbar" data-claim-image-zoom-toolbar hidden><button type="button" class="btn btn-sm btn-outline-secondary" data-claim-zoom-out aria-label="Perkecil gambar">−</button><span data-claim-zoom-level aria-live="polite">100%</span><button type="button" class="btn btn-sm btn-outline-secondary" data-claim-zoom-in aria-label="Perbesar gambar">+</button><button type="button" class="btn btn-sm btn-outline-secondary" data-claim-zoom-reset>Sesuaikan</button></div><div class="workspace-preview-stage" data-workspace-preview-stage><iframe class="claim-attachment-preview-frame" data-workspace-preview-frame title="Preview dokumen" referrerpolicy="no-referrer"></iframe></div></div></div>
                 <div class="modal-footer"><a class="btn btn-outline-primary" data-workspace-preview-fallback target="_blank" rel="noopener">Buka di tab baru</a><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button></div>
             </div>
         </div>

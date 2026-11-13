@@ -119,6 +119,8 @@ class HrisDashboardController extends Controller
         $manager = Employee::query()->where('user_id', $user->getKey())->first();
         $subordinateIds = $manager ? Employee::query()->where('manager_id', $manager->getKey())->pluck('id') : collect();
         $hrCompanyIds = HrisWorkflowApprover::query()->where('workflow_key', 'leave_sick')->where('step', 'hr')->where('user_id', $user->getKey())->where('is_active', true)->pluck('company_id');
+        $financeCompanyIds = HrisWorkflowApprover::query()->where('workflow_key', 'claim')->where('step', 'finance')->where('user_id', $user->getKey())->where('is_active', true)->pluck('company_id');
+        $finalCompanyIds = HrisWorkflowApprover::query()->where('workflow_key', 'claim')->where('step', 'final')->where('user_id', $user->getKey())->where('is_active', true)->pluck('company_id');
 
         return collect()
             ->concat(LeaveRequest::query()->with(['employee', 'dates'])->whereIn('employee_id', $subordinateIds)->where('status', 'pending_manager')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'leave', 'step' => 'manager', 'stage' => 'Atasan', 'label' => $item->type === 'sick' ? 'Sakit' : 'Cuti']))
@@ -126,6 +128,8 @@ class HrisDashboardController extends Controller
             ->concat(Claim::query()->with('employee')->whereIn('employee_id', $subordinateIds)->where('status', 'pending_manager')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'claim', 'step' => 'manager', 'stage' => 'Atasan', 'label' => $item->type === 'cash_advance' ? 'Cash advance' : 'Reimbursement']))
             ->concat(LeaveRequest::query()->with(['employee', 'dates'])->whereIn('company_id', $hrCompanyIds)->where('status', 'pending_hr')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'leave', 'step' => 'hr', 'stage' => 'HR', 'label' => $item->type === 'sick' ? 'Sakit' : 'Cuti']))
             ->concat(OvertimeRequest::query()->with(['employee', 'entries'])->whereIn('company_id', $hrCompanyIds)->where('status', 'pending_hr')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'overtime', 'step' => 'hr', 'stage' => 'HR', 'label' => 'Lembur']))
+            ->concat(Claim::query()->with('employee')->whereIn('company_id', $financeCompanyIds)->where('status', 'pending_finance')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'claim', 'step' => 'finance', 'stage' => 'Finance', 'label' => $item->type === 'cash_advance' ? 'Cash advance' : 'Reimbursement']))
+            ->concat(Claim::query()->with('employee')->whereIn('company_id', $finalCompanyIds)->where('status', 'pending_final')->latest()->get()->map(fn ($item) => ['item' => $item, 'type' => 'claim', 'step' => 'final', 'stage' => 'Approver final', 'label' => $item->type === 'cash_advance' ? 'Cash advance' : 'Reimbursement']))
             ->sortByDesc(fn (array $row) => $row['item']->created_at?->timestamp ?? 0)
             ->values();
     }

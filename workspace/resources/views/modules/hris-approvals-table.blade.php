@@ -73,7 +73,7 @@
                                         @endif
                                     @endif
                                     <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#reject-{{ $rowKey }}">Tolak</button>
-                                    @if (in_array($row['type'], ['leave', 'overtime'], true))
+                                    @if (in_array($row['type'], ['leave', 'overtime'], true) || ($row['type'] === 'claim' && in_array($row['step'], ['manager', 'finance'], true)))
                                         <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#revision-{{ $rowKey }}">Minta revisi</button>
                                     @endif
                                 </div>
@@ -82,7 +82,7 @@
 
                         @if ($row['has_supporting_document'] && $row['can_preview_supporting_document'])
                             <div class="modal fade" id="supporting-{{ $rowKey }}" tabindex="-1" aria-labelledby="supporting-title-{{ $rowKey }}" aria-hidden="true">
-                                <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="supporting-title-{{ $rowKey }}">Dokumen pendukung · {{ $item->employee?->full_name ?? '-' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">@if ($row['supporting_mime_type'] === 'application/pdf')<iframe src="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>@else<img src="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'preview' => 1]) }}" alt="Dokumen pendukung" class="img-fluid d-block mx-auto" style="max-height:70vh">@endif</div></div></div>
+                                <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="supporting-title-{{ $rowKey }}">Dokumen pendukung · {{ $item->employee?->full_name ?? '-' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">@if ($row['supporting_mime_type'] === 'application/pdf')<iframe src="{{ route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>@else@include('modules.partials.image-zoom-viewer', ['src' => route('workspace.hris.supporting-document', ['type' => $row['type'], 'id' => $item->getKey(), 'step' => $row['step'], 'preview' => 1]), 'title' => 'Dokumen pendukung'])@endif</div></div></div>
                             </div>
                         @endif
 
@@ -139,7 +139,7 @@
                             </div>
                         </div>
 
-                        @if (in_array($row['type'], ['leave', 'overtime'], true))
+                        @if (in_array($row['type'], ['leave', 'overtime'], true) || ($row['type'] === 'claim' && in_array($row['step'], ['manager', 'finance'], true)))
                             <div class="modal fade" id="revision-{{ $rowKey }}" tabindex="-1" aria-labelledby="revision-title-{{ $rowKey }}" aria-hidden="true">
                                 <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">

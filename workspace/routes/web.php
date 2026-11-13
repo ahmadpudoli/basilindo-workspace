@@ -34,6 +34,7 @@ use App\Modules\HRIS\Application\Services\LeaveSummaryController;
 use App\Modules\HRIS\Application\Services\HrisOperationsController;
 use App\Modules\HRIS\Application\Services\OvertimeController;
 use App\Modules\HRIS\Application\Services\HrisSettingsController;
+use App\Modules\HRIS\Application\Services\HrisExpenseCategoryController;
 use App\Modules\HRIS\Application\Services\HrisHolidayController;
 use App\Modules\Core\Notifications\Http\Controllers\WebPushController;
 
@@ -178,10 +179,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/hris/overtime/{overtimeRequest}', [OvertimeController::class, 'show'])->name('workspace.hris.overtime.show');
     Route::get('/workspace/hris/claims', [HrisOperationsController::class, 'claims'])->name('workspace.hris.claims');
     Route::get('/workspace/hris/claims/create', [HrisOperationsController::class, 'claimCreate'])->name('workspace.hris.claims.create');
+    Route::post('/workspace/hris/claims/attachments', [\App\Modules\HRIS\Application\Services\ClaimAttachmentUploadController::class, 'store'])->middleware('throttle:30,1')->name('workspace.hris.claims.attachments.store');
+    Route::post('/workspace/hris/claims/{claim}/attachments', [\App\Modules\HRIS\Application\Services\ClaimAttachmentUploadController::class, 'store'])->middleware('throttle:30,1')->name('workspace.hris.claims.attachments.update');
     Route::post('/workspace/hris/claims', [HrisOperationsController::class, 'claimStore'])->name('workspace.hris.claims.store');
+    Route::get('/workspace/hris/claims/{claim}/print', [HrisOperationsController::class, 'claimPrint'])->name('workspace.hris.claims.print');
+    Route::get('/workspace/hris/claims/{claim}', [HrisOperationsController::class, 'claimShow'])->name('workspace.hris.claims.show');
     Route::get('/workspace/hris/claims/{claim}/edit', [HrisOperationsController::class, 'claimEdit'])->name('workspace.hris.claims.edit');
     Route::put('/workspace/hris/claims/{claim}', [HrisOperationsController::class, 'claimUpdate'])->name('workspace.hris.claims.update');
     Route::delete('/workspace/hris/claims/{claim}', [HrisOperationsController::class, 'claimDestroy'])->name('workspace.hris.claims.destroy');
+    Route::get('/workspace/hris/claims/{claim}/expense-items/{item}/attachment', [HrisOperationsController::class, 'claimExpenseAttachment'])->name('workspace.hris.claims.expense-items.attachment');
     Route::get('/workspace/hris/approvals', [HrisOperationsController::class, 'approvals'])->name('workspace.hris.approvals');
     Route::get('/workspace/hris/approvals/{type}/{id}/{step}', [HrisOperationsController::class, 'approvalDetail'])->whereIn('type', ['leave', 'overtime', 'claim'])->whereIn('step', ['manager', 'hr', 'finance', 'final'])->name('workspace.hris.approval-detail');
     Route::get('/workspace/hris/{type}/{id}/supporting-document/{step}', [HrisOperationsController::class, 'supportingDocument'])->name('workspace.hris.supporting-document');
@@ -202,6 +208,11 @@ Route::middleware('auth')->group(function () {
     Route::put('/workspace/settings/hris/{setting}', [HrisSettingsController::class, 'update'])->name('workspace.settings.hris.update');
     Route::patch('/workspace/settings/hris/{setting}/archive', [HrisSettingsController::class, 'archive'])->name('workspace.settings.hris.archive');
     Route::patch('/workspace/settings/hris/{setting}/restore', [HrisSettingsController::class, 'restore'])->name('workspace.settings.hris.restore');
+    Route::get('/workspace/settings/hris/expense-categories', [HrisExpenseCategoryController::class, 'index'])->name('workspace.settings.hris.expense-categories');
+    Route::post('/workspace/settings/hris/expense-categories', [HrisExpenseCategoryController::class, 'store'])->name('workspace.settings.hris.expense-categories.store');
+    Route::put('/workspace/settings/hris/expense-categories/{category}', [HrisExpenseCategoryController::class, 'update'])->name('workspace.settings.hris.expense-categories.update');
+    Route::patch('/workspace/settings/hris/expense-categories/{category}/archive', [HrisExpenseCategoryController::class, 'archive'])->name('workspace.settings.hris.expense-categories.archive');
+    Route::patch('/workspace/settings/hris/expense-categories/{category}/restore', [HrisExpenseCategoryController::class, 'restore'])->name('workspace.settings.hris.expense-categories.restore');
     Route::redirect('/workspace/hris/settings', '/workspace/settings/hris')->name('workspace.hris.settings.legacy');
     Route::post('/workspace/hris/settings', [HrisSettingsController::class, 'store'])->name('workspace.hris.settings.store.legacy');
     Route::get('/workspace/notifications/push/config', [WebPushController::class, 'config'])->name('workspace.push.config');

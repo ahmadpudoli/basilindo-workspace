@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\DB;
 class NumberingRuleController extends Controller
 {
     private function formCatalog(): array { return ['hris_overtime' => 'Pengajuan Lembur', 'hris_leave' => 'Pengajuan Cuti', 'hris_claim' => 'Pengajuan Claim', 'hris_employee_document' => 'Dokumen Karyawan']; }
-    private function authorizeManage(Request $request): void
+    private function authorize(Request $request, string $permission): void
     {
-        abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('manage_numbering_rules'), 403);
+        abort_unless($request->user()->hasRole('super_admin') || $request->user()->can($permission), 403);
     }
 
     public function index(Request $request): View
     {
-        $this->authorizeManage($request);
+        $this->authorize($request, 'view_numbering_rules');
         $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get();
         $catalog = $this->formCatalog();
         $filters = $request->validate(['company_ids' => ['nullable', 'array'], 'company_ids.*' => ['integer'], 'form_keys' => ['nullable', 'array'], 'form_keys.*' => ['string', 'in:'.implode(',', array_keys($catalog))]]);
@@ -37,7 +37,7 @@ class NumberingRuleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorizeManage($request);
+        $this->authorize($request, 'create_numbering_rules');
         $catalog = $this->formCatalog();
         $data = $request->validate(['company_id' => ['required', 'integer'], 'form_key' => ['required', 'in:'.implode(',', array_keys($catalog))], 'format' => ['required', 'string', 'max:255'], 'counter_scope' => ['required', 'in:global,yearly,monthly,daily']]);
         $data['name'] = $catalog[$data['form_key']];
@@ -51,7 +51,7 @@ class NumberingRuleController extends Controller
 
     public function update(Request $request, NumberingRule $numberingRule): RedirectResponse
     {
-        $this->authorizeManage($request);
+        $this->authorize($request, 'update_numbering_rules');
         $data = $request->validate(['name' => ['nullable', 'string', 'max:150'], 'format' => ['required', 'string', 'max:255'], 'counter_scope' => ['required', 'in:global,yearly,monthly,daily'], 'is_active' => ['nullable', 'boolean']]);
         abort_unless(Company::query()->operationalFor($request->user())->whereKey($numberingRule->company_id)->exists(), 403);
         $values = ['format' => $data['format'], 'counter_scope' => $data['counter_scope'], 'updated_at' => now()];
