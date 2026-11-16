@@ -11,6 +11,7 @@ use App\Modules\HRIS\Domain\Models\LeaveRequest;
 use App\Modules\HRIS\Domain\Models\OvertimeRequest;
 use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
 use App\Modules\HRIS\Domain\Models\HrisExpenseCategory;
+use Core\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
@@ -203,6 +204,7 @@ class HrisOperationsController extends Controller
             'needs_revision' => 'Perlu revisi', 'approved' => 'Disetujui', 'paid' => 'Dibayar',
             'completed' => 'Selesai', 'rejected' => 'Ditolak',
         ];
+        if ($summaryView) unset($statusOptions['draft']);
         $selectedStatuses = is_array($request->query('statuses'))
             ? array_values(array_unique(array_filter($request->query('statuses'), fn ($value) => is_string($value) && array_key_exists($value, $statusOptions))))
             : [];
@@ -230,8 +232,13 @@ class HrisOperationsController extends Controller
         $visibleClaims = Claim::query()
             ->when($summaryView && ! $request->user()->hasRole('super_admin'), fn ($query) => $query->whereIn('company_id', $request->user()->companies()->pluck('companies.id')))
             ->when($summaryView, fn ($query) => $query->where('status', '!=', 'draft'))
-            ->when(! $summaryView, fn ($query) => $query->visibleTo($request->user()))
-            ->when(! $summaryView, fn ($query) => $query->where(fn ($draftQuery) => $draftQuery->where('status', '!=', 'draft')->orWhere('created_by', $request->user()->getKey())));
+            ->when($summaryView, fn ($query) => $query->where('type', $type))
+            ->when(! $summaryView, fn ($query) => $query->where(function ($ownerQuery) use ($request): void {
+                $userId = $request->user()->getKey();
+                $ownerQuery->where('requester_user_id', $userId)
+                    ->orWhereHas('employee', fn ($employeeQuery) => $employeeQuery->where('user_id', $userId))
+                    ->orWhere(fn ($draftQuery) => $draftQuery->where('status', 'draft')->where('created_by', $userId));
+            }));
         $categoryOptions = ClaimExpenseItem::query()
             ->whereHas('claim', fn ($query) => $query->whereIn('id', (clone $visibleClaims)->select('id')))
             ->whereNotNull('category')
@@ -243,18 +250,58 @@ class HrisOperationsController extends Controller
         $selectedCategories = is_array($request->query('categories'))
             ? array_values(array_unique(array_filter($request->query('categories'), fn ($value) => is_string($value) && in_array($value, $categoryOptions, true))))
             : [];
-        $items = (clone $visibleClaims)
-            ->with('employee')
+        $summaryCompanies = $summaryView ? Company::query()->operationalFor($request->user())->orderBy('name')->get(['id', 'name', 'code']) : collect();
+        $allowedSummaryCompanyIds = $summaryCompanies->pluck('id')->map(fn ($id) => (string) $id)->all();
+        $selectedCompanyIds = is_array($request->query('companies'))
+            ? array_values(array_unique(array_map('intval', array_filter($request->query('companies'), fn ($id) => (is_string($id) || is_int($id)) && in_array((string) $id, $allowedSummaryCompanyIds, true)))))
+            : [];
+        $summaryFilterInput = $summaryView ? $request->validate([
+            'q' => ['nullable', 'string', 'max:120'],
+            'min_amount' => ['nullable', 'numeric', 'min:0'],
+            'max_amount' => ['nullable', 'numeric', 'min:0'],
+        ]) : [];
+        $searchKeyword = trim((string) ($summaryFilterInput['q'] ?? ''));
+        $minimumAmount = isset($summaryFilterInput['min_amount']) ? (float) $summaryFilterInput['min_amount'] : null;
+        $maximumAmount = isset($summaryFilterInput['max_amount']) ? (float) $summaryFilterInput['max_amount'] : null;
+        if ($minimumAmount !== null && $maximumAmount !== null && $minimumAmount > $maximumAmount) {
+            [$minimumAmount, $maximumAmount] = [$maximumAmount, $minimumAmount];
+        }
+        $filteredClaims = (clone $visibleClaims)
             ->with('expenseItems')
             ->whereDate('created_at', '>=', $periodFrom)
             ->whereDate('created_at', '<=', $periodTo)
             ->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))
             ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
+            ->when($selectedCompanyIds !== [], fn ($q) => $q->whereIn('company_id', $selectedCompanyIds))
             ->when($selectedCategories !== [], fn ($q) => $q->whereHas('expenseItems', fn ($detail) => $detail->whereIn('category', $selectedCategories)))
+            ->when($searchKeyword !== '', function ($query) use ($searchKeyword, $statusOptions): void {
+                $pattern = '%'.$searchKeyword.'%';
+                $matchingStatuses = collect($statusOptions)->filter(fn ($label) => mb_stripos($label, $searchKeyword) !== false)->keys()->all();
+                $query->where(function ($search) use ($pattern, $matchingStatuses): void {
+                    $search->whereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern))
+                        ->orWhere('request_number', 'ilike', $pattern)
+                        ->orWhere('status', 'ilike', $pattern)
+                        ->orWhereHas('expenseItems', fn ($detail) => $detail->where('category', 'ilike', $pattern));
+                    if ($matchingStatuses !== []) $search->orWhereIn('status', $matchingStatuses);
+                });
+            })
+            ->when($minimumAmount !== null, fn ($q) => $q->where('amount', '>=', $minimumAmount))
+            ->when($maximumAmount !== null, fn ($q) => $q->where('amount', '<=', $maximumAmount));
+        $summaryMetrics = null;
+        if ($summaryView) {
+            $summaryMetrics = [
+                'count' => (clone $filteredClaims)->count(),
+                'amounts' => (clone $filteredClaims)->selectRaw('currency, SUM(amount) as total')->groupBy('currency')->orderBy('currency')->get(),
+                'in_progress' => (clone $filteredClaims)->whereIn('status', ['submitted', 'pending_manager', 'pending_finance', 'pending_final', 'needs_revision'])->count(),
+                'completed' => (clone $filteredClaims)->whereIn('status', ['approved', 'pending_payment', 'paid', 'completed'])->count(),
+            ];
+        }
+        $items = $filteredClaims
+            ->with(['employee.company', 'project'])
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
-        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView'));
+        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount'));
     }
     public function claimCreate(Request $request): View
     {

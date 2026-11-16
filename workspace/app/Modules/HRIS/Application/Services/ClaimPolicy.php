@@ -12,6 +12,10 @@ class ClaimPolicy
 
     public function view(User $user, Claim $claim): bool
     {
+        if ((int) $claim->requester_user_id === (int) $user->getKey() || (int) $claim->employee?->user_id === (int) $user->getKey()) {
+            return true;
+        }
+
         if (in_array($claim->status, ['draft', 'needs_revision'], true)) {
             return (int) $claim->created_by === (int) $user->getKey() || (int) $claim->requester_user_id === (int) $user->getKey() || $user->hasRole('super_admin');
         }

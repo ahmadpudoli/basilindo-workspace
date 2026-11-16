@@ -38,6 +38,8 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Requirement modul HRIS](requirements/hris-module.md)
 - [Requirement reimbursement HRIS](requirements/hris-reimbursement.md)
 - [Requirement approval final pada cetakan reimbursement](requirements/hris-claim-print-final-approval.md)
+- [Requirement ringkasan reimbursement dan cash advance HRIS](requirements/hris-claim-summary-dashboard.md)
+- [Requirement ringkasan cuti dan sakit HRIS](requirements/hris-leave-summary.md)
 - [Requirement pratinjau lembar A4 cetakan reimbursement](requirements/hris-claim-print-a4-preview.md)
 - [Requirement master kategori biaya reimbursement HRIS](requirements/hris-expense-categories.md)
 - [Requirement single-app identity](requirements/single-app-identity.md)

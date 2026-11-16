@@ -126,10 +126,17 @@ class LeaveRequestController extends Controller
     {
         abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('view_hris_leave_summary'), 403);
 
-        $type = in_array($request->string('type')->toString(), ['leave', 'sick'], true) ? $request->string('type')->toString() : null;
-        $status = in_array($request->string('status')->toString(), ['draft', 'pending_manager', 'pending_hr', 'needs_revision', 'approved', 'rejected'], true) ? $request->string('status')->toString() : null;
+        $typeOptions = ['leave' => 'Cuti', 'sick' => 'Sakit'];
+        $statusOptions = ['pending_manager' => 'Menunggu atasan', 'pending_hr' => 'Menunggu HR', 'needs_revision' => 'Revisi', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+        $normalizeSelections = static function (mixed $values, array $options): array {
+            $values = is_array($values) ? $values : (is_string($values) && $values !== '' ? [$values] : []);
+            return collect($values)->filter(fn ($value) => is_string($value) && array_key_exists($value, $options))->unique()->values()->all();
+        };
+        $selectedTypes = $normalizeSelections($request->input('type', []), $typeOptions);
+        $selectedStatuses = $normalizeSelections($request->input('status', []), $statusOptions);
         $yearInput = $request->string('year')->toString();
         $year = $yearInput === 'all' ? null : ($request->integer('year') ?: now()->year);
+        $searchKeyword = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:120']])['q'] ?? ''));
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
         $sort = in_array($request->string('sort')->toString(), ['start_date', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
@@ -138,9 +145,18 @@ class LeaveRequestController extends Controller
         $query = LeaveRequestModel::query()->with(['employee.company', 'dates'])
             ->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))
             ->where('status', '!=', 'draft')
-            ->when($type, fn ($q) => $q->where('type', $type))
-            ->when($status, fn ($q) => $q->where('status', $status))
-            ->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)));
+            ->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))
+            ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
+            ->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)))
+            ->when($searchKeyword !== '', function (Builder $q) use ($searchKeyword): void {
+                $pattern = '%'.$searchKeyword.'%';
+                $q->where(function (Builder $search) use ($pattern): void {
+                    $search->where('request_number', 'ilike', $pattern)
+                        ->orWhereHas('employee', fn (Builder $employee) => $employee
+                            ->where('full_name', 'ilike', $pattern)
+                            ->orWhere('employee_number', 'ilike', $pattern));
+                });
+            });
         if ($sort === 'start_date') {
             $query->orderBy(LeaveRequestDate::query()->select('leave_date')->whereColumn('leave_request_id', 'leave_requests.id')->orderBy('leave_date')->limit(1), $direction);
         } else {
@@ -148,14 +164,14 @@ class LeaveRequestController extends Controller
         }
 
         $requests = $query->paginate($perPage)->withQueryString();
-        $metricsQuery = LeaveRequestModel::query()->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))->where('status', '!=', 'draft')->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)));
+        $metricsQuery = LeaveRequestModel::query()->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))->where('status', '!=', 'draft')->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)))->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses));
         $metrics = [
             'total' => (clone $metricsQuery)->count(),
             'pending' => (clone $metricsQuery)->whereIn('status', ['pending_manager', 'pending_hr'])->count(),
-            'approved_days' => (int) LeaveRequestDate::query()->whereHas('leaveRequest', fn ($q) => $q->when($companyScope !== null, fn ($nested) => $nested->whereIn('company_id', $companyScope))->where('status', 'approved')->when($type, fn ($nested) => $nested->where('type', $type)))->when($year !== null, fn ($q) => $q->whereYear('leave_date', $year))->count(),
+            'approved_days' => $selectedStatuses !== [] && ! in_array('approved', $selectedStatuses, true) ? 0 : (int) LeaveRequestDate::query()->whereHas('leaveRequest', fn ($q) => $q->when($companyScope !== null, fn ($nested) => $nested->whereIn('company_id', $companyScope))->where('status', 'approved')->when($selectedTypes !== [], fn ($nested) => $nested->whereIn('type', $selectedTypes)))->when($year !== null, fn ($q) => $q->whereYear('leave_date', $year))->count(),
         ];
 
-        return view('modules.hris-leave-summary', compact('requests', 'type', 'status', 'year', 'perPage', 'sort', 'direction', 'metrics'));
+        return view('modules.hris-leave-summary', compact('requests', 'typeOptions', 'statusOptions', 'selectedTypes', 'selectedStatuses', 'year', 'perPage', 'sort', 'direction', 'metrics', 'searchKeyword'));
     }
 
     public function edit(Request $request, LeaveRequestModel $leaveRequest): View

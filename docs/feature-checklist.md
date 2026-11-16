@@ -1,4 +1,12 @@
 # Feature Checklist
+- [x] Ringkasan cuti/sakit mencari nama, NIP, dan nomor pengajuan; menampilkan nomor pengajuan, lebar kolom proporsional, dropdown aksi compact, dan panel metrik terpadu.
+- [x] Ringkasan Reimbursement dan Cash Advance memakai tabel responsif dengan pagination, metrik agregat per mata uang, detail pengajuan karyawan dalam scope perusahaan, dan mengecualikan draft.
+- [x] Filter ringkasan klaim menyediakan kata kunci nama/nomor/status/kategori, rentang nominal total, dan tata letak dua baris responsif.
+- [x] Filter tanggal ringkasan terisi dari awal bulan hingga hari ini, dan tombol Reset/Terapkan didekatkan ke kolom nominal maksimum.
+- [x] Tabel ringkasan pada layar kecil menjaga kolom kategori, nominal, status, dan aksi agar tidak bertumpuk; tombol serta menu dropdown aksi tampil compact.
+- [x] Tabel daftar Semua, Reimbursement, dan Cash Advance memakai dropdown aksi tiga titik yang compact dan mempertahankan aksi serta authorization yang tersedia.
+- [x] Lebar kolom daftar klaim dibuat proporsional untuk karyawan, jenis, kategori, nominal, status, dan aksi.
+- [x] Daftar kerja klaim hanya menampilkan pengajuan milik pengguna login tanpa diperluas oleh company scope; pemohon tetap dapat melihat detail klaimnya sendiri.
 - [x] Tombol Buat Pengajuan pada daftar klaim memisahkan pilihan Reimbursement dan Cash Advance; Cash Advance diarahkan ke halaman keterangan terpisah sampai form dan workflow tersedia.
 - [x] Daftar reimbursement dan cash advance menampilkan aksi Detail untuk semua pengajuan yang diizinkan policy, termasuk status menunggu persetujuan.
 - [x] Reimbursement menyediakan tombol cetak di daftar/detail hanya setelah seluruh approval selesai; `pending_final` belum bisa dicetak melalui UI maupun endpoint.

@@ -9,6 +9,9 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 
 ## Acceptance criteria daftar klaim
 
+- Daftar kerja `/workspace/hris/claims` dan tab Semua/Reimbursement/Cash Advance hanya menampilkan klaim milik pengguna login (requester atau karyawan yang terhubung ke akun); draft yang dibuat pengguna sendiri juga tetap terlihat. Hak akses scope perusahaan tidak memperluas daftar pribadi ini.
+- Pemohon dapat membuka detail klaim miliknya sendiri meskipun perusahaan klaim tidak termasuk scope perusahaan yang diberikan lewat role; akses data pengguna lain tetap mengikuti policy dan scope yang berlaku.
+- Halaman ringkasan reimbursement/cash advance tetap menjadi laporan berbasis scope perusahaan dan terpisah dari daftar kerja pribadi.
 - Tombol `Buat Pengajuan` menyediakan pilihan terpisah untuk Reimbursement dan Cash Advance. Reimbursement membuka form yang tersedia; Cash Advance membuka halaman terpisah yang menjelaskan form belum tersedia sampai workflow-nya diimplementasikan.
 - Pemilihan tipe tidak mengubah permission saat ini; permission dan workflow Cash Advance dapat dipisahkan saat fitur pengajuan Cash Advance dibangun.
 - Pada viewport desktop lebar (minimal 1400 px), filter jenis, status, kategori, rentang tanggal, jumlah baris, dan aksi Reset/Terapkan tersusun dalam satu baris tanpa kolom kosong di antaranya.
