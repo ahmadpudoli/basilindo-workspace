@@ -15,6 +15,7 @@
 - [x] Halaman cetak klaim menggunakan lembar A4; gambar proporsional dengan batas tinggi 90 mm dan dapat berbagi halaman, sedangkan tiap halaman PDF dirender lokal sebagai lembar A4 terpisah tanpa PDF viewer.
 - [x] Lembar PDF menyesuaikan tinggi area cetak A4 setelah margin sehingga tiap halaman PDF tidak menimbulkan halaman kosong akibat overflow.
 - [x] Lembar PDF dicetak sebagai elemen mandiri di luar wadah lampiran A4 agar tidak menambah halaman kosong dari overflow wadah induk.
+- [x] Pratinjau cetak menampilkan halaman ringkasan, lampiran gambar, dan halaman PDF dengan proporsi lembar A4 yang konsisten; hasil cetak lampiran memakai area halaman A4 sesuai margin cetak.
 - [x] Lampiran gambar tidak dipaksa ke halaman baru; beberapa lampiran dapat mengisi halaman A4 yang sama secara proporsional.
 - [x] Gambar-gambar berurutan ditampilkan bersama pada satu lembar preview lampiran, mengikuti susunan hasil cetak.
 - [x] Approval Atasan dan Finance dapat meminta revisi claim dengan tipe substansi/administrasi; pemohon dapat memperbarui dan mengirim ulang ke tahap sesuai tipe, dengan snapshot historis serta bukti lama tetap terjaga.
@@ -79,6 +80,12 @@
 Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusan dibutuhkan.
 
 ## Platform
+
+- [x] Cetakan reimbursement menampilkan penandatangan Approver Final dan waktu persetujuannya jika tahap final disetujui.
+
+- [x] Sidebar Workspace pada mobile dapat ditutup melalui tombol X dengan handler Offcanvas eksplisit dan target sentuh yang memadai.
+
+- [x] Workspace dapat dipasang sebagai PWA setelah login dengan manifest, ikon, service worker aman, Web Push, dan panduan instalasi lintas browser.
 
 - [x] Basilindo Workspace modular monolith berbasis `workspace`
 - [x] Migrasi penuh fitur bisnis yang dipertahankan dari legacy app ke `workspace`

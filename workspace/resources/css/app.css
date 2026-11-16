@@ -142,6 +142,7 @@ html[data-theme="dark"] .theme-icon-dark { display: block; }
 
 .workspace-shell { display: flex; min-height: calc(100vh - var(--workspace-topbar-height)); }
 .workspace-sidebar { background: var(--workspace-surface); border-right: 1px solid var(--workspace-border); flex: 0 0 var(--workspace-sidebar-width); width: var(--workspace-sidebar-width); }
+.workspace-sidebar-close { align-items: center; display: inline-flex; height: 44px; justify-content: center; margin: -6px -8px -6px auto; min-width: 44px; position: relative; touch-action: manipulation; width: 44px; z-index: 1; }
 .workspace-sidebar, .workspace-sidebar-inner, .workspace-nav-link, .workspace-module-card { transition: width .2s ease, flex-basis .2s ease, padding .2s ease, background .15s ease; }
 .workspace-sidebar-inner { display: flex; flex-direction: column; min-height: calc(100vh - var(--workspace-topbar-height)); padding: 22px 15px 18px; position: sticky; top: var(--workspace-topbar-height); }
 .workspace-module-card { align-items: center; background: #eff8ff; border: 1px solid #c7e5fa; border-radius: 12px; display: flex; gap: 11px; margin: 0 4px 25px; padding: 12px; }
@@ -1509,3 +1510,18 @@ html[data-theme="dark"] .workspace-audit-sidebar .workspace-audit-panel { backgr
 .integration-history-table td:last-child { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: normal; }
 @media (max-width: 991.98px) { .integration-history-filter { grid-template-columns: minmax(220px, 1fr) 1fr 1fr; }.integration-history-filter .integration-history-per-page { grid-column: span 1; }.integration-history-filter .btn { width: 100%; } }
 @media (max-width: 575.98px) { .integration-history-header { align-items: flex-start; flex-direction: column; }.integration-history-filter { grid-template-columns: 1fr; }.integration-history-filter .input-group, .integration-history-filter .integration-history-per-page { grid-column: auto; }.integration-history-filter .btn { width: auto; }.integration-dashboard-stat { min-height: 96px; } }
+
+.workspace-pwa-install-dialog { background: var(--workspace-surface, #fff); border: 1px solid var(--workspace-border, #dce4ee); border-radius: 18px; box-shadow: 0 24px 70px rgba(14, 35, 66, .25); color: var(--workspace-ink, #102a43); max-height: min(88dvh, 680px); max-width: min(460px, calc(100vw - 28px)); overflow: auto; padding: 0; width: 100%; }
+.workspace-pwa-install-dialog::backdrop { background: rgba(14, 28, 48, .48); backdrop-filter: blur(3px); }
+.workspace-pwa-install-dialog-header { align-items: center; border-bottom: 1px solid var(--workspace-border, #e3eaf2); display: flex; gap: 12px; padding: 18px 20px; }
+.workspace-pwa-install-dialog-icon { align-items: center; background: #eaf5ff; border: 1px solid #cfe8ff; border-radius: 13px; color: #087aca; display: inline-flex; flex: 0 0 42px; height: 42px; justify-content: center; }
+.workspace-pwa-install-dialog-icon svg { fill: none; height: 21px; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; width: 21px; }
+.workspace-pwa-install-dialog-kicker { color: #087aca; display: block; font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.workspace-pwa-install-dialog-header h2 { font-size: 1.05rem; font-weight: 750; margin: 3px 0 0; }
+.workspace-pwa-install-dialog-close { align-self: flex-start; background: transparent; border: 0; color: #63758a; font-size: 1.5rem; line-height: 1; margin-left: auto; padding: 0 2px; }
+.workspace-pwa-install-dialog-body { padding: 18px 20px 12px; }
+.workspace-pwa-install-step { background: #f7f9fc; border: 1px solid #e5ebf2; border-radius: 12px; font-size: .84rem; line-height: 1.5; margin-top: 10px; padding: 12px 14px; }
+.workspace-pwa-install-step > strong { display: block; margin-bottom: 3px; }
+.workspace-pwa-install-step > div { color: #65758b; }
+.workspace-pwa-install-dialog-footer { display: flex; justify-content: flex-end; padding: 0 20px 18px; }
+@media (max-width: 575.98px) { .workspace-pwa-install-dialog { border-radius: 16px; max-width: calc(100vw - 24px); }.workspace-pwa-install-dialog-header { padding: 15px 16px; }.workspace-pwa-install-dialog-body { padding: 15px 16px 10px; }.workspace-pwa-install-dialog-footer { padding: 0 16px 16px; } }

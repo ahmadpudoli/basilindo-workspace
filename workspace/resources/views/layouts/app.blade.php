@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ?? config('app.name', 'Basilindo Workspace') }}</title>
+    @auth
+        <link rel="manifest" href="{{ asset('manifest.json') }}">
+        <meta name="theme-color" content="#0d6efd">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="Basilindo">
+    @endauth
     <link rel="icon" href="{{ asset('favicon.ico') }}" type="image/x-icon">
-    <link rel="apple-touch-icon" href="{{ asset('images/logo-favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset(auth()->check() ? 'images/pwa-icon-192.png' : 'images/logo-favicon.png') }}">
     <link rel="stylesheet" href="{{ asset('vendor/summernote/summernote-lite.css') }}">
     <script src="{{ asset('vendor/summernote/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ asset('vendor/summernote/summernote-lite.js') }}"></script>
@@ -209,6 +217,9 @@
                         <svg class="theme-icon-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
                         <svg class="theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 8.5 8.5 0 1 0 20.5 15.5Z"/></svg>
                     </button>
+                    <button class="workspace-icon-button" type="button" data-pwa-install aria-label="Pasang aplikasi" title="Pasang aplikasi">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M12 7v7m-3-3 3 3 3-3M10 18h4"/></svg>
+                    </button>
                     <button class="workspace-icon-button" type="button" data-web-push-enable aria-label="Aktifkan notifikasi perangkat" title="Aktifkan notifikasi perangkat" hidden>
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg>
                     </button>
@@ -248,7 +259,7 @@
                 <aside class="workspace-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="workspaceSidebar" aria-label="Navigasi modul">
                     <div class="offcanvas-header d-lg-none">
                         <span class="workspace-sidebar-heading">{{ $activeModuleDefinition['label'] }}</span>
-                        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
+                        <button type="button" class="btn-close workspace-sidebar-close" data-workspace-sidebar-close aria-label="Tutup menu"></button>
                     </div>
                     <div class="workspace-sidebar-inner">
                         <div class="workspace-module-card">
@@ -303,6 +314,19 @@
     </div>
 
     <div class="workspace-loading-overlay" data-workspace-loading aria-hidden="true"><div class="workspace-loading-card"><span class="workspace-loading-spinner" aria-hidden="true"></span><span data-workspace-loading-message>Memproses...</span></div></div>
+
+    @auth
+        <dialog class="workspace-pwa-install-dialog" id="workspacePwaInstallHelp" aria-labelledby="workspacePwaInstallTitle">
+            <div class="workspace-pwa-install-dialog-header"><span class="workspace-pwa-install-dialog-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M12 7v7m-3-3 3 3 3-3"/></svg></span><div><span class="workspace-pwa-install-dialog-kicker">Akses lebih cepat</span><h2 id="workspacePwaInstallTitle">Pasang Basilindo Workspace</h2></div><button class="workspace-pwa-install-dialog-close" type="button" data-pwa-help-close aria-label="Tutup">&times;</button></div>
+            <div class="workspace-pwa-install-dialog-body">
+                <div class="alert alert-warning mb-3" data-pwa-secure-warning hidden><strong>Perlu koneksi aman (HTTPS)</strong><div class="small mt-1">Perangkat ini membuka Workspace melalui alamat HTTP. Chrome Android tidak dapat memasang PWA dari alamat IP komputer seperti <code>http://192.168.x.x:8080</code>. Gunakan alamat HTTPS atau akses pengembangan melalui port forwarding USB agar alamat di ponsel menjadi <code>http://localhost:8080</code>.</div></div>
+                <p class="mb-3" data-pwa-install-intro>Tambahkan Workspace ke layar utama agar mudah dibuka seperti aplikasi.</p>
+                <div class="workspace-pwa-install-step"><strong>Android</strong><div>Di Chrome, buka menu <strong>⋮</strong> lalu pilih <em>Install app</em> atau <em>Add to Home screen</em>.</div></div>
+                <div class="workspace-pwa-install-step"><strong>iPhone atau iPad</strong><div>Di Safari, ketuk Bagikan lalu pilih <em>Add to Home Screen</em> (Tambahkan ke Layar Utama).</div></div>
+            </div>
+            <div class="workspace-pwa-install-dialog-footer"><button type="button" class="btn btn-primary" data-pwa-help-close>Mengerti</button></div>
+        </dialog>
+    @endauth
 
     <div class="modal fade workspace-preview-modal" id="workspacePreviewModal" tabindex="-1" aria-labelledby="workspacePreviewTitle" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">

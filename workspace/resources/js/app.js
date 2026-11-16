@@ -7,11 +7,81 @@ window.bootstrap = bootstrap;
 const themeStorageKey = 'basilindo-workspace-theme';
 const sidebarStorageKey = 'basilindo-workspace-sidebar-collapsed';
 const savedTheme = window.localStorage.getItem(themeStorageKey);
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+});
+
 if (savedTheme === 'dark' || savedTheme === 'light') {
     document.documentElement.dataset.theme = savedTheme;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const mobileSidebar = document.querySelector('#workspaceSidebar');
+    const mobileSidebarClose = mobileSidebar?.querySelector('[data-workspace-sidebar-close]');
+    mobileSidebarClose?.addEventListener('click', (event) => {
+        event.preventDefault();
+        bootstrap.Offcanvas.getOrCreateInstance(mobileSidebar).hide();
+    });
+
+    const installButton = document.querySelector('[data-pwa-install]');
+    const installHelp = document.querySelector('#workspacePwaInstallHelp');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (installButton && isStandalone) installButton.hidden = true;
+
+    const showInstallHelp = () => {
+        if (!installHelp) {
+            window.alert('Untuk memasang Basilindo Workspace, gunakan Chrome pada Android atau Safari pada iPhone/iPad. Perangkat Android harus membuka aplikasi melalui HTTPS.');
+            return;
+        }
+
+        const secureWarning = installHelp.querySelector('[data-pwa-secure-warning]');
+        const intro = installHelp.querySelector('[data-pwa-install-intro]');
+        if (secureWarning) secureWarning.hidden = window.isSecureContext;
+        if (intro) intro.hidden = !window.isSecureContext;
+        if (typeof installHelp.showModal === 'function') {
+            if (!installHelp.open) installHelp.showModal();
+        } else {
+            window.alert(window.isSecureContext
+                ? 'Di Chrome Android, buka menu ⋮ lalu pilih Install app atau Add to Home screen.'
+                : 'Pemasangan di Android memerlukan HTTPS. Alamat HTTP melalui IP komputer tidak dapat dipasang sebagai PWA.');
+        }
+    };
+
+    if (installButton) {
+        installButton.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) {
+                showInstallHelp();
+                return;
+            }
+
+            try {
+                const installPrompt = deferredInstallPrompt;
+                deferredInstallPrompt = null;
+                await installPrompt.prompt();
+                const choice = await installPrompt.userChoice;
+                if (choice.outcome === 'accepted') installButton.hidden = true;
+            } catch (_) {
+                showInstallHelp();
+            }
+        });
+    }
+
+    installHelp?.querySelectorAll('[data-pwa-help-close]').forEach((button) => button.addEventListener('click', () => installHelp.close()));
+    installHelp?.addEventListener('click', (event) => {
+        if (event.target === installHelp) installHelp.close();
+    });
+
+    if (installButton && 'serviceWorker' in navigator && window.isSecureContext) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {});
+    }
+
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((element) => {
         bootstrap.Tooltip.getOrCreateInstance(element);
     });
@@ -34,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pushButton.addEventListener('click', async () => {
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') return;
-                const registration = await navigator.serviceWorker.register('/sw.js');
+                const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
                 let subscription = await registration.pushManager.getSubscription();
                 if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeVapidKey(config.publicKey) });
                 await fetch('/workspace/notifications/push/subscriptions', {
