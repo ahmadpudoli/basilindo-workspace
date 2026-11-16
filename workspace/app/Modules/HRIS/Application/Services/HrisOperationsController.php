@@ -259,7 +259,10 @@ class HrisOperationsController extends Controller
     public function claimCreate(Request $request): View
     {
         Gate::authorize('create', Claim::class);
+        $type = $request->query('type', 'reimbursement');
+        abort_unless(in_array($type, ['reimbursement', 'cash_advance'], true), 404);
         $employee = Employee::query()->visibleTo($request->user())->where('user_id', $request->user()->getKey())->where('status', 'active')->with(['company', 'manager', 'organizationUnit'])->firstOrFail();
+        if ($type === 'cash_advance') return view('modules.hris-cash-advance-coming-soon');
         $requestNumber = 'Nomor dibuat saat dikirim';
         $financeApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'claim', 'finance')->get();
         $finalApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'claim', 'final')->get();

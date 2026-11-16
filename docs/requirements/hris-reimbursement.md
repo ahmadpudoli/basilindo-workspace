@@ -9,6 +9,8 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 
 ## Acceptance criteria daftar klaim
 
+- Tombol `Buat Pengajuan` menyediakan pilihan terpisah untuk Reimbursement dan Cash Advance. Reimbursement membuka form yang tersedia; Cash Advance membuka halaman terpisah yang menjelaskan form belum tersedia sampai workflow-nya diimplementasikan.
+- Pemilihan tipe tidak mengubah permission saat ini; permission dan workflow Cash Advance dapat dipisahkan saat fitur pengajuan Cash Advance dibangun.
 - Pada viewport desktop lebar (minimal 1400 px), filter jenis, status, kategori, rentang tanggal, jumlah baris, dan aksi Reset/Terapkan tersusun dalam satu baris tanpa kolom kosong di antaranya.
 - Lebar kolom mengikuti isi: pilihan kategori/status dan rentang tanggal tetap mudah digunakan, sementara jumlah baris dan aksi tidak mengambil ruang berlebih.
 - Pada viewport yang lebih kecil, filter tetap membungkus secara responsif dan ringkasan klaim tidak terpengaruh.

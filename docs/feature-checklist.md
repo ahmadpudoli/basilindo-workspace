@@ -1,4 +1,5 @@
 # Feature Checklist
+- [x] Tombol Buat Pengajuan pada daftar klaim memisahkan pilihan Reimbursement dan Cash Advance; Cash Advance diarahkan ke halaman keterangan terpisah sampai form dan workflow tersedia.
 - [x] Daftar reimbursement dan cash advance menampilkan aksi Detail untuk semua pengajuan yang diizinkan policy, termasuk status menunggu persetujuan.
 - [x] Reimbursement menyediakan tombol cetak di daftar/detail hanya setelah seluruh approval selesai; `pending_final` belum bisa dicetak melalui UI maupun endpoint.
 - [x] Approver final dapat meminta revisi claim dengan catatan wajib; revisi substansi kembali ke Atasan dan revisi administrasi kembali ke Approver final.
