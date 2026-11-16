@@ -37,8 +37,9 @@ class LeaveRequestController extends Controller
         $year = $yearInput === 'all' ? null : ($request->integer('year') ?: $activeYear);
         $month = in_array($request->integer('month'), range(1, 12), true) ? $request->integer('month') : null;
         if ($year === null) $month = null;
+        $searchKeyword = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:120']])['q'] ?? ''));
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
-        $sort = in_array($request->string('sort')->toString(), ['leave_date', 'start_date', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
+        $sort = in_array($request->string('sort')->toString(), ['request_number', 'leave_date', 'start_date', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
         if ($sort === 'start_date') $sort = 'leave_date';
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $query = LeaveRequestModel::query()->with(['employee', 'dates']);
@@ -50,6 +51,13 @@ class LeaveRequestController extends Controller
             });
         }
         $query->when($type !== [], fn ($q) => $q->whereIn('type', $type))->when($status !== [], fn ($q) => $q->whereIn('status', $status))->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)->when($month, fn ($dateQuery) => $dateQuery->whereMonth('leave_date', $month))));
+        $query->when($searchKeyword !== '', function (Builder $q) use ($searchKeyword): void {
+            $pattern = '%'.$searchKeyword.'%';
+            $q->where(function (Builder $search) use ($pattern): void {
+                $search->where('request_number', 'ilike', $pattern)
+                    ->orWhereHas('employee', fn (Builder $employee) => $employee->where('full_name', 'ilike', $pattern)->orWhere('employee_number', 'ilike', $pattern));
+            });
+        });
         if ($sort === 'leave_date') {
             $query->orderBy(LeaveRequestDate::query()->select('leave_date')->whereColumn('leave_request_id', 'leave_requests.id')->orderBy('leave_date')->limit(1), $direction);
         } else {
@@ -79,7 +87,7 @@ class LeaveRequestController extends Controller
         $sickDays = (int) $sickRequests->sum(fn (LeaveRequestModel $leaveRequest): int => $leaveRequest->dates->count());
         $canCreate = $user->hasRole('super_admin') || $user->can('create_leave_request');
         $remainingLeave = max(0, $quota - $usedLeave);
-        return view('modules.hris-leave-requests-enhanced', compact('requests', 'type', 'status', 'year', 'month', 'activeYear', 'metricYear', 'perPage', 'sort', 'direction', 'baseQuota', 'collectiveHolidays', 'collectiveDays', 'quota', 'usedLeaveRequests', 'usedLeave', 'remainingLeave', 'sickRequests', 'sickDays', 'canViewAll', 'canCreate', 'summaryView'));
+        return view('modules.hris-leave-requests-enhanced', compact('requests', 'type', 'status', 'year', 'month', 'activeYear', 'metricYear', 'perPage', 'sort', 'direction', 'baseQuota', 'collectiveHolidays', 'collectiveDays', 'quota', 'usedLeaveRequests', 'usedLeave', 'remainingLeave', 'sickRequests', 'sickDays', 'canViewAll', 'canCreate', 'summaryView', 'searchKeyword'));
     }
 
     public function show(Request $request, LeaveRequestModel $leaveRequest): View

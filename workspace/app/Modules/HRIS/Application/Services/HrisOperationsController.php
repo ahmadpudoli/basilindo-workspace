@@ -9,6 +9,7 @@ use App\Modules\HRIS\Domain\Models\ApprovalEvent;
 use App\Modules\HRIS\Domain\Models\Employee;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
 use App\Modules\HRIS\Domain\Models\OvertimeRequest;
+use App\Modules\HRIS\Domain\Models\OvertimeRequestEntry;
 use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
 use App\Modules\HRIS\Domain\Models\HrisExpenseCategory;
 use Core\Models\Company;
@@ -168,20 +169,41 @@ class HrisOperationsController extends Controller
     {
         abort_unless($request->user()->hasRole('super_admin') || $request->user()->can('view_hris_overtime_summary'), 403);
         $companyScope = $request->user()->hasRole('super_admin') ? null : $request->user()->companies()->pluck('companies.id');
-        $items = OvertimeRequest::query()
+        $companies = Company::query()->operationalFor($request->user())->orderBy('name')->get(['id', 'name', 'code']);
+        $statusOptions = ['draft' => 'Draft', 'pending_manager' => 'Menunggu atasan', 'pending_hr' => 'Menunggu HR', 'needs_revision' => 'Perlu revisi', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+        $normalizeIds = static fn (mixed $values): array => collect(is_array($values) ? $values : [])->filter(fn ($value) => is_scalar($value) && ctype_digit((string) $value))->map(fn ($value) => (int) $value)->unique()->values()->all();
+        $selectedCompanyIds = $normalizeIds($request->query('companies', []));
+        if ($companyScope !== null) $selectedCompanyIds = array_values(array_intersect($selectedCompanyIds, $companyScope->map(fn ($id) => (int) $id)->all()));
+        $selectedStatuses = collect(is_array($request->query('statuses')) ? $request->query('statuses') : [])->filter(fn ($value) => is_string($value) && array_key_exists($value, $statusOptions))->unique()->values()->all();
+        $searchKeyword = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:120']])['q'] ?? ''));
+        $isValidDate = static function ($value): bool { if (! is_string($value) || ! preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $value)) return false; [$year, $month, $day] = array_map('intval', explode('-', $value)); return checkdate($month, $day, $year); };
+        $periodFrom = $isValidDate($request->query('from')) ? $request->query('from') : now()->startOfYear()->toDateString();
+        $periodTo = $isValidDate($request->query('to')) ? $request->query('to') : now()->toDateString();
+        if ($periodFrom > $periodTo) [$periodFrom, $periodTo] = [$periodTo, $periodFrom];
+        $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
+        $sort = in_array($request->string('sort')->toString(), ['request_number', 'work_date', 'duration_minutes', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
+        $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
+        $filteredQuery = OvertimeRequest::query()
             ->when($companyScope !== null, fn ($query) => $query->whereIn('company_id', $companyScope))
-            ->with(['employee.company'])
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
-        $metricsQuery = OvertimeRequest::query()->when($companyScope !== null, fn ($query) => $query->whereIn('company_id', $companyScope));
+            ->when($selectedCompanyIds !== [], fn ($query) => $query->whereIn('company_id', $selectedCompanyIds))
+            ->whereHas('entries', fn ($entries) => $entries->whereDate('work_date', '>=', $periodFrom)->whereDate('work_date', '<=', $periodTo))
+            ->when($selectedStatuses !== [], fn ($query) => $query->whereIn('status', $selectedStatuses))
+            ->when($searchKeyword !== '', function ($query) use ($searchKeyword): void { $pattern = '%'.$searchKeyword.'%'; $query->where(function ($search) use ($pattern): void { $search->where('request_number', 'ilike', $pattern)->orWhereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern)->orWhere('employee_number', 'ilike', $pattern)); }); });
+        $itemsQuery = (clone $filteredQuery)->with(['employee.company', 'entries']);
+        if ($sort === 'work_date') {
+            $itemsQuery->orderBy(OvertimeRequestEntry::query()->select('work_date')->whereColumn('overtime_request_id', 'overtime_requests.id')->orderBy('work_date')->limit(1), $direction);
+        } else {
+            $itemsQuery->orderBy($sort, $direction);
+        }
+        $items = $itemsQuery->paginate($perPage)->withQueryString();
+        $metricsQuery = clone $filteredQuery;
         $metrics = [
             'total' => (clone $metricsQuery)->count(),
             'pending' => (clone $metricsQuery)->whereIn('status', ['pending_manager', 'pending_hr'])->count(),
             'approved_minutes' => (int) (clone $metricsQuery)->where('status', 'approved')->sum('duration_minutes'),
         ];
 
-        return view('modules.hris-overtime-summary', compact('items', 'metrics'));
+        return view('modules.hris-overtime-summary', compact('items', 'metrics', 'companies', 'statusOptions', 'selectedCompanyIds', 'selectedStatuses', 'searchKeyword', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction'));
     }
     public function overtimeCreate(Request $request): View { Gate::authorize('create', OvertimeRequest::class); $requestNumber = OvertimeRequest::generateRequestNumber(); $request->session()->put('hris.request_number.overtime', $requestNumber); return view('modules.hris-overtime-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get(), 'requestNumber' => $requestNumber]); }
     public function overtimeStore(OvertimeRequestForm $request, OvertimeService $service): RedirectResponse { Gate::authorize('create', OvertimeRequest::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $data = $request->validated(); $data['request_number'] = $request->session()->pull('hris.request_number.overtime', null); $service->submit($employee, $data, $request->user()->id); return redirect()->route('workspace.hris.overtime')->with('status', 'Pengajuan lembur berhasil dikirim.'); }

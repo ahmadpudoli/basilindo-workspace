@@ -23,8 +23,10 @@ class OvertimeController extends Controller
         $status = collect($request->input('status', []))->when(is_string($request->input('status')), fn ($values) => collect([$request->input('status')]))->filter(fn ($value) => in_array($value, $allowedStatuses, true))->values()->all();
         $dateFrom = $request->input('date_from') ?: now()->startOfMonth()->toDateString();
         $dateTo = $request->input('date_to') ?: now()->toDateString();
-        $itemsQuery = OvertimeRequest::query()->visibleTo($request->user())
-            ->where(fn ($query) => $query->where('status', '!=', 'draft')->orWhere('created_by', $request->user()->getKey()))
+        $userId = $request->user()->getKey();
+        $itemsQuery = OvertimeRequest::query()
+            ->where(fn ($owner) => $owner->where('requester_user_id', $userId)->orWhereHas('employee', fn ($employee) => $employee->where('user_id', $userId)))
+            ->where(fn ($query) => $query->where('status', '!=', 'draft')->orWhere('created_by', $userId))
             ->with(['employee.organizationUnit', 'entries'])
             ->when($request->filled('q'), fn ($query) => $query->where(fn ($nested) => $nested->where('request_number', 'ilike', '%'.trim($request->q).'%')->orWhereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', '%'.trim($request->q).'%'))))
             ->when($status !== [], fn ($query) => $query->whereIn('status', $status))

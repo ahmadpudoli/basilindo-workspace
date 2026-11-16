@@ -388,6 +388,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Pengajuan cuti/sakit lintas tahun ditolak dan harus dibuat sebagai pengajuan terpisah
 - [x] Detail tanggal cuti/sakit disimpan sebagai multiple row dan tidak bergantung pada `start_date`/`end_date`
 - [x] Pengajuan cuti/sakit menyimpan `requester_user_id` selain relasi `employee_id`
+- [x] Daftar Cuti & Sakit menampilkan nomor pengajuan, pencarian kata kunci, kolom proporsional, dan dropdown aksi compact
 - [x] Primary key ULID pengajuan HRIS disimpan sebagai string agar detail tanggal terhubung ke request yang benar
 - [x] Status workflow cuti/sakit disederhanakan menjadi Menunggu atasan, Menunggu HR, Disetujui, dan Ditolak
 - [x] Workflow revisi pengajuan cuti/sakit dengan klasifikasi substansi/administrasi, resubmit pemohon, dan approval event
@@ -575,6 +576,9 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
 - [x] Daftar lembur memakai rentang tanggal default awal bulan sampai hari ini dan panel ringkasan jumlah serta total durasi sesuai filter
 - [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
+  - [x] Ringkasan lembur menyediakan pencarian kata kunci, filter multi-select perusahaan/status, tanggal default awal tahun–hari ini, pagination, nomor pengajuan, sortir server-side, dan menu aksi detail
+  - [x] Halaman Pengajuan Lembur hanya menampilkan pengajuan milik akun pengguna yang sedang login, bukan seluruh pengajuan dalam company scope
+  - [x] Panel ringkasan Pengajuan Lembur menyatu dalam satu wadah dan mempertahankan warna masing-masing status
 - [x] Form reimbursement/cash advance memakai layout dua kolom dan pola informasi pengajuan, rincian, karyawan, serta approver yang konsisten dengan form cuti/sakit
 - [x] Form reimbursement/cash advance menghapus field Department dan memakai pilihan keperluan Internal atau External / Project beserta referensi pekerjaan berscope perusahaan
 - [x] Cash advance pada form claim ditandai sebagai tahap pengembangan berikutnya dan referensi Project/Opportunity ditampilkan sebagai dropdown tabel seperti form lembur

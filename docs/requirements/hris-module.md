@@ -88,8 +88,13 @@ audit, dan layout aplikasi yang sudah tersedia.
   ditolak pada boundary agar tidak tertahan tanpa approver.
 - Revisi substansi selalu kembali ke Atasan. Revisi administratif kembali ke tahap
   yang meminta revisi. Pemohon adalah satu-satunya pihak yang dapat mengirim ulang.
-- Daftar lembur menyediakan filter status/periode/karyawan, pagination 10/25/50/100,
-  sorting server-side, detail rincian, dan indikator status berbahasa Indonesia.
+- Daftar lembur pada `/workspace/hris/overtime` hanya menampilkan pengajuan milik
+  akun yang sedang login (berdasarkan pemohon atau relasi akun karyawan), meskipun
+  pengguna memiliki company scope yang lebih luas. Halaman tetap menyediakan filter
+  status/periode/karyawan, pagination 10/25/50/100, sorting server-side, detail
+  rincian, dan indikator status berbahasa Indonesia.
+- Panel metrik lembur pada halaman pengajuan disajikan menyatu dalam satu wadah;
+  warna pembeda tiap metrik (disetujui, proses, ditolak, draft) tetap dipertahankan.
 - Data lembur lama dibackfill menjadi satu rincian tanpa menghapus kolom atau data
   lama; kolom lama dipertahankan sebagai kompatibilitas sementara.
 
@@ -135,6 +140,10 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Status dan tanggal pengajuan disimpan untuk kebutuhan timeline approval.
 - Halaman daftar menyediakan filter personal berdasarkan jenis, status, dan
   periode, pagination standar, serta akses detail pengajuan.
+- Daftar Cuti & Sakit menampilkan nomor pengajuan dan mendukung pencarian kata
+  kunci berdasarkan nomor pengajuan, nama karyawan, atau NIP; tabel memakai lebar
+  kolom proporsional dan kolom aksi dropdown dengan detail, pratinjau lampiran,
+  revisi, serta kelola draft sesuai status.
 - Tabel daftar Cuti & Sakit dan Ringkasan Cuti Karyawan menampilkan tombol
   Lihat dokumen pada kolom aksi jika pengajuan memiliki lampiran. Tombol
   membuka dialog preview melalui endpoint privat terotorisasi; PDF dan gambar
