@@ -4,6 +4,7 @@
 - **Scope:** Query ringkasan dibatasi ke perusahaan yang dapat diakses pengguna dan tipe route yang dipilih. Draft dikecualikan dari query dan opsi status.
 - **Requirement:** `docs/requirements/hris-claim-summary-dashboard.md`.
 - **Verifikasi:** Belum menjalankan test suite sesuai instruksi kerja; pemeriksaan sintaks PHP dan diff whitespace dilakukan setelah implementasi.
+- **Pembaruan:** Grid filter kini mengikuti lebar panel agar Reset/Terapkan tepat setelah Nominal maksimum, termasuk pada breakpoint tablet dan mobile.
 - **Risiko tersisa:** Tampilan browser dan data nyata belum dicek langsung.
 
 ## Penyesuaian tampilan

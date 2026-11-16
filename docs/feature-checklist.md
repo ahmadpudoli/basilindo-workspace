@@ -579,6 +579,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
   - [x] Ringkasan lembur menyediakan pencarian kata kunci, filter multi-select perusahaan/status, tanggal default awal tahun–hari ini, pagination, nomor pengajuan, sortir server-side, dan menu aksi detail
   - [x] Halaman Pengajuan Lembur hanya menampilkan pengajuan milik akun pengguna yang sedang login, bukan seluruh pengajuan dalam company scope
   - [x] Panel ringkasan Pengajuan Lembur menyatu dalam satu wadah dan mempertahankan warna masing-masing status
+  - [x] KPI Pengajuan Lembur bergaya lembut, badge status memakai warna semantik, dan kolom aksi memakai dropdown detail/revisi/draft
 - [x] Form reimbursement/cash advance memakai layout dua kolom dan pola informasi pengajuan, rincian, karyawan, serta approver yang konsisten dengan form cuti/sakit
 - [x] Form reimbursement/cash advance menghapus field Department dan memakai pilihan keperluan Internal atau External / Project beserta referensi pekerjaan berscope perusahaan
 - [x] Cash advance pada form claim ditandai sebagai tahap pengembangan berikutnya dan referensi Project/Opportunity ditampilkan sebagai dropdown tabel seperti form lembur

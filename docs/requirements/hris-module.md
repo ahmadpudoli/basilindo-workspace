@@ -92,9 +92,11 @@ audit, dan layout aplikasi yang sudah tersedia.
   akun yang sedang login (berdasarkan pemohon atau relasi akun karyawan), meskipun
   pengguna memiliki company scope yang lebih luas. Halaman tetap menyediakan filter
   status/periode/karyawan, pagination 10/25/50/100, sorting server-side, detail
-  rincian, dan indikator status berbahasa Indonesia.
+  rincian, badge status berwarna sesuai kondisi, serta menu aksi dropdown untuk detail,
+  revisi, dan pengelolaan draft.
 - Panel metrik lembur pada halaman pengajuan disajikan menyatu dalam satu wadah;
-  warna pembeda tiap metrik (disetujui, proses, ditolak, draft) tetap dipertahankan.
+  tampilannya lembut dengan warna pembeda tiap metrik (disetujui, proses, ditolak,
+  draft) tetap dipertahankan.
 - Data lembur lama dibackfill menjadi satu rincian tanpa menghapus kolom atau data
   lama; kolom lama dipertahankan sebagai kompatibilitas sementara.
 
