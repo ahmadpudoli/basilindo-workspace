@@ -80,7 +80,12 @@ class NotificationController extends Controller
                 'claim' => Claim::query()->find($requestId),
                 default => null,
             };
-            $expectedStatus = $step === 'manager' ? 'pending_manager' : ($step === 'finance' ? 'pending_finance' : 'pending_hr');
+            $expectedStatus = match ($step) {
+                'manager' => 'pending_manager',
+                'finance' => 'pending_finance',
+                'final' => 'pending_final',
+                default => 'pending_hr',
+            };
             if ($request && $request->status === $expectedStatus) return route('workspace.hris.approval-detail', [$requestType, $requestId, $step]);
 
             return route('workspace.hris.approvals');
@@ -105,7 +110,12 @@ class NotificationController extends Controller
                 'claim' => filled($requestId) ? Claim::query()->find($requestId) : null,
                 default => null,
             };
-            $expectedStatus = $step === 'manager' ? 'pending_manager' : ($step === 'finance' ? 'pending_finance' : 'pending_hr');
+            $expectedStatus = match ($step) {
+                'manager' => 'pending_manager',
+                'finance' => 'pending_finance',
+                'final' => 'pending_final',
+                default => 'pending_hr',
+            };
             return $request?->status === $expectedStatus ? 'Buka detail persetujuan' : 'Buka daftar persetujuan';
         }
 
@@ -135,6 +145,33 @@ class NotificationController extends Controller
         $data['request_number'] = $request->request_number;
         $data['requester_name'] = $request->employee?->full_name;
         $notification->data = $data;
+        $requestLabel = match ($requestType) {
+            'leave' => $request->type === 'sick' ? 'Pengajuan sakit' : 'Pengajuan cuti',
+            'overtime' => 'Pengajuan lembur',
+            'claim' => $request->type === 'cash_advance' ? 'Pengajuan cash advance' : 'Pengajuan reimbursement',
+            default => 'Pengajuan HRIS',
+        };
+        $requestLabel .= ' ['.$request->request_number.']';
+        $stepLabel = match ($data['step'] ?? null) {
+            'manager' => 'Atasan',
+            'hr' => 'HR',
+            'finance' => 'Finance',
+            'final' => 'Approver final',
+            default => null,
+        };
+        $notification->title = match ($data['action'] ?? null) {
+            'approve' => $stepLabel ? "Disetujui oleh {$stepLabel}: {$requestLabel}" : $notification->title,
+            'reject' => $stepLabel ? "Ditolak oleh {$stepLabel}: {$requestLabel}" : $notification->title,
+            'request_revision' => $stepLabel ? "Revisi diminta oleh {$stepLabel}: {$requestLabel}" : $notification->title,
+            'pending_approval' => match ($data['step'] ?? null) {
+                'manager' => "Persetujuan Atasan diperlukan: {$requestLabel}",
+                'hr' => "Pemeriksaan HR diperlukan: {$requestLabel}",
+                'finance' => "Pemeriksaan Finance diperlukan: {$requestLabel}",
+                'final' => "Persetujuan Approver final diperlukan: {$requestLabel}",
+                default => $notification->title,
+            },
+            default => $notification->title,
+        };
         if (! str_contains((string) $notification->title, $request->request_number)) $notification->title .= ' ['.$request->request_number.']';
         if (! str_contains((string) $notification->message, $request->request_number)) $notification->message .= ' Nomor pengajuan: '.$request->request_number.'; pemohon: '.($request->employee?->full_name ?? '—').'.';
 

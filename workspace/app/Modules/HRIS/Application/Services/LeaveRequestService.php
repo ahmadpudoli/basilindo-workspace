@@ -113,7 +113,7 @@ class LeaveRequestService
             $request->dates()->createMany($dates->map(fn (string $date): array => ['leave_date' => $date])->all());
             $label = $request->type === 'sick' ? 'Pengajuan sakit' : 'Pengajuan cuti';
             app(HrisWorkflowService::class)->notify($actorId, $label.' ['.$request->request_number.'] terkirim', $label.' Anda dengan nomor '.$request->request_number.' berhasil dikirim.', ['request_type' => 'leave', 'request_id' => $request->id, 'status' => $request->status]);
-            if ($employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, $label.' ['.$request->request_number.'] baru', $label.' nomor '.$request->request_number.' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'leave', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
+            if ($employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Persetujuan Atasan diperlukan: '.$label.' ['.$request->request_number.']', $label.' nomor '.$request->request_number.' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'leave', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
             return $request;
         });
     }
@@ -169,8 +169,8 @@ class LeaveRequestService
                 'revision_requested_at' => null,
             ]))->save();
             ApprovalEvent::create(['request_type' => 'leave', 'request_id' => $request->getKey(), 'step' => 'requester', 'action' => 'resubmitted', 'actor_id' => $actorId, 'comment' => 'Pengajuan hasil revisi dikirim ulang.', 'created_at' => now('UTC')]);
-            if ($nextStatus === 'pending_manager' && $employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Pengajuan cuti/sakit hasil revisi', 'Pengajuan hasil revisi menunggu verifikasi ulang.', ['request_type' => 'leave', 'request_id' => $request->id, 'approval' => true, 'step' => 'manager']);
-            if ($nextStatus === 'pending_hr') foreach (HrisWorkflowApprover::approverIds((int) $employee->company_id, 'leave_sick', 'hr') as $approverId) app(HrisWorkflowService::class)->notify($approverId, 'Pengajuan cuti/sakit hasil revisi', 'Pengajuan administrasi hasil revisi menunggu pemeriksaan HR.', ['request_type' => 'leave', 'request_id' => $request->id, 'approval' => true, 'step' => 'hr']);
+            if ($nextStatus === 'pending_manager' && $employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Persetujuan Atasan diperlukan: pengajuan cuti/sakit hasil revisi', 'Pengajuan hasil revisi menunggu verifikasi ulang oleh Atasan.', ['request_type' => 'leave', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager']);
+            if ($nextStatus === 'pending_hr') foreach (HrisWorkflowApprover::approverIds((int) $employee->company_id, 'leave_sick', 'hr') as $approverId) app(HrisWorkflowService::class)->notify($approverId, 'Pemeriksaan HR diperlukan: pengajuan cuti/sakit hasil revisi', 'Pengajuan administrasi hasil revisi menunggu pemeriksaan HR.', ['request_type' => 'leave', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'hr']);
             return $request;
         });
     }

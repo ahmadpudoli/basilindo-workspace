@@ -11,6 +11,9 @@ role/permission, serta scope perusahaan yang berlaku lintas modul Workspace.
 - Pengaturan modul aktif berlaku global untuk Workspace; minimal satu modul bisnis harus aktif.
 - Menu `Modul aktif` dan aksi penyimpanan memerlukan permission `access_settings` dan `manage_workspace_modules`.
 - Menu Integrasi Odoo, Queue & Job, Master penomoran, dan master kategori reimbursement menampilkan permission granular di grup Core & Pengaturan pada Role dan Pengguna.
+- Permission lama `manage_numbering_rules`, bila masih ada pada role, dikelompokkan pada subgrup Master penomoran di Core & Pengaturan.
+- Permission legacy tersebut harus dipetakan ke grup utama Core & Pengaturan pada form Role dan form Pengguna sebelum katalog subgrup diterapkan.
+- Permission `manage_numbering_rules` hanya diberikan kepada role `admin` dan `super_admin`; migration granular mewariskan akses master penomoran tersebut sebagai permission view/create/update.
 - Permission integrasi dikelompokkan sebagai submodul `Integrasi Odoo` pada grup Core & Pengaturan.
 - Modul bisnis yang dinonaktifkan tidak muncul pada dashboard/launcher dan shortcut `/workspace/{module}` ditolak.
 

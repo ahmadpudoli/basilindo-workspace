@@ -151,7 +151,7 @@
                         <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#approval-reject-modal">Tolak pengajuan</button>
                     </div>
 
-                    @if (in_array($type, ['leave', 'overtime'], true) || ($type === 'claim' && in_array($step, ['manager', 'finance'], true)))
+                    @if (in_array($type, ['leave', 'overtime'], true) || ($type === 'claim' && in_array($step, ['manager', 'finance', 'final'], true)))
                         <div class="border rounded-3 p-3">
                             <div class="fw-semibold text-warning-emphasis mb-1">Minta revisi</div>
                             <div class="small text-secondary mb-3">Pemohon akan diminta memperbaiki pengajuan sebelum diproses kembali.</div>
@@ -229,7 +229,7 @@
         </div>
     </div>
 
-    @if (in_array($type, ['leave', 'overtime'], true) || ($type === 'claim' && in_array($step, ['manager', 'finance'], true)))
+    @if (in_array($type, ['leave', 'overtime'], true) || ($type === 'claim' && in_array($step, ['manager', 'finance', 'final'], true)))
         <div class="modal fade" id="approval-revision-modal" tabindex="-1" aria-labelledby="approval-revision-title" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
@@ -240,7 +240,7 @@
                             <p class="text-secondary mb-3">Pilih jenis revisi dan jelaskan perubahan yang harus dilakukan pemohon.</p>
                             <div class="workspace-revision-info mb-3">
                                 <button type="button" class="workspace-revision-info-toggle" data-bs-toggle="collapse" data-bs-target="#approval-revision-guide" aria-expanded="false" aria-controls="approval-revision-guide"><span class="workspace-revision-info-title mb-0">Panduan jenis revisi</span><span class="workspace-revision-info-chevron" aria-hidden="true">⌄</span></button>
-                                <div id="approval-revision-guide" class="collapse"><div class="workspace-revision-info-content"><div class="workspace-revision-info-item"><strong>Revisi substansi</strong><span>{{ $type === 'claim' ? 'Perubahan keperluan, referensi pekerjaan, rincian biaya, kategori, atau nominal. Pengajuan kembali ke Atasan untuk diperiksa ulang.' : 'Perubahan tanggal, jumlah hari, jenis, atau isi utama. Pengajuan akan kembali meminta persetujuan Atasan.' }}</span></div><div class="workspace-revision-info-item"><strong>Revisi administrasi</strong><span>{{ $type === 'claim' ? 'Perbaikan dokumen bukti atau keterangan administratif. Pengajuan kembali ke tahap yang meminta revisi.' : 'Perbaikan dokumen atau keterangan tanpa mengubah isi utama. Pengajuan kembali ke tahap yang meminta revisi.' }}</span></div></div></div>
+                                <div id="approval-revision-guide" class="collapse"><div class="workspace-revision-info-content"><div class="workspace-revision-info-item"><strong>Revisi substansi</strong><span>{{ $type === 'claim' ? ($step === 'final' ? 'Perubahan keperluan, rincian biaya, kategori, atau nominal. Pengajuan akan diperiksa ulang oleh Atasan dan Finance, lalu kembali ke Approver final bila masih memenuhi ambang.' : 'Perubahan keperluan, referensi pekerjaan, rincian biaya, kategori, atau nominal. Pengajuan kembali ke Atasan untuk diperiksa ulang.') : 'Perubahan tanggal, jumlah hari, jenis, atau isi utama. Pengajuan akan kembali meminta persetujuan Atasan.' }}</span></div><div class="workspace-revision-info-item"><strong>Revisi administrasi</strong><span>{{ $type === 'claim' ? ($step === 'final' ? 'Perbaikan bukti atau keterangan administratif tanpa mengubah substansi. Setelah dikirim ulang, pengajuan kembali langsung ke Approver final; persetujuan Atasan dan Finance tetap tercatat.' : 'Perbaikan dokumen bukti atau keterangan administratif. Pengajuan kembali ke tahap yang meminta revisi.') : 'Perbaikan dokumen atau keterangan tanpa mengubah isi utama. Pengajuan kembali ke tahap yang meminta revisi.' }}</span></div></div></div>
                             </div>
                             <label class="form-label">Jenis revisi <span class="text-danger">*</span></label><select name="revision_type" class="form-select mb-3" required><option value="substantive">Revisi substansi</option><option value="administrative">Revisi administrasi</option></select>
                             <label class="form-label">Catatan revisi <span class="text-danger">*</span></label><textarea name="comment" class="form-control" rows="4" required maxlength="2000" placeholder="Jelaskan perubahan yang harus dilakukan pemohon."></textarea><input type="hidden" name="action" value="request_revision">

@@ -1,6 +1,8 @@
 # Feature Checklist
 - [x] Daftar reimbursement dan cash advance menampilkan aksi Detail untuk semua pengajuan yang diizinkan policy, termasuk status menunggu persetujuan.
-- [x] Reimbursement yang telah disetujui Finance menyediakan tombol cetak di daftar/detail dengan kop nama perusahaan, status workflow terkini, dan rincian pengajuan.
+- [x] Reimbursement menyediakan tombol cetak di daftar/detail hanya setelah seluruh approval selesai; `pending_final` belum bisa dicetak melalui UI maupun endpoint.
+- [x] Approver final dapat meminta revisi claim dengan catatan wajib; revisi substansi kembali ke Atasan dan revisi administrasi kembali ke Approver final.
+- [x] Modal permintaan revisi Approver final memiliki accordion informasi yang menjelaskan jalur revisi substansi dan administrasi.
 - [x] Dokumen cetak reimbursement menampilkan tanggal pengajuan awal, identitas/waktu persetujuan Atasan dan Finance, serta tanda persetujuan hijau pada blok tanda tangan.
 - [x] Ringkasan cetak tidak mengulang rincian persetujuan dan footer menyediakan blok tanda tangan pemohon.
 - [x] Nama perusahaan tidak diulang dalam ringkasan dokumen cetak karena sudah tampil sebagai kop.
@@ -48,6 +50,12 @@
 - [x] Input nominal reimbursement menerima angka maksimal dua desimal, menampilkan format `id-ID`, dan menormalisasi nilai lokal pada server; referensi nota berlabel opsional dengan contoh nomor nota.
 
 - [x] Hak akses Pengaturan HRIS dipisah per submenu (Parameter, Workflow Approval, Kategori biaya) dan per aksi lihat/tambah/ubah/arsip; Master penomoran dipisah untuk lihat/tambah/ubah.
+- [x] Form pengaturan workflow reimbursement & cash advance menyediakan accordion compact yang menjelaskan peran Finance, Approver final, dan ambang nominal approval tambahan.
+- [x] Permission legacy `manage_numbering_rules` ditampilkan bersama permission Master penomoran di grup Core & Pengaturan pada form Role.
+- [x] Permission legacy `manage_numbering_rules` pada form Role dan Pengguna dipetakan ke Core & Pengaturan agar tidak masuk ke grup Lainnya.
+- [x] Migration permission master penomoran memberikan akses `manage_numbering_rules` hanya kepada role `admin` dan `super_admin`; permission granular mewarisi akses role tersebut.
+- [x] Panel Early Warning Approval di dashboard HRIS disembunyikan ketika tidak ada pengajuan yang menunggu persetujuan.
+- [x] Judul notifikasi HRIS menyebut role/tahap persetujuan yang melakukan keputusan atau menunggu tindakan, termasuk pada notifikasi lama yang memiliki metadata tahap.
 
 - [x] Pengajuan/revisi lembur External / Project memiliki dropdown Project opsional dengan scope perusahaan dan akses project serta validasi server
 - [x] Form pengajuan lembur memakai susunan dua kolom dan card/footer yang konsisten dengan form cuti/sakit

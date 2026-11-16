@@ -213,6 +213,19 @@ html[data-theme="dark"] .theme-icon-dark { display: block; }
 .workspace-approval-avatar { align-items: center; background: #eaf5ff; border-radius: 50%; color: var(--workspace-primary); display: inline-flex; flex: 0 0 30px; font-size: .78rem; font-weight: 800; height: 30px; justify-content: center; width: 30px; }
 .workspace-workflow-card { border-left: 4px solid var(--workspace-primary); }
 .workspace-workflow-card { overflow: visible; }
+.workspace-workflow-info { border-radius: .8rem; }
+.workspace-workflow-info .accordion-item { overflow: hidden; border: 1px solid #dce7f3; border-radius: .8rem; background: linear-gradient(120deg, #f5faff, #fbf9ff 62%, #fff); box-shadow: 0 4px 14px rgba(34, 76, 125, .06); }
+.workspace-workflow-info .accordion-button { gap: .55rem; padding: .55rem .75rem; color: #24466d; background: transparent; font-size: .82rem; font-weight: 600; }
+.workspace-workflow-info .accordion-button:not(.collapsed) { color: #155ca0; background: linear-gradient(110deg, #eff7ff, #f7f3ff); box-shadow: inset 0 -1px 0 rgba(45, 100, 160, .1); }
+.workspace-workflow-info .accordion-button:focus { box-shadow: 0 0 0 .18rem rgba(47, 128, 237, .13); }
+.workspace-workflow-info-icon { display: inline-grid; width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #3685d3, #8268ca); font-size: .75rem; font-weight: 700; }
+.workspace-workflow-info .accordion-body { display: grid; gap: .6rem; padding: .7rem .8rem .8rem; }
+.workspace-workflow-info-row { display: flex; gap: .55rem; align-items: flex-start; color: #34445a; font-size: .78rem; line-height: 1.4; }
+.workspace-workflow-info-row strong { display: block; margin-bottom: .08rem; color: #203d60; }
+.workspace-workflow-info-row p { margin: 0; }
+.workspace-workflow-info-dot { flex: 0 0 .48rem; width: .48rem; height: .48rem; margin-top: .28rem; border-radius: 50%; background: #3685d3; box-shadow: 0 0 0 3px rgba(54, 133, 211, .12); }
+.workspace-workflow-info-dot.final { background: #8268ca; box-shadow: 0 0 0 3px rgba(130, 104, 202, .12); }
+.workspace-workflow-info-note { padding: .48rem .6rem; border-radius: .55rem; color: #596b82; background: rgba(255, 255, 255, .75); font-size: .73rem; }
 .workspace-workflow-assignment { align-items: center; background: #f8fafc; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
 .workspace-workflow-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .workspace-workflow-placeholder { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 9px; color: var(--workspace-muted); font-size: .84rem; padding: 14px; }

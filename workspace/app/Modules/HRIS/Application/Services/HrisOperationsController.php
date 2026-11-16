@@ -317,8 +317,9 @@ class HrisOperationsController extends Controller
                 ? 'revision'
                 : ($claim->finance_approved_at || in_array($claim->status, ['pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true) ? 'done' : ($claim->status === 'pending_finance' ? 'current' : 'upcoming'));
             $statusTimeline->push(['label' => 'Pemeriksaan Finance', 'state' => $financeState, 'at' => $claim->finance_approved_at ?: ($financeState === 'revision' ? $claim->revision_requested_at : null)]);
-            if ($claim->status === 'pending_final' || $claim->final_approved_at) {
-                $statusTimeline->push(['label' => 'Persetujuan akhir', 'state' => $claim->final_approved_at ? 'done' : 'current', 'at' => $claim->final_approved_at]);
+            if ($claim->status === 'pending_final' || $claim->final_approved_at || ($claim->status === 'needs_revision' && $claim->revision_requested_role === 'final')) {
+                $finalState = $claim->status === 'needs_revision' && $claim->revision_requested_role === 'final' ? 'revision' : ($claim->final_approved_at ? 'done' : 'current');
+                $statusTimeline->push(['label' => 'Persetujuan akhir', 'state' => $finalState, 'at' => $claim->final_approved_at ?: ($finalState === 'revision' ? $claim->revision_requested_at : null)]);
             }
             if ($claim->status === 'rejected') {
                 $statusTimeline->push(['label' => 'Pengajuan ditolak', 'state' => 'rejected', 'at' => $claim->updated_at]);
@@ -362,7 +363,7 @@ class HrisOperationsController extends Controller
         abort_unless(
             $claim->type === 'reimbursement'
                 && $claim->finance_approved_at !== null
-                && in_array($claim->status, ['pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true),
+                && in_array($claim->status, ['approved', 'pending_payment', 'paid', 'completed'], true),
             404,
         );
 

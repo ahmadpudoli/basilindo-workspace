@@ -175,7 +175,11 @@ class ClaimService
         $disk = Storage::disk((string) config('hris.claim_attachment_disk', 's3'));
         $temporaryKeys = [];
         $promotedKeys = [];
-        $nextStatus = $existingClaim && $existingClaim->revision_type === 'administrative' && $existingClaim->revision_requested_role === 'finance' ? 'pending_finance' : 'pending_manager';
+        $nextStatus = match ([$existingClaim?->revision_type, $existingClaim?->revision_requested_role]) {
+            ['administrative', 'finance'] => 'pending_finance',
+            ['administrative', 'final'] => 'pending_final',
+            default => 'pending_manager',
+        };
         try {
             $claim = DB::connection('hris')->transaction(function () use ($employee, $data, $actorId, $draft, $items, $disk, &$temporaryKeys, &$promotedKeys, $existingClaim, $resubmission, $revisionDraft, $nextStatus): Claim {
             $currency = (string) $items->first()['currency'];
@@ -209,7 +213,8 @@ class ClaimService
                     'revision_number' => ((int) $claim->revision_number) + 1, 'decision_reason' => null,
                     'manager_approved_by' => $nextStatus === 'pending_manager' ? null : $claim->manager_approved_by,
                     'manager_approved_at' => $nextStatus === 'pending_manager' ? null : $claim->manager_approved_at,
-                    'finance_approved_by' => null, 'finance_approved_at' => null,
+                    'finance_approved_by' => in_array($nextStatus, ['pending_manager', 'pending_finance'], true) ? null : $claim->finance_approved_by,
+                    'finance_approved_at' => in_array($nextStatus, ['pending_manager', 'pending_finance'], true) ? null : $claim->finance_approved_at,
                     'final_approved_by' => null, 'final_approved_at' => null,
                 ])->save();
             }
@@ -246,9 +251,11 @@ class ClaimService
             $workflow = app(HrisWorkflowService::class);
             $workflow->notify($actorId, ($resubmission ? 'Revisi pengajuan ' : 'Pengajuan ').$label.' ['.$claim->request_number.'] terkirim', ($resubmission ? 'Revisi pengajuan ' : 'Pengajuan ').$label.' nomor '.$claim->request_number.' berhasil dikirim.', ['request_type' => 'claim', 'request_id' => $claim->id, 'status' => $claim->status, 'action' => $resubmission ? 'resubmitted' : 'submit']);
             if ($resubmission && $nextStatus === 'pending_finance') {
-                foreach (HrisWorkflowApprover::approverIds((int) $claim->company_id, 'claim', 'finance') as $approverId) $workflow->notify($approverId, 'Revisi reimbursement menunggu pemeriksaan Finance', 'Revisi reimbursement nomor '.$claim->request_number.' dari '.$employee->full_name.' telah dikirim kembali untuk pemeriksaan Finance.', ['request_type' => 'claim', 'request_id' => $claim->id, 'status' => $claim->status, 'action' => 'pending_approval', 'approval' => true, 'step' => 'finance', 'actor_id' => $actorId]);
+                foreach (HrisWorkflowApprover::approverIds((int) $claim->company_id, 'claim', 'finance') as $approverId) $workflow->notify($approverId, 'Pemeriksaan Finance diperlukan: revisi reimbursement ['.$claim->request_number.']', 'Revisi reimbursement nomor '.$claim->request_number.' dari '.$employee->full_name.' telah dikirim kembali untuk pemeriksaan Finance.', ['request_type' => 'claim', 'request_id' => $claim->id, 'status' => $claim->status, 'action' => 'pending_approval', 'approval' => true, 'step' => 'finance', 'actor_id' => $actorId]);
+            } elseif ($resubmission && $nextStatus === 'pending_final') {
+                foreach (HrisWorkflowApprover::approverIds((int) $claim->company_id, 'claim', 'final') as $approverId) $workflow->notify($approverId, 'Persetujuan Approver final diperlukan: revisi reimbursement ['.$claim->request_number.']', 'Revisi reimbursement nomor '.$claim->request_number.' dari '.$employee->full_name.' telah dikirim kembali untuk persetujuan final.', ['request_type' => 'claim', 'request_id' => $claim->id, 'status' => $claim->status, 'action' => 'pending_approval', 'approval' => true, 'step' => 'final', 'actor_id' => $actorId]);
             } elseif ($employee->manager?->user_id) {
-                $workflow->notify($employee->manager->user_id, $resubmission ? 'Revisi reimbursement menunggu persetujuan Atasan' : 'Pengajuan '.$label.' ['.$claim->request_number.'] baru', 'Pengajuan '.$label.' nomor '.$claim->request_number.' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'claim', 'request_id' => $claim->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
+                $workflow->notify($employee->manager->user_id, ($resubmission ? 'Revisi perlu persetujuan Atasan: ' : 'Persetujuan Atasan diperlukan: ').'pengajuan '.$label.' ['.$claim->request_number.']', 'Pengajuan '.$label.' nomor '.$claim->request_number.' dari '.$employee->full_name.' menunggu persetujuan Anda sebagai Atasan.', ['request_type' => 'claim', 'request_id' => $claim->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager', 'actor_id' => $actorId]);
             }
             if ($resubmission) \App\Modules\HRIS\Domain\Models\ApprovalEvent::create(['request_type' => 'claim', 'request_id' => $claim->getKey(), 'step' => 'requester', 'action' => 'resubmitted', 'actor_id' => $actorId, 'comment' => 'Pengajuan hasil revisi dikirim ulang.', 'created_at' => now('UTC')]);
             return $claim;

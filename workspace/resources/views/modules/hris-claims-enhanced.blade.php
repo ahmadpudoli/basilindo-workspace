@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const drafts = [];
     const printActions = [];
     @foreach($items->getCollection() as $claimRow)
-        @if($claimRow->type === 'reimbursement' && $claimRow->finance_approved_at && in_array($claimRow->status, ['pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true) && auth()->user()->can('view', $claimRow))
+        @if($claimRow->type === 'reimbursement' && $claimRow->finance_approved_at && in_array($claimRow->status, ['approved', 'pending_payment', 'paid', 'completed'], true) && auth()->user()->can('view', $claimRow))
             printActions.push({ id: @json($claimRow->id), url: @json(route('workspace.hris.claims.print', $claimRow)) });
         @endif
     @endforeach

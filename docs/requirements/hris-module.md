@@ -10,6 +10,8 @@ audit, dan layout aplikasi yang sudah tersedia.
 
 ## Keputusan requirement
 
+- Panel Early Warning Approval pada dashboard HRIS hanya ditampilkan kepada pengguna yang berhak melihat approval dan ketika terdapat pengajuan yang menunggu persetujuan pengguna tersebut; panel disembunyikan saat kosong.
+- Judul notifikasi HRIS untuk approval, penolakan, permintaan revisi, dan tindakan yang menunggu harus menyebut tahap/role terkait (Atasan, HR, Finance, atau Approver final); notifikasi lama dengan metadata tahap menampilkan judul yang sama jelasnya.
 - Istilah bisnis yang digunakan adalah **karyawan**, bukan mahasiswa.
 - Satu karyawan terhubung ke satu perusahaan operasional dan dapat dikaitkan
   dengan satu akun Workspace.

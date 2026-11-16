@@ -29,9 +29,11 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 - Preview bukti gambar pada detail persetujuan (termasuk tahap Finance) menyediakan zoom in, zoom out, dan sesuaikan; kontrol tidak muncul untuk PDF.
 - Timestamp approval event disimpan konsisten dalam UTC dan dikonversi ke zona waktu aplikasi saat dibaca, agar urutan kronologis timeline akurat.
 - Halaman detail approval reimbursement tidak menampilkan bagian Dokumen pendukung umum; bukti hanya ditampilkan per rincian biaya.
-- Atasan pada tahap `pending_manager` dan approver Finance pada tahap `pending_finance` dapat meminta revisi dengan catatan wajib dan tipe `substantive` atau `administrative`.
-- Revisi substansi kembali ke approval Atasan; revisi administrasi kembali ke tahap yang meminta revisi (Atasan atau Finance).
+- Atasan pada tahap `pending_manager`, approver Finance pada tahap `pending_finance`, dan Approver final pada tahap `pending_final` dapat meminta revisi dengan catatan wajib dan tipe `substantive` atau `administrative`.
+- Revisi substansi dari tahap mana pun kembali ke approval Atasan, lalu Finance dan Approver final sesuai ambang; revisi administrasi kembali ke tahap yang meminta revisi (Atasan, Finance, atau Approver final).
+- Accordion pilihan revisi di tahap Approver final menjelaskan bahwa revisi substansi memulai ulang pemeriksaan Atasan/Finance, sementara revisi administrasi kembali langsung ke Approver final dengan approval Atasan/Finance tetap tercatat.
 - Pemohon dapat mengubah header, rincian biaya, dan bukti lalu mengirim kembali claim yang sama dengan nomor pengajuan yang sama.
+- Setelah pengiriman ulang revisi administrasi Approver final, status kembali ke `pending_final` dan Approver final menerima notifikasi; pengiriman ulang revisi substansi kembali ke `pending_manager`.
 - Setiap pengiriman ulang menyimpan snapshot claim/rincian sebelumnya, mempertahankan approval event, dan tidak menghapus file bukti lama; rincian yang dikeluarkan dari pengajuan ditandai tidak aktif.
 - Detail pengajuan menampilkan riwayat permintaan revisi, keputusan approval, pengiriman ulang, serta snapshot sebelum revisi.
 
@@ -61,12 +63,12 @@ Keputusan teknis lampiran: [Unggah bukti reimbursement](hris-reimbursement-attac
 - Form edit dan pengajuan menampilkan pengingat yang menonjol di bawah accordion informasi karyawan/alur persetujuan agar bukti fisik disimpan dan diserahkan ke Finance pada akhir bulan pengajuan.
 - Label status klaim `pending_manager` ditampilkan sebagai “Menunggu persetujuan atasan” dan `pending_finance` sebagai “Menunggu persetujuan Finance”; nilai status internal tetap.
 - Daftar klaim menyediakan tombol Detail untuk setiap pengajuan yang dapat diakses pengguna, berdampingan dengan aksi status seperti pembayaran atau edit draft.
-- Reimbursement yang sudah disetujui Finance menyediakan tombol Cetak pada daftar dan detail; dokumen cetak memakai nama perusahaan sebagai kop, nomor pengajuan, status terkini, ringkasan, rincian biaya, total, dan waktu persetujuan Finance.
+- Reimbursement menyediakan tombol Cetak pada daftar dan detail hanya setelah seluruh tahap approval selesai. Jika approval final diwajibkan, status `pending_final` belum boleh dicetak; endpoint cetak juga menolak akses pada status tersebut. Dokumen cetak memakai nama perusahaan sebagai kop, nomor pengajuan, status terkini, ringkasan, rincian biaya, total, dan waktu persetujuan Finance.
 - Dokumen cetak menampilkan tanggal pengajuan pertama (tetap setelah revisi), nama approver Atasan dan Finance beserta waktu persetujuan, serta tanda centang hijau pada blok persetujuan yang sudah diberikan.
 - Nama dan waktu approver hanya ditampilkan pada blok persetujuan footer agar tidak berulang pada ringkasan; footer juga menyediakan ruang tanda tangan pemohon beserta nama dan waktu pengajuan.
 - Nama perusahaan hanya tampil pada kop dokumen dan tidak diulang dalam ringkasan.
 - Tabel `hris_claims` menyimpan `submitted_at`; migration mengisi pengajuan lama non-draft dari `created_at` dan tidak mengubah waktu tersebut saat revisi.
-- Route cetak memakai policy `view` klaim yang sama dan hanya menyajikan reimbursement yang telah melewati persetujuan Finance; halaman menyediakan dialog cetak browser dan format ramah kertas.
+- Route cetak memakai policy `view` klaim yang sama dan hanya menyajikan reimbursement yang telah melewati seluruh approval (status `approved`, `pending_payment`, `paid`, atau `completed`); status `pending_final` ditolak sampai approver final memutuskan. Halaman menyediakan dialog cetak browser dan format ramah kertas.
 - Pratinjau dan hasil cetak klaim memakai ukuran A4; lampiran gambar mengalir secara proporsional dengan batas tinggi 90 mm dan dapat berbagi halaman agar hemat kertas.
 - PDF reimbursement dirender sebagai halaman individual melalui PDF.js lokal: setiap halaman dokumen menjadi satu lembar A4 baru, tanpa menyematkan PDF viewer. Sumber file tetap endpoint privat terotorisasi dan tombol cetak menunggu seluruh halaman selesai dirender.
 - Tinggi setiap lembar PDF cetak harus sama dengan area konten A4 setelah margin halaman, agar page break tidak menghasilkan halaman kosong tambahan.
@@ -83,6 +85,7 @@ Keputusan teknis lampiran: [Unggah bukti reimbursement](hris-reimbursement-attac
 - Simpan draft dan Kirim pengajuan menampilkan indikator loading selama unggah bukti dan pengiriman form berlangsung.
 - Alur dasar adalah Atasan -> Finance -> Disetujui -> Menunggu pembayaran -> Dibayar -> Selesai.
 - Approval tambahan dapat diarahkan ke approver final berdasarkan threshold nominal yang aktif pada perusahaan pengajuan.
+- Form konfigurasi workflow claim menyediakan accordion informasi ringkas yang menjelaskan perbedaan tugas Finance dan Approver final serta hubungan tahap final dengan ambang nominal perusahaan.
 - Jika threshold tambahan tidak dikonfigurasi, pengajuan tidak memiliki tahap approval tambahan.
 - Jika threshold terpenuhi tetapi approver final tidak dikonfigurasi, pengajuan ditolak pada boundary dan tidak boleh melewati approval.
 - Metode pembayaran hanya dapat dicatat oleh Finance setelah seluruh approval selesai.
@@ -123,6 +126,7 @@ nominal dibayar, referensi pembayaran, dan bukti pembayaran.
 - Approval atasan mengubah status menjadi `pending_finance`; bila meminta revisi, pemohon dapat memperbaiki pengajuan dan mengirim ulang sesuai tipe revisi.
 - Approval Finance mengubah status menjadi `approved` jika tidak ada threshold final.
 - Approval Finance mengubah status menjadi `pending_final` jika threshold aktif terpenuhi.
+- Admin dapat memahami bahwa Finance memeriksa claim setelah Atasan, sedangkan Approver final memberi persetujuan tambahan setelah Finance untuk nominal yang memenuhi ambang.
 - Pengajuan dengan threshold terpenuhi tanpa approver final aktif tidak dapat disetujui.
 - Approver final yang bukan konfigurasi perusahaan tidak dapat memproses pengajuan.
 - Finance dapat mencatat pembayaran hanya pada pengajuan berstatus `approved` atau `pending_payment`.

@@ -35,6 +35,7 @@
         'manage_integration' => 'Core & Pengaturan',
         'run_integration_sync' => 'Core & Pengaturan',
         'view_queue_jobs' => 'Core & Pengaturan',
+        'manage_numbering_rules' => 'Core & Pengaturan',
         'view_numbering_rules' => 'Core & Pengaturan',
         'create_numbering_rules' => 'Core & Pengaturan',
         'update_numbering_rules' => 'Core & Pengaturan',
