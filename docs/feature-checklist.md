@@ -7,7 +7,7 @@
 - [x] Tabel daftar Semua, Reimbursement, dan Cash Advance memakai dropdown aksi tiga titik yang compact dan mempertahankan aksi serta authorization yang tersedia.
 - [x] Lebar kolom daftar klaim dibuat proporsional untuk karyawan, jenis, kategori, nominal, status, dan aksi.
 - [x] Daftar kerja klaim hanya menampilkan pengajuan milik pengguna login tanpa diperluas oleh company scope; pemohon tetap dapat melihat detail klaimnya sendiri.
-- [x] Tombol Buat Pengajuan pada daftar klaim memisahkan pilihan Reimbursement dan Cash Advance; Cash Advance diarahkan ke halaman keterangan terpisah sampai form dan workflow tersedia.
+- [x] Tombol Buat Pengajuan pada daftar klaim memisahkan pilihan Reimbursement dan Cash Advance melalui dropdown berikon, berwarna, dan responsif; Cash Advance diarahkan ke halaman keterangan terpisah sampai form dan workflow tersedia.
 - [x] Daftar reimbursement dan cash advance menampilkan aksi Detail untuk semua pengajuan yang diizinkan policy, termasuk status menunggu persetujuan.
 - [x] Reimbursement menyediakan tombol cetak di daftar/detail hanya setelah seluruh approval selesai; `pending_final` belum bisa dicetak melalui UI maupun endpoint.
 - [x] Approver final dapat meminta revisi claim dengan catatan wajib; revisi substansi kembali ke Atasan dan revisi administrasi kembali ke Approver final.
