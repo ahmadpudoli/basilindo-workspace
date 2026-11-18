@@ -15,7 +15,10 @@ class CrmOpportunityPolicy
     public function view(User $user, CrmOpportunity $opportunity): bool
     {
         $companyId = $opportunity->company_id ?: $opportunity->account?->company_id;
-        return ($user->hasRole('super_admin') || $user->can('view_crm_opportunity')) && $companyId !== null && $user->companies()->whereKey($companyId)->exists();
+
+        return ($user->hasRole('super_admin') || $user->can('view_crm_opportunity'))
+            && $companyId !== null
+            && $user->companies()->whereKey($companyId)->exists();
     }
 
     public function create(User $user): bool

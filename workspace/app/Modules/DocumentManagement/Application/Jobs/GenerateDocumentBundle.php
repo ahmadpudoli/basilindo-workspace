@@ -20,7 +20,7 @@ class GenerateDocumentBundle implements ShouldQueue
 
     public function __construct(public string $bundleId)
     {
-        $this->onQueue('document-bundles');
+        $this->onQueue((string) config('workers.groups.documents.queues.0', 'document-bundles'));
     }
 
     public function handle(DocumentBundleService $service): void

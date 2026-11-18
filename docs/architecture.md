@@ -24,6 +24,9 @@ Browser
 - **Redis**: cache hasil yang aman, queue backend, distributed lock, dan throttling. Redis bukan source of truth.
 - **MinIO**: bucket private dengan object key yang tidak berasal langsung dari nama file pengguna.
 - **Queue worker**: OCR, checksum, preview, matching berat, dan bundling berjalan asynchronous.
+- **Worker registry**: `workspace/config/workers.php` adalah inventaris pusat worker group, queue, dan job. Scheduler tetap terdaftar di `workspace/routes/console.php`. Job domain tetap berada di modul pemiliknya.
+- **Email notifications**: Core Notifications menyiapkan outbox email dari notifikasi aplikasi. Worker `email` hanya mengirim outbox; log status khusus berada di `core_email_notification_logs`.
+- **Application payload encryption**: service bersama `Core\Application\Services\PayloadCipher` memakai key global dari `config/encryption.php`; IV acak disimpan bersama ciphertext. Transport SMTP tetap di `config/mail.php`, sedangkan pemetaan template email berada di `config/notifications.php`.
 
 ## Boundary modul
 

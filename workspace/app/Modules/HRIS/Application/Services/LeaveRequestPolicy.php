@@ -14,6 +14,13 @@ class LeaveRequestPolicy
         if ($user->can('view_leave_request') && $user->companies()->whereKey($request->company_id)->exists()) return true;
         return (int) $request->created_by === (int) $user->getKey() || (int) $request->employee?->user_id === (int) $user->getKey();
     }
+
+    public function viewOwner(User $user, LeaveRequest $request): bool
+    {
+        return (int) $request->requester_user_id === (int) $user->getKey()
+            || (int) $request->created_by === (int) $user->getKey()
+            || (int) $request->employee?->user_id === (int) $user->getKey();
+    }
     public function create(User $user): bool { return $user->hasRole('super_admin') || $user->can('create_leave_request'); }
     public function update(User $user, LeaveRequest $request): bool
     {

@@ -46,7 +46,7 @@ class RoleSeeder extends Seeder
         }
         Permission::firstOrCreate(['name' => 'access_settings', 'guard_name' => 'web']);
         Permission::firstOrCreate(['name' => 'view_document_audit_trail', 'guard_name' => 'web']);
-        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents', 'access_integration', 'view_integration', 'manage_integration', 'run_integration_sync', 'view_queue_jobs', 'manage_workspace_modules', 'manage_hris_expense_categories', 'manage_crm_pipeline', 'manage_crm_team'] as $permission) {
+        foreach (['access_company', 'access_crm', 'access_project_management', 'access_documents', 'access_integration', 'view_integration', 'manage_integration', 'run_integration_sync', 'view_queue_jobs', 'view_email_queue', 'retry_queue_jobs', 'manage_workspace_modules', 'manage_hris_expense_categories', 'manage_crm_pipeline', 'manage_crm_team'] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
         foreach (['view_role', 'view_any_role', 'create_role', 'update_role', 'delete_role', 'view_audit_trail'] as $permission) {
@@ -61,6 +61,10 @@ class RoleSeeder extends Seeder
             'view_hris_overtime_summary',
             'view_hris_reimbursement_summary',
             'view_hris_cash_advance_summary',
+            'print_hris_reimbursement',
+            'print_hris_cash_advance',
+            'print_hris_overtime',
+            'print_hris_leave',
             'process_hris_payment',
         ] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
@@ -83,7 +87,10 @@ class RoleSeeder extends Seeder
         $superAdmin->syncPermissions(Permission::all());
 
         // admin: semua permission kecuali user delete
-        $adminPermissions = Permission::whereNotIn('name', ['delete_user'])->get();
+        $adminPermissions = Permission::whereNotIn('name', [
+            'delete_user', 'view_email_queue', 'retry_queue_jobs',
+            'print_hris_reimbursement', 'print_hris_cash_advance', 'print_hris_overtime', 'print_hris_leave',
+        ])->get();
         $admin->syncPermissions($adminPermissions);
 
         $documentPermissions = Permission::whereIn('name', [

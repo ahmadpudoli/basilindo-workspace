@@ -20,7 +20,7 @@ class RunOdooReferenceSync implements ShouldQueue, ShouldBeUnique
 
     public function __construct(public bool $full = false)
     {
-        $this->onQueue('odoo-sync');
+        $this->onQueue((string) config('workers.groups.integration.queues.0', 'odoo-sync'));
     }
 
     public function uniqueId(): string

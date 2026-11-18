@@ -7,12 +7,11 @@ use App\Modules\HRIS\Domain\Models\Employee;
 use Core\Models\Project;
 use Core\Models\User;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 class OvertimeWorkReferenceService
 {
-    public function availableOpportunities(Employee $employee, User $user): Builder
+    public function availableOpportunities(Employee $employee, User $user, bool $ignoreCompanyScope = false): Builder
     {
         if ($user->hasRole('super_admin')) {
             return CrmOpportunity::query()->with(['pipelineStage', 'closingStatus', 'project']);
@@ -24,13 +23,20 @@ class OvertimeWorkReferenceService
             return $query->whereRaw('1 = 0');
         }
 
+        if ($ignoreCompanyScope) {
+            return $query;
+        }
+
         $companyIds = $user->companies()->pluck('companies.id');
 
         return CrmOpportunity::query()
             ->with(['pipelineStage', 'closingStatus', 'project'])
             ->where(function (Builder $company) use ($companyIds): void {
                 $company->whereIn('company_id', $companyIds)
-                    ->orWhereHas('account', fn (Builder $account) => $account->whereIn('company_id', $companyIds));
+                    ->orWhere(function (Builder $fallback) use ($companyIds): void {
+                        $fallback->whereNull('company_id')
+                            ->whereHas('account', fn (Builder $account) => $account->whereIn('company_id', $companyIds));
+                    });
             });
     }
 
@@ -66,13 +72,13 @@ class OvertimeWorkReferenceService
             throw ValidationException::withMessages(['opportunity_id' => 'Anda tidak memiliki akses ke opportunity CRM.']);
         }
 
-        $opportunity = $this->availableOpportunities($employee, $user)->whereKey($data['opportunity_id'] ?? null)->first();
-        if (! $opportunity || Gate::forUser($user)->denies('view', $opportunity)) {
+        $opportunity = $this->availableOpportunities($employee, $user, ignoreCompanyScope: true)->whereKey($data['opportunity_id'] ?? null)->first();
+        if (! $opportunity) {
             throw ValidationException::withMessages(['opportunity_id' => 'Opportunity tidak tersedia atau tidak dapat Anda akses.']);
         }
 
         $linkedProject = $opportunity->project_id
-            ? app(OvertimeProjectService::class)->available($employee, $user)->whereKey($opportunity->project_id)->first()
+            ? app(OvertimeProjectService::class)->available($employee, $user, ignoreCompanyScope: true)->whereKey($opportunity->project_id)->first()
             : null;
 
         return [

@@ -11,11 +11,13 @@ Risiko utama: kebocoran dokumen melalui URL, user melihat company lain, upload f
 - Authorization berlapis: authentication, role/permission, company scope, project scope, dan object-level policy.
 - MIME allowlist, ukuran maksimum, extension validation, checksum, nama object acak, dan antivirus hook sebelum `ready` bila tersedia.
 - CSRF, secure cookie, session rotation, rate limit login/upload/download, dan security headers.
+- Penggantian password mensyaratkan verifikasi password saat ini, hash password baru, session rotation, dan pencabutan session database lain milik akun tersebut.
 - Secret hanya melalui environment/secret manager; `.env` tidak di-commit.
 - Audit untuk login, upload, replace/version, view/download, relation, verification, bundle, permission, dan delete/restore.
 - Jangan menulis nama lengkap dokumen sensitif, token, isi OCR, atau credential ke log.
 - PostgreSQL backup terenkripsi dan diuji restore. MinIO lifecycle, replication/backup, dan retention harus terdokumentasi.
 - Queue job idempotent; retry tidak boleh membuat duplicate bundle atau mengubah status secara tidak konsisten.
+- Payload sensitif memakai service enkripsi bersama. Key berasal dari `APP_DATA_ENCRYPTION_KEY`; IV acak unik per payload disimpan bersama ciphertext Base64 dan tidak boleh berupa nilai global tetap. Body email tidak boleh muncul di log aplikasi atau halaman monitoring.
 
 ## Data retention
 

@@ -37,7 +37,10 @@
 .overtime-entry .row > .col-md-4:nth-child(1) { order: 1; }
 .overtime-entry .row > .col-md-4:nth-child(2) { order: 2; }
 .overtime-entry .row > .col-md-4:nth-child(3) { order: 3; }
+.overtime-entry .row > .col-md-4:nth-child(2),.overtime-entry .row > .col-md-4:nth-child(3) { grid-column: span 2; min-width: 0; }
 .overtime-entry .row > .col-12:has(.overtime-day-type) { grid-column: span 3; width: auto !important; max-width: none !important; padding: 0; order: 4; }
+.overtime-entry .row > .col-12:has(.overtime-day-type) { grid-column: span 5; min-width: 0; }
+.overtime-entry .workspace-floating-field,.overtime-day-type-options { min-width: 0; }
 .overtime-entry .row > .col-12:not(:has(.overtime-day-type)) { grid-column: 1 / -1; padding: 0; order: 5; }
 .overtime-day-type { position: relative; padding: 0; }
 .overtime-day-type-label { position: absolute; top: -.55rem; left: -.25rem; z-index: 1; padding: 0 .25rem; background: #fff; font-size: .72rem; font-weight: 600; color: var(--workspace-text-secondary, #667085); line-height: 1; }
@@ -121,20 +124,119 @@ form#overtime-form:has(input[name="overtime_type"][value="external_project"]:che
 <input type="hidden" id="overtime-project" name="project_id" value="{{ old('project_id', $overtimeRequest->project_id) }}" @disabled($referenceType !== 'project' || $overtimeType !== 'external_project')>
 <div class="row g-2 align-items-start"><div class="col-md-5"><div class="dropdown w-100" data-reference-picker="project"><button type="button" class="form-select text-start d-flex justify-content-between align-items-center" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><span data-reference-label>{{ old('project_id', $overtimeRequest->project_id) ? 'Project terpilih' : 'Pilih project' }}</span><span class="small text-secondary">▾</span></button><div class="dropdown-menu p-2" style="min-width: min(820px, calc(100vw - 3rem)); max-height: 360px; overflow-y: auto;"><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Project</th><th>Status</th><th>Client</th><th class="text-end">Pilih</th></tr></thead><tbody>
 @forelse($projects as $project) @php($projectStatus = $project->end_date && $project->end_date->isPast() ? 'Selesai' : 'Aktif')<tr data-reference-row data-reference-kind="project" data-reference-search-text="{{ strtolower($project->name.' '.$projectStatus.' '.($project->clients->first()?->name ?? '')) }}"><td class="fw-semibold">{{ $project->name }}</td><td><span class="badge text-bg-light">{{ $projectStatus }}</span></td><td>{{ $project->clients->first()?->name ?: '—' }}</td><td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary" data-reference-choice data-reference-kind="project" data-reference-value="{{ $project->id }}" data-reference-name="{{ $project->name }}" data-reference-status="{{ $projectStatus }}" data-reference-classification="Project" data-reference-stage="{{ $projectStatus }}" data-reference-closing="" data-reference-client="{{ $project->clients->first()?->name ?: '—' }}" data-reference-contact="—">Pilih</button></td></tr>@empty<tr><td colspan="4" class="text-center text-secondary py-3">Tidak ada project yang dapat dipilih.</td></tr>@endforelse
-</tbody></table></div></div></div><div class="col-md-7"><div class="input-group"><span class="input-group-text">⌕</span><input type="search" class="form-control" placeholder="Cari nama project atau client..." data-reference-search="project"></div></div></div>@error('project_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror<div class="form-text">Project mengikuti akses data perusahaan dan membership project user.</div></div>
+</tbody></table></div></div></div><div class="col-md-7"><div class="input-group"><span class="input-group-text">⌕</span><input type="search" class="form-control" placeholder="Cari nama project atau client..." data-reference-search="project"></div></div></div>@error('project_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror<div class="form-text">Project lintas perusahaan tersedia untuk pengajuan lembur.</div></div>
 <div id="overtime-opportunity-field" class="mb-3" @if($referenceType !== 'opportunity' || $overtimeType !== 'external_project') hidden @endif>
 <input type="hidden" id="overtime-opportunity" name="opportunity_id" value="{{ old('opportunity_id', $overtimeRequest->opportunity_id) }}" @disabled($referenceType !== 'opportunity' || $overtimeType !== 'external_project')>
 <div class="row g-2 align-items-start"><div class="col-md-5"><div class="dropdown w-100" data-reference-picker="opportunity"><button type="button" class="form-select text-start d-flex justify-content-between align-items-center" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"><span data-reference-label>{{ old('opportunity_id', $overtimeRequest->opportunity_id) ? 'Opportunity terpilih' : 'Pilih opportunity' }}</span><span class="small text-secondary">▾</span></button><div class="dropdown-menu p-2" style="min-width: min(940px, calc(100vw - 3rem)); max-height: 360px; overflow-y: auto;"><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Opportunity</th><th>Status</th><th>Client</th><th>Kontak</th><th class="text-end">Pilih</th></tr></thead><tbody>
 @forelse($opportunities as $opportunity) @php($opportunityStatus = app(\App\Modules\HRIS\Application\Services\OvertimeWorkReferenceService::class)->statusParts($opportunity)) @php($opportunityStatusLabel = $opportunityStatus['classification'].' · Stage: '.$opportunityStatus['stage'].' · Closing: '.$opportunityStatus['closing']) @php($classificationBadge = match ($opportunityStatus['classification']) { 'Sales' => 'text-bg-success', 'Dibatalkan' => 'text-bg-danger', 'Lost' => 'text-bg-warning text-dark', 'Diabaikan' => 'text-bg-secondary', default => 'text-bg-primary' })<tr data-reference-row data-reference-kind="opportunity" data-reference-search-text="{{ strtolower($opportunity->name.' '.$opportunityStatusLabel.' '.($opportunity->account?->name ?? '').' '.($opportunity->contact?->name ?? '').' '.($opportunity->email ?? '')) }}"><td class="fw-semibold">{{ $opportunity->name }}</td><td class="text-nowrap"><span class="badge rounded-pill {{ $classificationBadge }}">{{ $opportunityStatus['classification'] }}</span> <span class="badge rounded-pill text-bg-light">Stage: {{ $opportunityStatus['stage'] }}</span> <span class="badge rounded-pill text-bg-secondary">Closing: {{ $opportunityStatus['closing'] }}</span></td><td>{{ $opportunity->account?->name ?: '—' }}</td><td>{{ $opportunity->contact?->name ?: ($opportunity->email ?: '—') }}</td><td class="text-end"><button type="button" class="btn btn-sm btn-outline-primary" data-reference-choice data-reference-kind="opportunity" data-reference-value="{{ $opportunity->id }}" data-reference-name="{{ $opportunity->name }}" data-reference-status="{{ $opportunityStatusLabel }}" data-reference-classification="{{ $opportunityStatus['classification'] }}" data-reference-stage="{{ $opportunityStatus['stage'] }}" data-reference-closing="{{ $opportunityStatus['closing'] }}" data-reference-client="{{ $opportunity->account?->name ?: '—' }}" data-reference-contact="{{ $opportunity->contact?->name ?: ($opportunity->email ?: '—') }}">Pilih</button></td></tr>@empty<tr><td colspan="5" class="text-center text-secondary py-3">Tidak ada opportunity yang dapat dipilih.</td></tr>@endforelse
-</tbody></table></div></div></div><div class="col-md-7"><div class="input-group"><span class="input-group-text">⌕</span><input type="search" class="form-control" placeholder="Cari opportunity, status, client, atau kontak..." data-reference-search="opportunity"></div></div></div>@error('opportunity_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror<div class="form-text">Opportunity prospek maupun sales dapat dipilih sebagai referensi pekerjaan.</div></div>
+</tbody></table></div></div></div><div class="col-md-7"><div class="input-group"><span class="input-group-text">⌕</span><input type="search" class="form-control" placeholder="Cari opportunity, status, client, atau kontak..." data-reference-search="opportunity"></div></div></div>@error('opportunity_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror<div class="form-text">Opportunity lintas perusahaan tersedia untuk pengajuan lembur.</div></div>
 <div id="overtime-reference-summary" class="alert alert-primary-subtle border-primary-subtle mb-3" hidden><div class="small text-secondary mb-1">Referensi terpilih</div><div class="fw-semibold mb-2" data-reference-summary-name>—</div><div class="d-flex flex-wrap gap-1 mb-2" data-reference-summary-badges></div><div class="small" data-reference-summary-client>Client: —</div><div class="small" data-reference-summary-contact>Kontak: —</div></div>
 </div>
 <div class="workspace-floating-field"><input id="overtime-location" name="work_location" value="{{ old('work_location', $overtimeRequest->work_location) }}" class="form-control" maxlength="150" placeholder="Contoh: Kantor A22 atau lokasi proyek"><label for="overtime-location" class="form-label">Lokasi kerja</label></div>
 </section>
 <section class="workspace-form-section"><h2 class="h6 mb-3">Informasi karyawan</h2><div class="border rounded-3 bg-light-subtle p-3"><div class="row g-3"><div class="col-sm-6"><small class="text-secondary d-block">Nama</small><strong>{{ $employee->full_name }}</strong></div><div class="col-sm-6"><small class="text-secondary d-block">NIP</small><strong>{{ $employee->employee_number }}</strong></div><div class="col-sm-6"><small class="text-secondary d-block">Jabatan</small><strong>{{ $employee->job_title ?: 'Belum diatur' }}</strong></div><div class="col-sm-6"><small class="text-secondary d-block">Perusahaan</small><strong>{{ $employee->company?->name ?: '-' }}</strong></div></div></div><div class="border rounded-3 bg-light-subtle p-3 mt-3"><small class="text-secondary d-block">Atasan</small>@if($employee->manager)<strong>{{ $employee->manager->full_name }}</strong><div class="small text-secondary">Persetujuan akan dikirim ke atasan langsung.</div>@else<div class="text-danger">Atasan langsung belum dikonfigurasi.</div>@endif</div><div class="border rounded-3 bg-light-subtle p-3 mt-3"><small class="text-secondary d-block">HR approver</small>@forelse($hrApprovers as $approver)<strong class="d-block">{{ $approver->user?->name ?: 'Pengguna HR' }}</strong><div class="small text-secondary">Akan memeriksa pengajuan setelah disetujui atasan.</div>@empty<div class="text-danger">Approver HR belum dikonfigurasi untuk perusahaan ini.</div>@endforelse</div></section>
 </div></div></div>
-<div class="card-footer bg-white d-flex justify-content-end gap-2 p-3"><a href="{{ route('workspace.hris.overtime') }}" class="btn btn-outline-secondary">Batal</a>@if(!$isEdit || $isDraft)<button type="submit" name="action" value="draft" class="btn btn-outline-secondary">Simpan draft</button>@endif<button type="submit" name="action" value="submit" class="btn btn-primary">{{ $isDraft ? 'Kirim pengajuan' : ($isEdit ? 'Kirim ulang revisi' : 'Kirim ke Atasan') }}</button></div>
+<div class="card-footer bg-white d-flex justify-content-end gap-2 p-3"><a href="{{ route('workspace.hris.overtime') }}" class="btn btn-outline-secondary btn-sm">Batal</a><button type="submit" name="action" value="draft" class="btn btn-outline-secondary btn-sm">Simpan draft</button><button type="submit" name="action" value="submit" class="btn btn-primary btn-sm">{{ $isDraft ? 'Kirim pengajuan' : ($isEdit ? 'Kirim ulang revisi' : 'Kirim ke Atasan') }}</button></div>
 </form>
+<style>
+.workspace-overtime-type-section > label.form-label{display:block;margin:0 0 .75rem;position:relative;z-index:1;}
+.workspace-overtime-type-section .workspace-claim-scope-grid{gap:8px;margin:0 0 1rem;}
+.workspace-overtime-type-section .workspace-claim-scope-card{gap:8px;min-height:72px;padding:9px 28px 9px 9px;border-radius:10px;}
+.workspace-overtime-type-section .workspace-claim-scope-icon{flex-basis:32px;height:32px;width:32px;border-radius:8px;}
+.workspace-overtime-type-section .workspace-claim-scope-icon svg{height:18px;width:18px;}
+.workspace-overtime-type-section .workspace-claim-scope-copy{gap:2px;}
+.workspace-overtime-type-section .workspace-claim-scope-copy strong{font-size:.78rem;line-height:1.25;}
+.workspace-overtime-type-section .workspace-claim-scope-copy small{font-size:.68rem;line-height:1.3;}
+.workspace-overtime-employee-info > h2{color:#24527b;font-size:.82rem;font-weight:700;margin:0 0 .5rem!important;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle{border-color:#dce8f4!important;border-radius:10px!important;padding:10px 12px!important;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:first-of-type{background:linear-gradient(110deg,#f2f8ff,#f8f7ff)!important;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:not(:first-of-type){position:relative;margin-top:8px!important;padding:9px 12px 9px 42px!important;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:nth-of-type(2){background:#f2f8ff!important;border-color:#d8e9fb!important;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:nth-of-type(3){background:#f7f4ff!important;border-color:#e5ddfb!important;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:not(:first-of-type)::before{align-items:center;border-radius:8px;content:"✓";display:flex;font-size:.78rem;font-weight:700;height:24px;justify-content:center;left:10px;position:absolute;top:10px;width:24px;}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:nth-of-type(2)::before{background:#e1efff;color:#1474c8;content:"↗";}
+.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:nth-of-type(3)::before{background:#ede7ff;color:#7250c9;content:"✓";}
+.workspace-overtime-employee-info small{font-size:.69rem;line-height:1.35;}
+.workspace-overtime-employee-info strong{font-size:.8rem;line-height:1.3;}
+.workspace-overtime-employee-info .text-secondary.small{margin-top:2px;}
+@media(max-width:575.98px){.workspace-overtime-employee-info > .border.rounded-3.bg-light-subtle:first-of-type .row{row-gap:9px!important;}}
+#overtime-form .workspace-form-section{border-bottom:0!important;padding-bottom:0!important;}
+#overtime-form .col-lg-6 > .workspace-form-section:first-child{margin-bottom:.85rem!important;}
+#overtime-form .workspace-form-section .form-text.mb-3{margin-bottom:.5rem!important;}
+</style>
+<script>
+(() => {
+    const form = document.getElementById('overtime-form');
+    if (!form) return;
+
+    const columns = form.querySelector('.card-body > .row')?.children;
+    const left = columns?.[0];
+    const right = columns?.[1];
+    const details = form.querySelector('#overtime-entries')?.closest('section');
+    const requestInfo = form.querySelector('#overtime-request-number')?.closest('section');
+    const typeSection = form.querySelector('input[name="overtime_type"]')?.closest('section');
+    const employeeSection = [...form.querySelectorAll('.workspace-form-section')]
+        .find((section) => section.querySelector('h2')?.textContent.trim() === 'Informasi karyawan');
+
+    if (!left || !right || !details || !requestInfo || !typeSection || !employeeSection) return;
+
+    left.classList.replace('col-lg-6', 'col-lg-5');
+    right.classList.replace('col-lg-6', 'col-lg-7');
+    typeSection.classList.add('workspace-overtime-type-section');
+    left.prepend(typeSection);
+    left.prepend(requestInfo);
+    right.append(details);
+
+    const accordion = document.createElement('div');
+    accordion.className = 'accordion workspace-claim-info-accordion mt-3';
+    accordion.id = 'overtime-information-accordion';
+    accordion.innerHTML = `<div class="accordion-item border rounded-3 overflow-hidden">
+        <h2 class="accordion-header" id="overtime-information-heading">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#overtime-information-content" aria-expanded="false" aria-controls="overtime-information-content">
+                <span class="workspace-claim-info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19v-1.2A4.8 4.8 0 0 1 8.3 13h1.4a4.8 4.8 0 0 1 4.8 4.8V19M16 5.5a3 3 0 0 1 0 5.8M16.5 13.2a4.5 4.5 0 0 1 4 4.5V19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span>Informasi karyawan dan alur persetujuan</span>
+            </button>
+        </h2>
+        <div id="overtime-information-content" class="accordion-collapse collapse" aria-labelledby="overtime-information-heading" data-bs-parent="#overtime-information-accordion"><div class="accordion-body p-3"></div></div>
+    </div>`;
+    accordion.querySelector('.accordion-body').append(employeeSection);
+    employeeSection.classList.add('workspace-overtime-employee-info');
+    typeSection.after(accordion);
+
+    const choiceRow = typeSection.querySelector('input[name="overtime_type"]')?.closest('.row');
+    choiceRow?.classList.add('workspace-claim-scope-grid');
+    choiceRow?.querySelectorAll(':scope > .col-sm-6').forEach((column) => {
+        column.style.display = 'contents';
+    });
+    choiceRow?.querySelectorAll('label').forEach((card) => {
+        const input = card.querySelector('input[name="overtime_type"]');
+        const title = card.querySelector('strong');
+        const description = card.querySelector('span');
+        if (!input || !title || !description) return;
+
+        card.className = `workspace-claim-scope-card ${input.value === 'internal' ? 'is-internal' : 'is-external'}`;
+        const icon = document.createElement('span');
+        icon.className = 'workspace-claim-scope-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = input.value === 'internal'
+            ? '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 10.5 12 4l8.5 6.5v9a.5.5 0 0 1-.5.5h-16a.5.5 0 0 1-.5-.5v-9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 20v-6h6v6M7.5 10h.01M16.5 10h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none"><path d="M3.5 20V6.5A1.5 1.5 0 0 1 5 5h5l2 2h7A1.5 1.5 0 0 1 20.5 8.5V20" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3.5 11h17M8 15h3M8 18h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
+        const copy = document.createElement('span');
+        copy.className = 'workspace-claim-scope-copy';
+        title.textContent = input.value === 'internal' ? 'Operasional internal' : 'External / Project';
+        description.className = '';
+        description.textContent = input.value === 'internal'
+            ? 'Lembur untuk kegiatan internal perusahaan.'
+            : 'Lembur yang terkait project atau pekerjaan eksternal.';
+        const check = document.createElement('span');
+        check.className = 'workspace-claim-scope-check';
+        check.setAttribute('aria-hidden', 'true');
+        check.textContent = '✓';
+        copy.append(title, description);
+        card.replaceChildren(input, icon, copy, check);
+    });
+})();
+</script>
 <template id="overtime-entry-template"><div class="border rounded-3 p-3 mb-3 overtime-entry"><div class="d-flex justify-content-between align-items-center mb-3"><span class="badge rounded-pill bg-primary-subtle text-primary">Rincian baru</span><button type="button" class="btn btn-sm btn-outline-danger remove-overtime-entry">Hapus</button></div><div class="row g-3"><div class="col-md-4"><div class="workspace-floating-field"><input type="date" data-field="work_date" max="{{ now()->format('Y-m-d') }}" class="form-control" required><label class="form-label">Tanggal <span class="text-danger">*</span></label></div></div><div class="col-md-4"><div class="workspace-floating-field"><input type="text" data-field="start_time" class="form-control" placeholder="HH:mm" data-time-picker readonly required><label class="form-label">Mulai <span class="text-danger">*</span></label></div></div><div class="col-md-4"><div class="workspace-floating-field"><input type="text" data-field="end_time" class="form-control" placeholder="HH:mm" data-time-picker readonly required><label class="form-label">Selesai <span class="text-danger">*</span></label></div></div><div class="col-12"><div class="overtime-day-type"><div class="overtime-day-type-label">Jenis hari lembur</div><div class="overtime-day-type-options"><div class="overtime-day-type-option"><input type="radio" data-field="day_type" value="workday" checked><label>Hari Kerja</label></div><div class="overtime-day-type-option"><input type="radio" data-field="day_type" value="holiday"><label>Hari Libur</label></div></div></div></div><div class="col-12"><div class="workspace-floating-field"><textarea data-field="work_description" class="form-control" rows="3" maxlength="2000" required></textarea><label class="form-label">Uraian pekerjaan <span class="text-danger">*</span></label></div></div></div></div></template>
 <script>
 document.addEventListener('DOMContentLoaded', () => {

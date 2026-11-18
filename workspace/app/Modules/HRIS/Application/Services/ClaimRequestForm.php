@@ -58,7 +58,7 @@ class ClaimRequestForm extends FormRequest
             'items.*.activity_date' => ['nullable', 'date'],
             'items.*.expense_category_id' => ['required', 'string', 'size:26', 'exists:hris.expense_categories,id'],
             'items.*.description' => ['required', 'string', 'max:2000'],
-            'items.*.currency' => ['required', 'in:IDR,USD,SGD'],
+            'items.*.currency' => ['required', 'in:IDR'],
             'items.*.amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01'],
             'items.*.attachment_reference' => ['nullable', 'string', 'max:255'],
             'items.*.attachment_token' => ['nullable', 'string', 'size:26', 'regex:/^[0-9A-HJKMNP-TV-Z]{26}$/i'],
@@ -66,7 +66,7 @@ class ClaimRequestForm extends FormRequest
             'category' => ['nullable', 'string', 'max:100'],
             'purpose' => ['nullable', 'string', 'max:2000'],
             'amount' => ['nullable', 'numeric', 'min:0.01'],
-            'currency' => ['nullable', 'in:IDR,USD,SGD'],
+            'currency' => ['nullable', 'in:IDR'],
             'supporting_document_id' => ['nullable', 'string', 'max:255'],
         ];
     }

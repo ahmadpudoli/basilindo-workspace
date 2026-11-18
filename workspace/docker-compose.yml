@@ -38,6 +38,67 @@ services:
     networks:
       - laravel-network
 
+  worker-notifications:
+    build: { context: ., dockerfile: Dockerfile }
+    restart: unless-stopped
+    working_dir: /var/www
+    command: ["php", "artisan", "workspace:queue-work", "notifications"]
+    volumes: ["./:/var/www"]
+    environment: { DB_HOST: db, REDIS_HOST: redis, AWS_ENDPOINT: http://minio:9000 }
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [laravel-network]
+
+  worker-email-notifications:
+    build: { context: ., dockerfile: Dockerfile }
+    restart: unless-stopped
+    working_dir: /var/www
+    command: ["php", "artisan", "workspace:queue-work", "email"]
+    volumes: ["./:/var/www"]
+    environment: { DB_HOST: db, REDIS_HOST: redis }
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [laravel-network]
+
+  worker-documents:
+    build: { context: ., dockerfile: Dockerfile }
+    restart: unless-stopped
+    working_dir: /var/www
+    command: ["php", "artisan", "workspace:queue-work", "documents"]
+    volumes: ["./:/var/www"]
+    environment: { DB_HOST: db, REDIS_HOST: redis, AWS_ENDPOINT: http://minio:9000 }
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    networks: [laravel-network]
+
+  worker-integration:
+    build: { context: ., dockerfile: Dockerfile }
+    restart: unless-stopped
+    working_dir: /var/www
+    command: ["php", "artisan", "workspace:queue-work", "integration"]
+    volumes: ["./:/var/www"]
+    environment: { DB_HOST: db, REDIS_HOST: redis }
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [laravel-network]
+
+  scheduler:
+    build: { context: ., dockerfile: Dockerfile }
+    restart: unless-stopped
+    working_dir: /var/www
+    command: ["php", "artisan", "schedule:work"]
+    volumes: ["./:/var/www"]
+    environment: { DB_HOST: db, REDIS_HOST: redis, AWS_ENDPOINT: http://minio:9000 }
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [laravel-network]
+
   db:
     image: postgres:16-alpine
     container_name: basilindo_workspace_db

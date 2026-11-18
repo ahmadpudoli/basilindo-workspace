@@ -56,6 +56,7 @@ waktu won/closed, dan external reference.
 - Pipeline menampilkan opportunity dalam kolom sesuai urutan stage.
 - Pipeline menampilkan label tipe Prospek atau Opportunity pada setiap card.
 - User berizin dapat memindahkan card antar-stage melalui drag-and-drop.
+- Akses lihat Opportunity mengikuti perusahaan pemilik pada Opportunity; perusahaan Account hanya menjadi fallback jika Opportunity belum memiliki perusahaan pemilik. Daftar dan policy detail harus memakai aturan yang sama.
 - Perubahan stage divalidasi server-side dan dicatat audit.
 - Stage Won dapat ditandai sebagai sumber pembuatan project.
 - Closing status mendukung Open, Closed, Ignored, Lost, dan Cancelled.

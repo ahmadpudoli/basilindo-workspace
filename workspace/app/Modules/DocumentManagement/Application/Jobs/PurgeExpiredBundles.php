@@ -16,7 +16,7 @@ class PurgeExpiredBundles implements ShouldQueue
 
     public function __construct()
     {
-        $this->onQueue('document-cleanup');
+        $this->onQueue((string) config('workers.groups.documents.queues.1', 'document-cleanup'));
     }
 
     public function handle(): void

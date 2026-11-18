@@ -75,9 +75,51 @@ class OvertimeController extends Controller
 
     public function show(Request $request, OvertimeRequest $overtimeRequest): View
     {
-        Gate::authorize('view', $overtimeRequest);
-        $overtimeRequest->load(['employee.company', 'employee.manager', 'employee.organizationUnit', 'entries', 'approvalEvents.actor']);
-        return view('modules.hris-overtime-show', ['item' => $overtimeRequest]);
+        $isSummaryDetail = $request->routeIs('workspace.hris.overtime-summary.show');
+        Gate::authorize($isSummaryDetail ? 'view' : 'viewOwner', $overtimeRequest);
+        $backUrl = route($isSummaryDetail ? 'workspace.hris.overtime-summary' : 'workspace.hris.overtime');
+        if ($isSummaryDetail) {
+            $returnUrl = $request->query('return');
+            $returnPath = is_string($returnUrl) ? parse_url($returnUrl, PHP_URL_PATH) : null;
+            $summaryPath = parse_url(route('workspace.hris.overtime-summary'), PHP_URL_PATH);
+            $returnHost = is_string($returnUrl) ? parse_url($returnUrl, PHP_URL_HOST) : null;
+            $appHost = parse_url($request->root(), PHP_URL_HOST);
+            if (is_string($returnUrl) && $returnPath === $summaryPath && ($returnHost === null || hash_equals((string) $appHost, $returnHost))) {
+                $backUrl = $returnUrl;
+            }
+        }
+        $overtimeRequest->load([
+            'employee.company',
+            'employee.manager',
+            'employee.organizationUnit',
+            'entries',
+            'approvalEvents.actor',
+            'project.company',
+            'project.clients',
+            'opportunity.company',
+            'opportunity.account',
+        ]);
+        $referenceType = $overtimeRequest->work_reference_type
+            ?: ($overtimeRequest->opportunity_id ? 'opportunity' : ($overtimeRequest->project_id ? 'project' : 'none'));
+        $referenceProject = $referenceType === 'project' ? $overtimeRequest->project : null;
+        $referenceOpportunity = $referenceType === 'opportunity' ? $overtimeRequest->opportunity : null;
+        $referenceClientNames = $referenceProject?->clients?->pluck('name')->filter()->unique()->values();
+        $referenceClient = $referenceType === 'project'
+            ? ($referenceClientNames?->isNotEmpty() ? $referenceClientNames->join(', ') : 'Belum ditentukan')
+            : ($referenceOpportunity?->account?->name ?? 'Belum ditentukan');
+        $referenceOwner = $referenceType === 'project'
+            ? ($referenceProject?->company?->name ?? 'Informasi perusahaan tidak tersedia')
+            : ($referenceOpportunity?->company?->name ?? 'Informasi perusahaan tidak tersedia');
+
+        return view('modules.hris-overtime-show', [
+            'item' => $overtimeRequest,
+            'referenceType' => $referenceType,
+            'referenceProject' => $referenceProject,
+            'referenceOpportunity' => $referenceOpportunity,
+            'referenceClient' => $referenceClient,
+            'referenceOwner' => $referenceOwner,
+            'backUrl' => $backUrl,
+        ]);
     }
 
     public function edit(Request $request, OvertimeRequest $overtimeRequest): View
@@ -97,12 +139,15 @@ class OvertimeController extends Controller
         if ($overtimeRequest->status === 'draft') {
             if ($action === 'draft') $service->updateDraft($overtimeRequest, $employee, $data, (int) $request->user()->getKey());
             else $service->submitDraft($overtimeRequest, $employee, $data, (int) $request->user()->getKey());
+        } elseif ($action === 'draft') {
+            $service->saveRevisionDraft($overtimeRequest, $employee, $data, (int) $request->user()->getKey());
         } else {
             $service->resubmit($overtimeRequest, $employee, $data, (int) $request->user()->getKey());
         }
         if ($wasDraft) {
             return redirect()->route('workspace.hris.overtime')->with('status', $action === 'draft' ? 'Draft pengajuan lembur berhasil diperbarui.' : 'Pengajuan lembur berhasil dikirim ke Atasan.');
         }
+        if ($action === 'draft') return redirect()->route('workspace.hris.overtime.show', $overtimeRequest)->with('status', 'Perubahan revisi lembur berhasil disimpan sebagai draft.');
         return redirect()->route('workspace.hris.overtime.show', $overtimeRequest)->with('status', 'Revisi lembur berhasil dikirim ulang.');
     }
 
@@ -117,8 +162,8 @@ class OvertimeController extends Controller
     private function form(Request $request, OvertimeRequest $overtimeRequest, string $requestNumber, ?Employee $employee = null): View
     {
         $employee ??= $overtimeRequest->employee()->with(['company', 'manager', 'organizationUnit'])->firstOrFail();
-        $projects = app(OvertimeProjectService::class)->available($employee, $request->user())->with('clients')->orderBy('name')->get(['id', 'company_id', 'name', 'end_date']);
-        $opportunities = app(OvertimeWorkReferenceService::class)->availableOpportunities($employee, $request->user())->with(['account', 'contact'])->orderBy('name')->get();
+        $projects = app(OvertimeProjectService::class)->available($employee, $request->user(), ignoreCompanyScope: true)->with('clients')->orderBy('name')->get(['id', 'company_id', 'name', 'end_date']);
+        $opportunities = app(OvertimeWorkReferenceService::class)->availableOpportunities($employee, $request->user(), ignoreCompanyScope: true)->with(['account', 'contact'])->orderBy('name')->get();
         $hrApprovers = HrisWorkflowApprover::query()->with('user')->forWorkflow((int) $employee->company_id, 'leave_sick', 'hr')->get();
         return view('modules.hris-overtime-form', compact('employee', 'requestNumber', 'overtimeRequest', 'projects', 'opportunities', 'hrApprovers'));
     }

@@ -30,10 +30,10 @@
         <div class="workspace-leave-detail-stat"><span>Diajukan</span><strong>{{ ($leaveRequest->created_at ?? $leaveRequest->submitted_at)?->format('d/m/Y') }}</strong><small>{{ ($leaveRequest->created_at ?? $leaveRequest->submitted_at)?->format('H:i') }} WIB</small></div>
     </div>
 
-    <div class="row g-4">
+    <div class="row g-3 workspace-leave-detail-panels">
         <div class="col-lg-5">
             <section class="card workspace-leave-detail-card h-100">
-                <div class="card-header"><span class="workspace-detail-icon">▦</span><div><strong>Tanggal pengajuan</strong><small>Daftar tanggal yang dipilih</small></div></div>
+                <div class="card-header"><span class="workspace-detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16M8 13h2m4 0h2m-8 4h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><strong>Tanggal pengajuan</strong><small>Daftar tanggal yang dipilih</small></div></div>
                 <div class="card-body">
                     <div class="workspace-leave-date-list">
                         @forelse ($leaveRequest->dates as $index => $date)
@@ -44,13 +44,32 @@
                     </div>
                     <hr>
                     <div class="workspace-detail-reason"><span>Alasan pengajuan</span><p>{{ $leaveRequest->reason ?: 'Tidak ada alasan.' }}</p></div>
+                    @if ($hasSupportingDocument)
+                        <div class="workspace-leave-supporting-document">
+                            <div class="workspace-leave-supporting-copy"><span class="workspace-detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3.75h7l4 4v12.5H6a2 2 0 0 1-2-2v-12.5a2 2 0 0 1 2-2h1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 4v4h4M8 13h8m-8 3.5h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><strong>Dokumen pendukung</strong><small>Surat pendukung pengajuan tersedia.</small></div></div>
+                            @if ($canPreviewSupportingDocument)
+                                <button type="button" class="btn btn-sm btn-outline-primary workspace-leave-document-action" data-bs-toggle="modal" data-bs-target="#supporting-document-modal"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.7" stroke="currentColor" stroke-width="1.7"/></svg>Lihat dokumen</button>
+                            @else
+                                <a href="{{ route('workspace.hris.leave-requests.supporting-document', $leaveRequest) }}" class="btn btn-sm btn-outline-primary workspace-leave-document-action"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3.5v11m0 0 4-4m-4 4-4-4M5 16v4h14v-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>Unduh dokumen</a>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </section>
         </div>
         <div class="col-lg-7">
-            <section class="card workspace-leave-detail-card h-100">
-                <div class="card-header"><span class="workspace-detail-icon">↗</span><div><strong>Timeline approval</strong><small>Riwayat proses pengajuan</small></div></div>
-                <div class="card-body">
+            @php($timelineId = 'leave-approval-timeline-'.$leaveRequest->getKey())
+            <section class="card workspace-leave-detail-card workspace-leave-timeline-card h-100">
+                <h2 class="card-header p-0 mb-0">
+                    <button class="workspace-leave-timeline-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $timelineId }}" aria-expanded="true" aria-controls="{{ $timelineId }}">
+                        <span class="workspace-detail-icon is-timeline" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l2.5 1.5M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                        <span class="workspace-leave-timeline-title"><strong>Timeline approval</strong><small>Riwayat proses pengajuan</small></span>
+                        <span class="workspace-leave-timeline-count">{{ $leaveRequest->approvalEvents->count() + 1 }} aktivitas</span>
+                        <svg class="workspace-leave-timeline-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </h2>
+                <div class="collapse show" id="{{ $timelineId }}">
+                <div class="card-body workspace-leave-timeline-body">
                     <div class="workspace-detail-timeline">
                         <div class="workspace-detail-timeline-item is-done">
                             <span class="workspace-detail-timeline-dot">✓</span>
@@ -66,22 +85,12 @@
                         @endforelse
                     </div>
                 </div>
+                </div>
             </section>
         </div>
     </div>
 
-    @if ($hasSupportingDocument)
-        <section class="card workspace-leave-detail-card mt-4">
-            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-                <div><strong>Dokumen pendukung</strong><small class="d-block text-secondary">Surat pendukung pengajuan tersedia.</small></div>
-                @if ($canPreviewSupportingDocument)
-                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#supporting-document-modal">Lihat dokumen</button>
-                @else
-                    <a href="{{ route('workspace.hris.leave-requests.supporting-document', $leaveRequest) }}" class="btn btn-outline-primary btn-sm">Unduh dokumen</a>
-                @endif
-            </div>
-        </section>
-        @if ($canPreviewSupportingDocument)
+    @if ($hasSupportingDocument && $canPreviewSupportingDocument)
             <div class="modal fade" id="supporting-document-modal" tabindex="-1" aria-labelledby="supporting-document-title" aria-hidden="true">
                 <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="supporting-document-title">Dokumen pendukung</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">
                     @if ($supportingMimeType === 'application/pdf')
@@ -91,6 +100,5 @@
                     @endif
                 </div></div></div>
             </div>
-        @endif
     @endif
 @endsection

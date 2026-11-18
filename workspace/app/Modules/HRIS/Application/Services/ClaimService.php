@@ -11,7 +11,6 @@ use App\Modules\HRIS\Domain\Models\HrisExpenseCategory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Core\Models\User;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use App\Modules\Core\Application\Services\NumberingService;
@@ -155,15 +154,15 @@ class ClaimService
             $data['opportunity_id'] = null;
         } elseif (($data['work_reference_type'] ?? 'none') === 'project') {
             $user = User::findOrFail($actorId);
-            $project = app(OvertimeProjectService::class)->available($employee, $user)->whereKey($data['project_id'] ?? null)->first();
-            if (! $project) throw ValidationException::withMessages(['project_id' => 'Project tidak berada dalam scope perusahaan karyawan.']);
+            $project = app(OvertimeProjectService::class)->available($employee, $user, ignoreCompanyScope: true)->whereKey($data['project_id'] ?? null)->first();
+            if (! $project) throw ValidationException::withMessages(['project_id' => 'Project tidak tersedia atau Anda tidak memiliki akses untuk melihat project.']);
             $data['reference_name_snapshot'] = $project->name;
             $data['reference_status_snapshot'] = 'Project';
             $data['opportunity_id'] = null;
         } elseif (($data['work_reference_type'] ?? 'none') === 'opportunity') {
             $user = User::findOrFail($actorId);
-            $opportunity = app(OvertimeWorkReferenceService::class)->availableOpportunities($employee, $user)->whereKey($data['opportunity_id'] ?? null)->first();
-            if (! $opportunity || Gate::forUser($user)->denies('view', $opportunity)) throw ValidationException::withMessages(['opportunity_id' => 'Opportunity tidak tersedia atau tidak dapat Anda akses.']);
+            $opportunity = app(OvertimeWorkReferenceService::class)->availableOpportunities($employee, $user, ignoreCompanyScope: true)->whereKey($data['opportunity_id'] ?? null)->first();
+            if (! $opportunity) throw ValidationException::withMessages(['opportunity_id' => 'Opportunity tidak tersedia atau Anda tidak memiliki akses untuk melihat opportunity.']);
             $data['reference_name_snapshot'] = $opportunity->name;
             $data['reference_status_snapshot'] = 'Opportunity';
             $data['project_id'] = null;
@@ -203,7 +202,7 @@ class ClaimService
                 'status' => $revisionDraft ? 'needs_revision' : ($resubmission ? $nextStatus : ($draft ? 'draft' : 'pending_manager')),
                 'submitted_at' => $existingClaim?->submitted_at ?: ($draft ? null : now()),
                 'category' => $items->first()['category'],
-                'purpose' => $data['purpose'] ?? $items->first()['description'],
+                'purpose' => $data['purpose'] ?? null,
                 'amount' => $amount, 'currency' => $currency,
             ]))->save();
             if ($resubmission) {

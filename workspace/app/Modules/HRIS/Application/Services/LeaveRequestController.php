@@ -92,7 +92,7 @@ class LeaveRequestController extends Controller
 
     public function show(Request $request, LeaveRequestModel $leaveRequest): View
     {
-        Gate::authorize('view', $leaveRequest);
+        Gate::authorize('viewOwner', $leaveRequest);
         $leaveRequest->load(['employee.company', 'approvalEvents', 'dates']);
         $detailContext = in_array($request->string('from')->toString(), ['summary', 'leave-requests', 'notification'], true)
             ? $request->string('from')->toString()
@@ -249,11 +249,11 @@ class LeaveRequestController extends Controller
             }
             unset($data['supporting_document']);
             try {
-                $service->saveDraft($employee, $data, (int) $request->user()->getKey());
+                $leaveRequest = $service->saveDraft($employee, $data, (int) $request->user()->getKey());
             } catch (OverlappingLeaveRequest $exception) {
                 return back()->withInput()->withErrors(['dates' => $exception->getMessage()]);
             }
-            return redirect()->route('workspace.hris.leave-requests')->with('status', 'Draft pengajuan cuti/sakit berhasil disimpan.');
+            return redirect()->route('workspace.hris.leave-requests.edit', $leaveRequest)->with('status', 'Draft pengajuan cuti/sakit berhasil disimpan.');
         }
         $data['request_number'] = $request->session()->pull('hris.request_number.leave', null);
         if (! is_string($data['request_number']) || str_starts_with($data['request_number'], 'Nomor dibuat')) unset($data['request_number']);
@@ -285,12 +285,15 @@ class LeaveRequestController extends Controller
             }
             unset($data['supporting_document']);
             try {
-                if ($request->input('action') === 'draft') $service->updateDraft($leaveRequest, $employee, $data, (int) $request->user()->getKey());
+                if ($request->input('action') === 'draft') $leaveRequest = $service->updateDraft($leaveRequest, $employee, $data, (int) $request->user()->getKey());
                 else $service->submitDraft($leaveRequest, $employee, $data, (int) $request->user()->getKey());
             } catch (OverlappingLeaveRequest $exception) {
                 return back()->withInput()->withErrors(['dates' => $exception->getMessage()]);
             }
-            return redirect()->route('workspace.hris.leave-requests')->with('status', $request->input('action') === 'draft' ? 'Draft berhasil diperbarui.' : 'Pengajuan berhasil dikirim.');
+            if ($request->input('action') === 'draft') {
+                return redirect()->route('workspace.hris.leave-requests.edit', $leaveRequest)->with('status', 'Draft berhasil diperbarui.');
+            }
+            return redirect()->route('workspace.hris.leave-requests')->with('status', 'Pengajuan berhasil dikirim.');
         }
         $hasExistingSupportingDocument = filled($leaveRequest->supporting_document_id) && $disk->exists((string) $leaveRequest->supporting_document_id);
         if ($leaveRequest->type === 'sick' && ! $request->hasFile('supporting_document') && ! $hasExistingSupportingDocument) {

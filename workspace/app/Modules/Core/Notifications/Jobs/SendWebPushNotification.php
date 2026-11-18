@@ -24,7 +24,7 @@ class SendWebPushNotification implements ShouldQueue
         public readonly string $message,
         public readonly array $data = [],
     ) {
-        $this->onQueue('notifications');
+        $this->onQueue((string) config('workers.groups.notifications.queues.0', 'notifications'));
     }
 
     public function handle(): void

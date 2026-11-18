@@ -12,16 +12,57 @@ class ClaimPolicy
 
     public function view(User $user, Claim $claim): bool
     {
-        if ((int) $claim->requester_user_id === (int) $user->getKey() || (int) $claim->employee?->user_id === (int) $user->getKey()) {
+        if ($claim->status === 'draft' && (int) $claim->created_by === (int) $user->getKey()) {
             return true;
         }
 
-        if (in_array($claim->status, ['draft', 'needs_revision'], true)) {
-            return (int) $claim->created_by === (int) $user->getKey() || (int) $claim->requester_user_id === (int) $user->getKey() || $user->hasRole('super_admin');
+        return (int) $claim->requester_user_id === (int) $user->getKey()
+            || (int) $claim->employee?->user_id === (int) $user->getKey();
+    }
+
+    public function viewFromSummary(User $user, Claim $claim): bool
+    {
+        if ($claim->status === 'draft') {
+            return false;
+        }
+        if ($user->hasRole('super_admin')) {
+            return true;
         }
 
+        $inCompanyScope = $user->companies()->whereKey($claim->company_id)->exists();
+        if (! $inCompanyScope) {
+            return false;
+        }
+
+        $summaryPermission = $claim->type === 'reimbursement'
+            ? 'view_hris_reimbursement_summary'
+            : 'view_hris_cash_advance_summary';
+
         return $this->viewAny($user)
-            && ($user->hasRole('super_admin') || $user->companies()->whereKey($claim->company_id)->exists());
+            || ($claim->status !== 'draft' && $user->can($summaryPermission));
+    }
+
+    public function print(User $user, Claim $claim): bool
+    {
+        if ($this->view($user, $claim)) {
+            return true;
+        }
+
+        if ($claim->status === 'draft') {
+            return false;
+        }
+
+        if (! $user->companies()->whereKey($claim->company_id)->exists()) {
+            return false;
+        }
+
+        $permission = match ($claim->type) {
+            'reimbursement' => 'print_hris_reimbursement',
+            'cash_advance' => 'print_hris_cash_advance',
+            default => null,
+        };
+
+        return $permission !== null && $user->can($permission);
     }
 
     public function create(User $user): bool

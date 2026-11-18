@@ -22,34 +22,61 @@
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <section class="card border-0 shadow-sm mb-4 {{ $type === 'claim' ? 'approval-claim-card' : '' }}">
-                <div class="card-header d-flex justify-content-between align-items-center">
+            <section class="card border-0 shadow-sm mb-4 {{ $type === 'claim' ? 'approval-claim-card' : '' }} {{ $type === 'leave' ? 'approval-leave-card' : '' }}">
+                <div class="card-header d-flex justify-content-between align-items-center {{ $type === 'leave' ? 'approval-leave-header' : '' }}">
                     <div>
-                        <div class="text-uppercase text-secondary small fw-semibold">Pengajuan {{ $typeLabel }}</div>
-                        <h2 class="h5 mb-0">{{ $model->employee?->full_name ?? '-' }}</h2>
-                        <div class="small text-primary mt-1">Nomor pengajuan: {{ $model->request_number }}</div>
+                        @if($type === 'leave')
+                            <div class="approval-leave-heading">
+                                <span class="approval-leave-type-icon {{ $model->type === 'sick' ? 'is-sick' : 'is-leave' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16M12 12v5m-2.5-2.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+                                <div><div class="approval-leave-kicker">Pengajuan {{ $typeLabel }}</div><h2 class="h5 mb-1">{{ $model->employee?->full_name ?? '-' }}</h2><div class="approval-leave-number">No. {{ $model->request_number }}</div></div>
+                            </div>
+                        @else
+                            <div class="text-uppercase text-secondary small fw-semibold">Pengajuan {{ $typeLabel }}</div>
+                            <h2 class="h5 mb-0">{{ $model->employee?->full_name ?? '-' }}</h2>
+                            <div class="small text-primary mt-1">Nomor pengajuan: {{ $model->request_number }}</div>
+                        @endif
                     </div>
                     <span class="badge rounded-pill {{ in_array($step, ['hr', 'finance', 'final'], true) ? 'text-bg-info' : 'text-bg-warning' }}">Tahap {{ $stage }}</span>
                 </div>
                 <div class="card-body py-3">
+                    @if($type === 'leave')
+                        <div class="approval-leave-overview" aria-label="Ringkasan pengajuan">
+                            <div class="approval-leave-overview-item"><span class="approval-leave-overview-icon is-blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 20c.5-3.3 2.7-5 6.5-5s6 1.7 6.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><small>Pemohon</small><strong>{{ $model->employee?->full_name ?? '-' }}</strong><span>{{ $model->employee?->employee_number ?? 'Nomor karyawan tidak tersedia' }}</span></div></div>
+                            <div class="approval-leave-overview-item"><span class="approval-leave-overview-icon is-violet" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M3.5 20h17M5 20V7l7-3 7 3v13M9 9h1m4 0h1m-6 4h1m4 0h1m-5 7v-4h3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><small>Perusahaan</small><strong>{{ $model->employee?->company?->name ?? '-' }}</strong><span>Unit kerja pemohon</span></div></div>
+                            <div class="approval-leave-overview-item"><span class="approval-leave-overview-icon is-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><small>Diajukan</small><strong>{{ ($model->submitted_at ?? $model->created_at)?->format('d M Y') ?? '-' }}</strong><span>{{ ($model->submitted_at ?? $model->created_at)?->format('H:i') ?? '' }} WIB</span></div></div>
+                            <div class="approval-leave-overview-item"><span class="approval-leave-overview-icon is-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12.5 4.2 4.2L19 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><small>Status saat ini</small><strong>{{ $model->status_label ?? ucfirst(str_replace('_', ' ', $model->status ?? '-')) }}</strong><span>Menunggu tahap {{ $stage }}</span></div></div>
+                        </div>
+                        <section class="approval-leave-dates-panel" aria-labelledby="approval-leave-dates-title">
+                            <div class="approval-leave-section-heading"><span class="approval-leave-section-icon is-blue" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><h3 id="approval-leave-dates-title">Tanggal yang diajukan</h3><p>Periksa tanggal izin yang dimohon sebelum memberi keputusan.</p></div><span class="approval-leave-count">{{ $model->total_days ?? $model->dates->count() }} {{ ($model->total_days ?? $model->dates->count()) == 1 ? 'hari' : 'hari' }}</span></div>
+                            <div class="approval-leave-date-list">@forelse($model->dates as $date)<div class="approval-leave-date-item"><span class="approval-leave-date-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13H4V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 13h2m4 0h2m-8 4h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><strong>{{ $date->leave_date?->format('d/m/Y') ?? '-' }}</strong><span>{{ $date->leave_date?->translatedFormat('l') ?? '' }}</span></div>@empty<div class="text-secondary small">Tanggal pengajuan tidak tersedia.</div>@endforelse</div>
+                        </section>
+                        <section class="approval-leave-reason" aria-label="Alasan pengajuan"><span class="approval-leave-reason-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4.5h14A1.5 1.5 0 0 1 20.5 6v10a1.5 1.5 0 0 1-1.5 1.5h-8L5 21v-3.5H5A1.5 1.5 0 0 1 3.5 16V6A1.5 1.5 0 0 1 5 4.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M7.5 9h9m-9 4h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><small>Alasan pengajuan</small><p>{{ $model->reason ?: 'Pemohon tidak menyertakan keterangan tambahan.' }}</p></div></section>
+                    @endif
+                    @if ($type === 'overtime')
+                        <dl class="approval-overtime-summary mb-0" aria-label="Informasi detail permohonan">
+                            <div><dt>Pemohon</dt><dd>{{ $model->employee?->full_name ?? '-' }}</dd><small>{{ $model->employee?->employee_number ?? '-' }}</small></div>
+                            <div><dt>Nomor pengajuan</dt><dd class="is-primary">{{ $model->request_number }}</dd></div>
+                            <div><dt>Perusahaan</dt><dd>{{ $model->employee?->company?->name ?? '-' }}</dd></div>
+                            <div><dt>Status</dt><dd>{{ ['pending_manager' => 'Menunggu Atasan', 'pending_hr' => 'Menunggu HR', 'needs_revision' => 'Perlu revisi', 'approved' => 'Disetujui HR', 'rejected' => 'Ditolak'][$model->status] ?? ($model->status_label ?? ucfirst(str_replace('_', ' ', $model->status ?? '-'))) }}</dd></div>
+                            <div><dt>Diajukan</dt><dd>{{ ($model->created_at ?? $model->submitted_at)?->format('d/m/Y H:i') ?? '-' }}</dd></div>
+                            <div><dt>Divisi / unit</dt><dd>{{ $model->organization_unit_name ?: '-' }}</dd></div>
+                            <div><dt>Jenis / lokasi</dt><dd>{{ $model->overtime_type === 'external_project' ? 'External / Project' : 'Internal' }} · {{ $model->work_location ?: '-' }}</dd></div>
+                            <div><dt>Total durasi</dt><dd>{{ intdiv($model->duration_minutes, 60) }} jam {{ $model->duration_minutes % 60 }} menit</dd></div>
+                            <div class="is-reason"><dt>Alasan</dt><dd>{{ $model->reason ?: '-' }}</dd></div>
+                        </dl>
+                    @endif
                     <div class="row g-3 {{ $type === 'claim' ? 'approval-claim-fields' : '' }}">
+                        @if($type === 'claim')
                         <div class="col-md-6"><div class="small text-secondary">Pemohon</div><div class="fw-semibold">{{ $model->employee?->full_name ?? '-' }}</div><div class="small text-secondary">{{ $model->employee?->employee_number ?? '-' }}</div></div>
                         <div class="col-md-6"><div class="small text-secondary">Nomor pengajuan</div><div class="fw-semibold text-primary">{{ $model->request_number }}</div></div>
                         <div class="col-md-6"><div class="small text-secondary">Perusahaan</div><div class="fw-semibold">{{ $model->employee?->company?->name ?? '-' }}</div></div>
                         <div class="col-md-6"><div class="small text-secondary">Status</div><div class="fw-semibold">{{ $model->status_label ?? ucfirst(str_replace('_', ' ', $model->status ?? '-')) }}</div></div>
                         <div class="col-md-6"><div class="small text-secondary">Diajukan</div><div class="fw-semibold">{{ ($model->created_at ?? $model->submitted_at)?->format('d/m/Y H:i') ?? '-' }}</div></div>
+                        @endif
 
-                        @if ($type === 'leave')
-                            <div class="col-12"><div class="small text-secondary mb-2">Tanggal pengajuan</div><div class="workspace-leave-date-badges">@foreach ($model->dates as $date)<span class="badge rounded-pill">{{ $date->leave_date?->format('d/m/Y') ?? '-' }}</span>@endforeach</div></div>
-                            <div class="col-md-6"><div class="small text-secondary">Jumlah hari</div><div class="fw-semibold">{{ $model->total_days ?? '-' }} hari</div></div>
-                            <div class="col-12"><div class="small text-secondary">Alasan</div><div class="fw-semibold">{{ $model->reason ?: '-' }}</div></div>
-                        @elseif ($type === 'overtime')
-                            <div class="col-md-6"><div class="small text-secondary">Divisi / unit</div><div class="fw-semibold">{{ $model->organization_unit_name ?: '-' }}</div></div>
-                            <div class="col-md-6"><div class="small text-secondary">Jenis / lokasi</div><div class="fw-semibold">{{ $model->overtime_type === 'external_project' ? 'External / Project' : 'Internal' }} · {{ $model->work_location ?: '-' }}</div></div>
-                            <div class="col-md-6"><div class="small text-secondary">Total durasi</div><div class="fw-semibold">{{ intdiv($model->duration_minutes, 60) }} jam {{ $model->duration_minutes % 60 }} menit</div></div>
-                            <div class="col-12"><div class="small text-secondary">Alasan</div><div class="fw-semibold">{{ $model->reason ?: '-' }}</div></div>
+                        @if ($type === 'overtime')
                             <div class="col-12"><div class="table-responsive"><table class="table table-sm align-middle"><thead><tr><th>Tanggal</th><th>Jenis hari</th><th>Jam</th><th>Durasi</th><th>Pekerjaan</th></tr></thead><tbody>@foreach($model->entries as $entry)<tr><td>{{ $entry->work_date?->format('d/m/Y') }}</td><td><span class="badge {{ $entry->day_type === 'holiday' ? 'text-bg-danger' : 'text-bg-light' }}">{{ $entry->day_type === 'holiday' ? 'Hari Libur' : 'Hari Kerja' }}</span></td><td>{{ substr($entry->start_time,0,5) }}–{{ substr($entry->end_time,0,5) }}</td><td>{{ $entry->duration_minutes }} menit</td><td>{{ $entry->work_description }}</td></tr>@endforeach</tbody></table></div></div>
-                        @else
+                        @elseif ($type === 'claim')
                             <div class="col-12"><section class="approval-claim-purpose"><span>Keperluan</span><strong>{{ $model->purpose ?: 'Tidak ada keterangan keperluan.' }}</strong></section></div>
                             <div class="col-12"><div class="approval-claim-context">
                                 <div class="approval-claim-context-item"><span>Jenis</span><strong>{{ $model->type === 'cash_advance' ? 'Cash advance' : 'Reimbursement' }}</strong></div>
@@ -89,7 +116,7 @@
                             </div>
                         @endif
 
-                        @if ($type !== 'claim')
+                        @if ($type === 'leave')
                         <div class="col-12">
                             <div class="small text-secondary">Dokumen pendukung</div>
                             @if ($hasSupportingDocument)
@@ -107,9 +134,12 @@
                 </div>
             </section>
             @if (in_array($type, ['leave', 'overtime'], true))
-                <section class="card border-0 shadow-sm">
-                    <div class="card-header"><strong>Timeline pengajuan</strong><div class="small text-secondary">Riwayat proses pengajuan.</div></div>
-                    <div class="card-body">
+                @php($historyId = 'approval-timeline-'.$model->getKey())
+                <section class="accordion approval-request-history" id="{{ $historyId }}">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="{{ $historyId }}-heading"><button class="accordion-button collapsed approval-request-history-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $historyId }}-panel" aria-expanded="false" aria-controls="{{ $historyId }}-panel"><span class="approval-request-history-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l2.5 1.5M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="approval-request-history-copy"><strong>Timeline pengajuan</strong><small>{{ $model->approvalEvents->count() + 1 }} aktivitas · Riwayat proses dan keputusan</small></span><span class="approval-request-history-current"><i></i>Menunggu {{ $stage }}</span></button></h2>
+                        <div id="{{ $historyId }}-panel" class="accordion-collapse collapse" aria-labelledby="{{ $historyId }}-heading">
+                    <div class="card-body approval-request-history-body">
                         <div class="workspace-detail-timeline">
                             <div class="workspace-detail-timeline-item is-done"><span class="workspace-detail-timeline-dot">✓</span><div><strong>Pengajuan dibuat</strong><small>{{ ($model->created_at ?? $model->submitted_at)?->format('d/m/Y H:i') }} WIB
                                 @if ($model->reason)
@@ -125,6 +155,8 @@
                             @empty
                                 <div class="text-secondary small">Belum ada aktivitas approval.</div>
                             @endforelse
+                        </div>
+                    </div>
                         </div>
                     </div>
                 </section>
@@ -196,7 +228,7 @@
         </script>
     @endif
 
-    @if ($hasSupportingDocument && $canPreviewSupportingDocument)
+    @if ($type === 'leave' && $hasSupportingDocument && $canPreviewSupportingDocument)
         <div class="modal fade" id="approval-supporting-document-modal" tabindex="-1" aria-labelledby="approval-supporting-document-title" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-centered">
                 <div class="modal-content">

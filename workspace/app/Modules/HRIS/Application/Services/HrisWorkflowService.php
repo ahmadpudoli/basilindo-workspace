@@ -3,6 +3,7 @@
 namespace App\Modules\HRIS\Application\Services;
 
 use App\Modules\Core\Notifications\Jobs\SendWebPushNotification;
+use App\Modules\Core\Notifications\Services\NotificationLinkResolver;
 use App\Modules\HRIS\Domain\Models\ApprovalEvent;
 use App\Modules\HRIS\Domain\Models\Claim;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
@@ -19,6 +20,7 @@ class HrisWorkflowService
     {
         if (! User::query()->whereKey($userId)->exists()) return;
         $data = $this->enrichRequestData($data);
+        $data['url'] = app(NotificationLinkResolver::class)->url($data) ?? url('/dashboard');
         Notification::create(['user_id' => $userId, 'type' => 'hris', 'title' => $title, 'message' => $message, 'data' => $data]);
         SendWebPushNotification::dispatch($userId, $title, $message, $data);
     }
@@ -128,6 +130,13 @@ class HrisWorkflowService
         $data['request_number'] ??= $request->request_number;
         $data['requester_name'] ??= $request->employee?->full_name;
         $data['request_label'] ??= $this->requestLabel($requestType, $request);
+        $data['email_category'] ??= match ($requestType) {
+            'leave' => 'leave_sick',
+            'overtime' => 'overtime',
+            'claim' => $request->type === 'cash_advance' ? 'cash_advance' : 'reimbursement',
+            default => 'other',
+        };
+        if ($requestType === 'claim') $data['claim_type'] ??= $request->type;
 
         return $data;
     }

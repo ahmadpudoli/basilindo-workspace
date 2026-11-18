@@ -689,6 +689,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (file && (!/\.(pdf|jpe?g|png)$/i.test(file.name) || file.size > 10 * 1024 * 1024)) addError('supporting_document', 'Dokumen harus PDF/JPG/PNG dan maksimal 10 MB.', field('supporting_document'));
         }
         if (errors.length) {
+            const claimItem = errors[0].target.closest?.('#claim-items .claim-item');
+            if (claimItem) {
+                claimItem.dataset.collapsed = 'false';
+                claimItem.querySelector('[data-claim-item-body]')?.removeAttribute('hidden');
+                claimItem.querySelector('[data-claim-item-summary]')?.setAttribute('hidden', '');
+                const toggle = claimItem.querySelector('[data-claim-item-toggle]');
+                if (toggle) {
+                    toggle.setAttribute('aria-expanded', 'true');
+                    const toggleLabel = toggle.querySelector('[data-claim-toggle-label]');
+                    if (toggleLabel) toggleLabel.textContent = `Sembunyikan ${claimItem.querySelector('[data-claim-item-title]')?.textContent || 'rincian'}`;
+                }
+            }
             errors[0].target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             errors[0].target.focus({ preventScroll: true });
             return false;
@@ -792,7 +804,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('click', (event) => {
         const link = event.target.closest('a[href]');
-        if (!link || event.defaultPrevented || link.dataset.workspaceNoLoading || link.target === '_blank' || link.dataset.workspacePreview || link.closest('.dropdown-menu') || link.getAttribute('href')?.startsWith('#')) return;
+        if (!link || event.defaultPrevented) return;
+        const isFileDownload = link.hasAttribute('download')
+            || link.closest('.workspace-supporting-document-actions')
+            || new URL(link.href).searchParams.get('download') === '1';
+        if (isFileDownload || link.dataset.workspaceNoLoading || link.target === '_blank' || link.dataset.workspacePreview || link.closest('.dropdown-menu') || link.getAttribute('href')?.startsWith('#')) return;
         if (link.origin === window.location.origin) showLoading('Memuat halaman...');
     });
 

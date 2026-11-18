@@ -14,6 +14,8 @@ use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Events\JobQueued;
 use App\Modules\Core\Domain\Models\QueueJobLog;
+use App\Modules\Core\Notifications\Services\EmailNotificationDispatcher;
+use App\Modules\ProjectManagement\Domain\Models\Notification;
 use Core\Models\Role;
 use Core\Models\Project;
 use Core\Models\User;
@@ -69,6 +71,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+        Notification::created(function (Notification $notification): void {
+            app(EmailNotificationDispatcher::class)->dispatch($notification);
+        });
         Event::listen(JobQueued::class, function (JobQueued $event): void {
             $jobName = is_object($event->job) ? $event->job::class : (string) ($event->job ?: 'Queued job');
             QueueJobLog::create(['job_id' => $event->id, 'connection_name' => $event->connectionName, 'queue_name' => $event->queue, 'job_name' => $jobName, 'status' => 'queued', 'queued_at' => now()]);
@@ -87,7 +92,11 @@ class AppServiceProvider extends ServiceProvider
         });
         Event::listen(JobFailed::class, function (JobFailed $event): void {
             $log = QueueJobLog::query()->where('job_id', $event->job->getJobId())->latest()->first();
-            $log?->update(['status' => 'failed', 'finished_at' => now(), 'attempts' => $event->job->attempts(), 'error_message' => substr($event->exception->getMessage(), 0, 2000)]);
+            $jobMaxAttempts = $event->job->maxTries();
+            $maxAttempts = $jobMaxAttempts === 0
+                ? null
+                : ($jobMaxAttempts ?? (int) config('workers.max_attempts', 3));
+            $log?->update(['status' => 'failed', 'finished_at' => now(), 'attempts' => $event->job->attempts(), 'max_attempts' => $maxAttempts, 'failed_job_uuid' => $event->job->uuid(), 'error_message' => substr($event->exception->getMessage(), 0, 2000)]);
         });
         Livewire::component('document-metadata-fields', DocumentMetadataFields::class);
         Gate::policy(Role::class, RolePolicy::class);

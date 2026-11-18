@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class OvertimeProjectService
 {
-    public function available(Employee $employee, User $user): Builder
+    public function available(Employee $employee, User $user, bool $ignoreCompanyScope = false): Builder
     {
         $query = Project::query();
 
@@ -20,6 +20,10 @@ class OvertimeProjectService
 
         if (! $user->can('view_project')) {
             return $query->whereRaw('1 = 0');
+        }
+
+        if ($ignoreCompanyScope) {
+            return $query;
         }
 
         return $query
@@ -34,7 +38,7 @@ class OvertimeProjectService
         }
 
         $user = User::findOrFail($actorId);
-        $project = $this->available($employee, $user)->whereKey($data['project_id'])->first();
+        $project = $this->available($employee, $user, ignoreCompanyScope: true)->whereKey($data['project_id'])->first();
 
         if (! $project) {
             throw ValidationException::withMessages(['project_id' => 'Project tidak tersedia atau tidak dapat Anda akses.']);

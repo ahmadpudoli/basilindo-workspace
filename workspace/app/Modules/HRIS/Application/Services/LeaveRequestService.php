@@ -46,16 +46,26 @@ class LeaveRequestService
 
     public function updateDraft(LeaveRequest $request, Employee $employee, array $data, int $actorId): LeaveRequest
     {
-        $dates = collect($data['dates'] ?? [])
-            ->filter(fn ($date): bool => filled($date))
-            ->map(fn (string $date): string => CarbonImmutable::parse($date)->toDateString())
-            ->unique()
-            ->sort()
-            ->values();
-        $this->validateDraftDates($employee, $dates->all(), $request->getKey());
-        $request->dates()->delete();
-        $request->delete();
-        return $this->saveDraft($employee, $data, $actorId);
+        return DB::connection('hris')->transaction(function () use ($request, $employee, $data): LeaveRequest {
+            $dates = collect($data['dates'] ?? [])
+                ->filter(fn ($date): bool => filled($date))
+                ->map(fn (string $date): string => CarbonImmutable::parse($date)->toDateString())
+                ->unique()
+                ->sort()
+                ->values();
+            $this->validateDraftDates($employee, $dates->all(), $request->getKey());
+
+            $request->update([
+                'type' => $data['type'] ?? $request->type,
+                'total_days' => $dates->count(),
+                'reason' => $data['reason'] ?? null,
+                'supporting_document_id' => $data['supporting_document_id'] ?? $request->supporting_document_id,
+            ]);
+            $request->dates()->delete();
+            $request->dates()->createMany($dates->map(fn (string $date): array => ['leave_date' => $date])->all());
+
+            return $request->refresh();
+        });
     }
 
     public function submitDraft(LeaveRequest $request, Employee $employee, array $data, int $actorId): LeaveRequest
@@ -169,6 +179,8 @@ class LeaveRequestService
                 'revision_requested_at' => null,
             ]))->save();
             ApprovalEvent::create(['request_type' => 'leave', 'request_id' => $request->getKey(), 'step' => 'requester', 'action' => 'resubmitted', 'actor_id' => $actorId, 'comment' => 'Pengajuan hasil revisi dikirim ulang.', 'created_at' => now('UTC')]);
+            $label = $request->type === 'sick' ? 'Pengajuan sakit' : 'Pengajuan cuti';
+            app(HrisWorkflowService::class)->notify($actorId, 'Revisi '.$label.' ['.$request->request_number.'] terkirim', 'Revisi pengajuan Anda dengan nomor '.$request->request_number.' berhasil dikirim untuk pemeriksaan ulang.', ['request_type' => 'leave', 'request_id' => $request->id, 'status' => $request->status, 'action' => 'resubmitted']);
             if ($nextStatus === 'pending_manager' && $employee->manager?->user_id) app(HrisWorkflowService::class)->notify($employee->manager->user_id, 'Persetujuan Atasan diperlukan: pengajuan cuti/sakit hasil revisi', 'Pengajuan hasil revisi menunggu verifikasi ulang oleh Atasan.', ['request_type' => 'leave', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'manager']);
             if ($nextStatus === 'pending_hr') foreach (HrisWorkflowApprover::approverIds((int) $employee->company_id, 'leave_sick', 'hr') as $approverId) app(HrisWorkflowService::class)->notify($approverId, 'Pemeriksaan HR diperlukan: pengajuan cuti/sakit hasil revisi', 'Pengajuan administrasi hasil revisi menunggu pemeriksaan HR.', ['request_type' => 'leave', 'request_id' => $request->id, 'action' => 'pending_approval', 'approval' => true, 'step' => 'hr']);
             return $request;

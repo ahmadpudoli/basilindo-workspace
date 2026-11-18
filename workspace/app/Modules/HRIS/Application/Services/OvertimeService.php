@@ -38,12 +38,18 @@ class OvertimeService
         return $this->persist($employee, $request, $data, $actorId, true, false);
     }
 
-    private function persist(Employee $employee, OvertimeRequest $request, array $data, int $actorId, bool $resubmission, bool $draft): OvertimeRequest
+    public function saveRevisionDraft(OvertimeRequest $request, Employee $employee, array $data, int $actorId): OvertimeRequest
     {
-        return DB::connection('hris')->transaction(function () use ($employee, $request, $data, $actorId, $resubmission, $draft): OvertimeRequest {
+        if ($request->status !== 'needs_revision' || (string) $request->employee_id !== (string) $employee->getKey()) throw ValidationException::withMessages(['request' => 'Pengajuan tidak dapat disimpan sebagai draft revisi.']);
+        return $this->persist($employee, $request, $data, $actorId, false, false, true);
+    }
+
+    private function persist(Employee $employee, OvertimeRequest $request, array $data, int $actorId, bool $resubmission, bool $draft, bool $revisionDraft = false): OvertimeRequest
+    {
+        return DB::connection('hris')->transaction(function () use ($employee, $request, $data, $actorId, $resubmission, $draft, $revisionDraft): OvertimeRequest {
             $reference = app(OvertimeWorkReferenceService::class)->resolve($employee, $data, $actorId);
             $employee->loadMissing(['manager', 'organizationUnit']);
-            if (! $draft && ! $employee->manager?->user_id) throw ValidationException::withMessages(['employee_id' => 'Atasan langsung karyawan harus memiliki akun Workspace sebelum pengajuan dikirim.']);
+            if (! $draft && ! $revisionDraft && ! $employee->manager?->user_id) throw ValidationException::withMessages(['employee_id' => 'Atasan langsung karyawan harus memiliki akun Workspace sebelum pengajuan dikirim.']);
             $entries = $data['entries'] ?? [[
                 'work_date' => $data['work_date'], 'start_time' => $data['start_time'], 'end_time' => $data['end_time'],
                 'day_type' => 'workday',
@@ -68,7 +74,7 @@ class OvertimeService
             $revisionRequestedRole = $request->revision_requested_role;
             $revisionType = $request->revision_type;
             $returnsToHr = $resubmission && $revisionType === 'administrative' && $revisionRequestedRole === 'hr';
-            $status = $draft ? 'draft' : ($returnsToHr ? 'pending_hr' : 'pending_manager');
+            $status = $draft ? 'draft' : ($revisionDraft ? 'needs_revision' : ($returnsToHr ? 'pending_hr' : 'pending_manager'));
             $requestNumber = $draft
                 ? null
                 : (($request->status === 'draft' || blank($request->request_number))
@@ -83,13 +89,16 @@ class OvertimeService
                 'work_location' => $data['work_location'] ?? null, 'organization_unit_name' => $employee->organizationUnit?->name,
                 'job_title_snapshot' => $employee->job_title, 'created_by' => $request->created_by ?: $actorId,
                 'requester_user_id' => $request->requester_user_id ?: $actorId, 'status' => $status,
-                'revision_requested_by' => null, 'revision_requested_role' => null, 'revision_type' => null,
-                'revision_reason' => null, 'revision_requested_at' => null,
+                'revision_requested_by' => $revisionDraft ? $request->revision_requested_by : null,
+                'revision_requested_role' => $revisionDraft ? $request->revision_requested_role : null,
+                'revision_type' => $revisionDraft ? $request->revision_type : null,
+                'revision_reason' => $revisionDraft ? $request->revision_reason : null,
+                'revision_requested_at' => $revisionDraft ? $request->revision_requested_at : null,
             ])->save();
             $request->entries()->delete();
             foreach ($normalized as $entry) $request->entries()->create($entry);
             if ($resubmission) \App\Modules\HRIS\Domain\Models\ApprovalEvent::create(['request_type' => 'overtime', 'request_id' => $request->getKey(), 'step' => 'employee', 'action' => 'resubmit', 'actor_id' => $actorId, 'comment' => null, 'created_at' => now('UTC')]);
-            if ($draft) return $request;
+            if ($draft || $revisionDraft) return $request;
             $workflow = app(HrisWorkflowService::class);
             $workflow->notify($actorId, $resubmission ? 'Revisi pengajuan lembur ['.$request->request_number.'] terkirim' : 'Pengajuan lembur ['.$request->request_number.'] terkirim', $resubmission ? 'Revisi pengajuan lembur nomor '.$request->request_number.' berhasil dikirim untuk pemeriksaan ulang.' : 'Pengajuan lembur nomor '.$request->request_number.' berhasil dikirim.', ['request_type' => 'overtime', 'request_id' => $request->id, 'status' => $request->status, 'action' => $resubmission ? 'resubmit' : 'submit']);
             if ($returnsToHr && $revisionRequestedBy > 0) {

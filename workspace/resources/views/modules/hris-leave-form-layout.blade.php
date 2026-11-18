@@ -21,7 +21,7 @@
     @error('dates')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     <div class="invalid-feedback d-block" data-date-error hidden></div>
     <div class="form-text">Tanggal dapat diisi mundur. Hari libur tidak dapat dipilih. Untuk cuti, jumlah tanggal tidak boleh melebihi sisa kuota.</div>
-    @if($collectiveHolidays->isNotEmpty())<div class="alert alert-warning mt-3 mb-0"><strong>Cuti bersama {{ $year }}</strong><ul class="mb-0 mt-1">@foreach($collectiveHolidays as $holiday)<li>{{ $holiday->holiday_date->format('d/m/Y') }} — {{ $holiday->name }}</li>@endforeach</ul><small class="d-block mt-1">Total {{ $collectiveHolidays->count() }} hari telah mengurangi kuota cuti tahunan.</small></div>@endif
+    @if($collectiveHolidays->isNotEmpty())<div class="accordion workspace-leave-holidays mt-3" id="leave-holidays-{{ $year }}"><div class="accordion-item"><h3 class="accordion-header" id="leave-holidays-heading-{{ $year }}"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#leave-holidays-panel-{{ $year }}" aria-expanded="false" aria-controls="leave-holidays-panel-{{ $year }}"><span><strong>Cuti bersama {{ $year }}</strong><small>{{ $collectiveHolidays->count() }} hari mengurangi kuota cuti tahunan</small></span></button></h3><div id="leave-holidays-panel-{{ $year }}" class="accordion-collapse collapse" aria-labelledby="leave-holidays-heading-{{ $year }}" data-bs-parent="#leave-holidays-{{ $year }}"><div class="accordion-body"><ul>@foreach($collectiveHolidays as $holiday)<li>{{ $holiday->holiday_date->format('d/m/Y') }} — {{ $holiday->name }}</li>@endforeach</ul><small>Total {{ $collectiveHolidays->count() }} hari telah mengurangi kuota cuti tahunan.</small></div></div></div></div>@endif
 </section>
 <section class="workspace-leave-section workspace-leave-reason-section"><div class="workspace-leave-section-heading"><h2>Alasan <span class="text-danger">*</span></h2></div><textarea name="reason" class="form-control" rows="4" maxlength="2000" placeholder="Tuliskan alasan pengajuan..." aria-describedby="reason-error">{{ old('reason', ($isDraft || $isRevision) ? $leaveRequest->reason : null) }}</textarea><div class="invalid-feedback d-block" id="reason-error" data-reason-error hidden></div></section>
 </div>
@@ -35,12 +35,43 @@
 <div class="workspace-leave-actions d-flex justify-content-end gap-2"><a href="{{ route('workspace.hris.leave-requests') }}" class="btn btn-light btn-sm">Batal</a><button class="btn btn-outline-secondary btn-sm" type="submit" name="action" value="draft">Simpan draft</button><button class="btn btn-primary btn-sm" type="submit" name="action" value="submit" @disabled(!$hasHrApprover)>Kirim pengajuan</button></div>
 </form>
 @if(($isDraft || $isRevision) && ($hasSupportingDocument ?? false) && ($canPreviewSupportingDocument ?? false))
-<div class="modal fade" id="leave-draft-supporting-document-modal" tabindex="-1" aria-labelledby="leave-draft-supporting-document-title" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="leave-draft-supporting-document-title">Preview dokumen pendukung</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">@if($supportingMimeType === 'application/pdf')<iframe src="{{ route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>@else@include('modules.partials.image-zoom-viewer', ['src' => route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]), 'title' => 'Dokumen pendukung'])@endif</div></div></div></div>
+<div class="modal fade" id="leave-draft-supporting-document-modal" tabindex="-1" aria-labelledby="leave-draft-supporting-document-title" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="leave-draft-supporting-document-title">Preview dokumen pendukung</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button></div><div class="modal-body p-0" style="min-height:70vh">@if($supportingMimeType === 'application/pdf')<iframe src="{{ route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]) }}" title="Dokumen pendukung" style="width:100%;height:70vh;border:0"></iframe>@else
+@include('modules.partials.image-zoom-viewer', ['src' => route('workspace.hris.leave-requests.supporting-document', [$leaveRequest, 'preview' => 1]), 'title' => 'Dokumen pendukung'])
+@endif</div></div></div></div>
 @endif
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('[data-leave-form]');
     if (!form) return;
+    const [leftColumn, rightColumn] = form.querySelectorAll('.workspace-leave-column');
+    const numberSection = form.querySelector('#leave-request-number')?.closest('.workspace-form-section');
+    const typeSection = form.querySelector('.workspace-leave-type-section');
+    const documentSection = form.querySelector('.workspace-leave-document-section');
+    const datePanel = form.querySelector('.workspace-date-panel');
+    const reasonSection = form.querySelector('.workspace-leave-reason-section');
+    const employeeSection = form.querySelector('.workspace-leave-employee-section');
+    const managerSection = form.querySelector('.workspace-leave-manager-section');
+    const hrSection = form.querySelector('.workspace-leave-hr-section');
+
+    if (leftColumn && rightColumn && numberSection && typeSection && documentSection && datePanel && reasonSection && employeeSection && managerSection && hrSection) {
+        const accordion = document.createElement('div');
+        accordion.className = 'accordion workspace-claim-info-accordion workspace-leave-info-accordion mt-3';
+        accordion.id = 'leave-request-information';
+        accordion.innerHTML = `<div class="accordion-item border rounded-3 overflow-hidden">
+            <h2 class="accordion-header" id="leave-request-information-heading">
+                <button class="accordion-button fw-semibold collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#leave-request-information-panel" aria-expanded="false" aria-controls="leave-request-information-panel">
+                    <span class="workspace-claim-info-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19v-1.2A4.8 4.8 0 0 1 8.3 13h1.4a4.8 4.8 0 0 1 4.8 4.8V19M16 5.5a3 3 0 0 1 0 5.8M16.5 13.2a4.5 4.5 0 0 1 4 4.5V19" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span>Informasi karyawan dan alur persetujuan</span>
+                </button>
+            </h2>
+            <div id="leave-request-information-panel" class="accordion-collapse collapse" aria-labelledby="leave-request-information-heading" data-bs-parent="#leave-request-information"><div class="accordion-body p-3"></div></div>
+        </div>`;
+        const accordionBody = accordion.querySelector('.accordion-body');
+        accordionBody.append(employeeSection, managerSection, hrSection);
+        leftColumn.append(typeSection, documentSection, accordion);
+        rightColumn.append(datePanel, reasonSection);
+    }
+
     const list = form.querySelector('[data-date-list]');
     const addButton = form.querySelector('[data-add-leave-date]');
     const typeInputs = [...form.querySelectorAll('[data-leave-type]')];

@@ -104,7 +104,10 @@
                     ['label' => 'Sinkronisasi Odoo', 'url' => route('workspace.core.integration'), 'permission' => 'view_integration'],
                     ['label' => 'Mapping Perusahaan', 'url' => route('workspace.core.integration.company-mapping'), 'permission' => 'manage_integration'],
                 ]]] : []),
-                ...(auth()->user()?->can('view_queue_jobs') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Queue & Job', 'url' => route('workspace.core.queue-jobs'), 'permission' => 'view_queue_jobs']] : []),
+                ...((auth()->user()?->hasAnyPermission(['view_queue_jobs', 'view_email_queue']) || auth()->user()?->hasRole('super_admin')) ? [['label' => 'Queue & Job', 'icon' => 'settings', 'items' => [
+                    ...(auth()->user()?->can('view_queue_jobs') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Log eksekusi job', 'url' => route('workspace.core.queue-jobs'), 'permission' => 'view_queue_jobs']] : []),
+                    ...(auth()->user()?->can('view_email_queue') || auth()->user()?->hasRole('super_admin') ? [['label' => 'Antrean email', 'url' => route('workspace.core.email-queue'), 'permission' => 'view_email_queue']] : []),
+                ]]] : []),
                 ...(auth()->user()?->hasAnyPermission(['view_hris_settings', 'create_hris_settings', 'update_hris_settings', 'delete_hris_settings', 'view_hris_workflow', 'create_hris_workflow', 'update_hris_workflow', 'delete_hris_workflow', 'view_hris_expense_categories', 'create_hris_expense_categories', 'update_hris_expense_categories', 'delete_hris_expense_categories']) || auth()->user()?->hasRole('super_admin') ? [['label' => 'Pengaturan HRIS', 'url' => route('workspace.settings.hris'), 'items' => [
                     ...(auth()->user()?->hasAnyPermission(['view_hris_settings', 'create_hris_settings', 'update_hris_settings', 'delete_hris_settings']) || auth()->user()?->hasRole('super_admin') ? [
                         ['label' => 'Parameter HRIS', 'url' => route('workspace.settings.hris'), 'permission' => 'view_hris_settings'],
@@ -246,6 +249,7 @@
                         <ul class="dropdown-menu dropdown-menu-end workspace-account-menu">
                             <li><h6 class="dropdown-header">Akun aktif</h6></li>
                             <li><span class="dropdown-item-text small text-secondary">{{ auth()->user()?->email }}</span></li>
+                            <li><a class="dropdown-item" href="{{ route('workspace.account.settings', ['section' => 'summary']) }}">Pengaturan Akun</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item text-danger" type="submit">Keluar</button></form></li>
                         </ul>
@@ -270,8 +274,8 @@
                         @php
                             $currentPath = parse_url(request()->url(), PHP_URL_PATH);
                             $navigationPath = $currentPath;
-                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.show', 'workspace.hris.claims.payment', 'workspace.hris.claims.payment.start', 'workspace.hris.claims.payment.store', 'workspace.hris.claims.complete')) {
-                                $navigationPath = request('view') === 'summary'
+                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.show', 'workspace.hris.claims.summary.show', 'workspace.hris.claims.payment', 'workspace.hris.claims.payment.start', 'workspace.hris.claims.payment.store', 'workspace.hris.claims.complete')) {
+                                $navigationPath = request()->routeIs('workspace.hris.claims.summary.show') || request('view') === 'summary'
                                     ? (request('type') === 'cash_advance' ? 'hris-claims-summary-cash-advance' : 'hris-claims-summary-reimbursement')
                                     : 'hris-claims-list';
                             }
@@ -301,7 +305,7 @@
 
             <main class="workspace-main @if(!empty($wide)) workspace-main-wide @endif">
                 <div class="workspace-content">
-                    @if (session('status'))
+                    @if (session('status') && !request()->routeIs('workspace.account.settings', 'workspace.hris.claims.create', 'workspace.hris.claims.edit'))
                         <div class="alert alert-success workspace-alert" role="alert">{{ session('status') }}</div>
                     @endif
                     @if (session('error'))

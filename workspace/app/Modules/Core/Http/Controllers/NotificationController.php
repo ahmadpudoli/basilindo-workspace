@@ -7,6 +7,7 @@ use App\Modules\HRIS\Domain\Models\Claim;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
 use App\Modules\HRIS\Domain\Models\OvertimeRequest;
 use App\Modules\ProjectManagement\Domain\Models\Notification;
+use App\Modules\Core\Notifications\Services\NotificationLinkResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -45,7 +46,7 @@ class NotificationController extends Controller
         abort_unless((int) $notification->user_id === (int) $request->user()->getKey(), 403);
         $notification = $this->hydrateHrisIdentity($notification);
         $notification->markAsRead();
-        $targetUrl = $this->targetUrl($notification);
+        $targetUrl = app(NotificationLinkResolver::class)->url($notification->data ?? []);
 
         if ((($notification->data['approval'] ?? false) === true || ($notification->data['action'] ?? null) === 'pending_approval') && $targetUrl) {
             return redirect()->to($targetUrl);
@@ -65,66 +66,42 @@ class NotificationController extends Controller
         return back()->with('status', 'Semua notifikasi telah ditandai sudah dibaca.');
     }
 
+    public function emailPreferences(Request $request): RedirectResponse
+    {
+        return redirect()->route('workspace.account.settings', ['section' => 'notifications']);
+    }
+
+    public function updateEmailPreferences(Request $request): RedirectResponse
+    {
+        $categories = array_keys(config('notifications.email.preference_categories', []));
+        $rules = [
+            'email_notification_preferences' => ['required', 'array:'.implode(',', $categories)],
+        ];
+        foreach ($categories as $category) {
+            $rules['email_notification_preferences.'.$category] = ['required', 'boolean'];
+        }
+
+        $data = $request->validate($rules);
+        $preferences = [];
+        foreach ($categories as $category) {
+            $preferences[$category] = (bool) $data['email_notification_preferences'][$category];
+        }
+
+        $request->user()->forceFill([
+            'email_notification_preferences' => $preferences,
+        ])->save();
+
+        return redirect()->route('workspace.account.settings', ['section' => 'notifications'])->with('status', 'Preferensi email notifikasi berhasil diperbarui.');
+    }
+
     public function targetUrl(Notification $notification): ?string
     {
-        $data = $notification->data ?? [];
-        $requestType = $data['request_type'] ?? null;
-        $requestId = $data['request_id'] ?? null;
-
-        $isApprovalNotification = ($data['approval'] ?? false) === true || ($data['action'] ?? null) === 'pending_approval';
-        if ($isApprovalNotification && filled($requestType) && filled($requestId)) {
-            $step = $data['step'] ?? 'manager';
-            $request = match ($requestType) {
-                'leave' => LeaveRequest::query()->find($requestId),
-                'overtime' => OvertimeRequest::query()->find($requestId),
-                'claim' => Claim::query()->find($requestId),
-                default => null,
-            };
-            $expectedStatus = match ($step) {
-                'manager' => 'pending_manager',
-                'finance' => 'pending_finance',
-                'final' => 'pending_final',
-                default => 'pending_hr',
-            };
-            if ($request && $request->status === $expectedStatus) return route('workspace.hris.approval-detail', [$requestType, $requestId, $step]);
-
-            return route('workspace.hris.approvals');
-        }
-        if ($requestType === 'leave' && filled($requestId)) return route('workspace.hris.leave-requests.show', $requestId);
-        if ($requestType === 'overtime') return route('workspace.hris.overtime');
-        if ($requestType === 'claim') return route('workspace.hris.claims');
-        if (filled($data['document_id'] ?? null)) return route('documents.preview', $data['document_id']);
-
-        return null;
+        return app(NotificationLinkResolver::class)->url($notification->data ?? []);
     }
 
     private function targetLabel(Notification $notification): string
     {
-        if (($notification->data['approval'] ?? false) === true || ($notification->data['action'] ?? null) === 'pending_approval') {
-            $requestType = $notification->data['request_type'] ?? null;
-            $requestId = $notification->data['request_id'] ?? null;
-            $step = $notification->data['step'] ?? 'manager';
-            $request = match ($requestType) {
-                'leave' => filled($requestId) ? LeaveRequest::query()->find($requestId) : null,
-                'overtime' => filled($requestId) ? OvertimeRequest::query()->find($requestId) : null,
-                'claim' => filled($requestId) ? Claim::query()->find($requestId) : null,
-                default => null,
-            };
-            $expectedStatus = match ($step) {
-                'manager' => 'pending_manager',
-                'finance' => 'pending_finance',
-                'final' => 'pending_final',
-                default => 'pending_hr',
-            };
-            return $request?->status === $expectedStatus ? 'Buka detail persetujuan' : 'Buka daftar persetujuan';
-        }
-
-        return match ($notification->data['request_type'] ?? null) {
-            'leave' => 'Buka detail pengajuan cuti/sakit',
-            'overtime' => 'Buka daftar lembur',
-            'claim' => 'Buka daftar claim',
-            default => filled($notification->data['document_id'] ?? null) ? 'Buka dokumen terkait' : 'Buka terkait',
-        };
+        return app(NotificationLinkResolver::class)->label($notification->data ?? []);
     }
 
     private function hydrateHrisIdentity(Notification $notification): Notification

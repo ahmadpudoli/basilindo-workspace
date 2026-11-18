@@ -21,6 +21,7 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Sakit tidak memiliki kuota; sistem hanya mencatat jumlah hari dan riwayatnya.
 - Pengajuan cuti/sakit dapat menggunakan tanggal lampau (backdate), sesuai
   kebijakan yang dikonfigurasi.
+- Halaman detail `/workspace/hris/leave-requests/{id}` dan revisi pengajuan hanya dapat diakses pemilik/pemohon yang terkait dengan pengajuan (`requester_user_id`, `created_by`, atau akun karyawan pemilik); akses approver tetap melalui halaman detail approval khusus.
 - Pengajuan aktif tidak boleh overlap dengan pengajuan aktif lain milik karyawan
   yang sama. Satu tanggal yang beririsan sudah cukup untuk menolak pengajuan.
 - Pengajuan ditolak, dibatalkan, kadaluarsa, atau draft tidak memblokir tanggal.
@@ -67,15 +68,54 @@ audit, dan layout aplikasi yang sudah tersedia.
   tersembunyi; field visual Pemohon tidak ditampilkan pada form.
 - External / Project menampilkan dropdown Project opsional dengan floating label;
   Internal menyembunyikan dan menonaktifkan dropdown serta menyimpan project kosong.
-- Pilihan project dibatasi perusahaan pemohon dan akses lihat project (permission
-  `view_project` serta membership, atau super admin). Server menolak project di
-  luar scope atau tidak ada. Pilihan disimpan pada pengajuan dan tersedia saat revisi.
-- Acceptance criteria: external tanpa project tetap dapat dikirim, project valid
-  tersimpan, project lintas perusahaan/tanpa akses ditolak, dan pergantian ke internal
-  mengosongkan relasi. Kolom nullable incremental menjaga semua pengajuan lama.
+- Pada form pengajuan/revisi lembur, pilihan Project dan Opportunity memuat data
+  lintas perusahaan tanpa membatasi company scope atau membership. Permission lihat
+  modul (`view_project` atau `view_crm_opportunity`) tetap diwajibkan.
+- Validasi client-side lembur hanya memastikan tipe dan ID referensi terpilih valid
+  secara format; validasi server memastikan record ada dan permission lihat terkait
+  dimiliki, tanpa menolak karena company scope. Aturan ini hanya berlaku pada
+  pengajuan/revisi lembur.
+- Acceptance criteria: external tanpa referensi tetap dapat dikirim; referensi lintas
+  perusahaan tersimpan jika permission terkait dimiliki; referensi tidak ada atau
+  permission tidak dimiliki ditolak; pergantian ke internal mengosongkan relasi.
+  Kolom nullable incremental menjaga semua pengajuan lama.
 - Form menggunakan identitas karyawan dari akun pengguna yang sedang login; pemohon tidak memilih karyawan lain.
 - Alasan umum tidak wajib diisi terpisah karena uraian pekerjaan dicatat pada setiap rincian lembur.
 - Nomor pengajuan berasal dari master penomoran Core per perusahaan dan jenis form, dengan token `[no_urut]`, `[tahun]`, `[bulan]`, `[bulan_romawi]`, `[hari]` serta periode counter tahunan, bulanan, harian, atau global.
+- Isi kolom nomor pengajuan pada tabel Cuti & Sakit memakai gaya elemen kode yang sama dengan tabel Lembur.
+- Kolom nomor pengajuan pada Ringkasan Lembur Karyawan memakai gaya elemen kode yang sama dengan kolom nomor di daftar Lembur.
+- Kolom nomor pengajuan pada Ringkasan Cuti Karyawan memakai warna, font monospace, dan ukuran teks yang sama dengan kolom nomor pengajuan pada daftar Cuti & Sakit.
+- Form rincian lembur memberi ruang cukup untuk tombol Hari Kerja/Hari Libur di dalam panel; field waktu dibuat lebih ringkas pada layout desktop dan seluruh elemen tetap responsif.
+- Halaman detail lembur mempertahankan posisi panel, memberi identitas visual berwarna lembut pada informasi, ringkasan, dan rincian; riwayat workflow memakai accordion berikon yang terbuka secara default dan tetap aksesibel melalui keyboard.
+- Informasi pengajuan detail lembur memakai grid datar dengan pemisah tipis dan ikon kecil; setiap field tidak dibungkus kartu terpisah.
+- Panel Informasi pengajuan detail lembur menampilkan nama karyawan, NIP, dan perusahaan tempat karyawan terdaftar, disertai divisi/unit, jabatan saat pengajuan, serta jenis/lokasi kerja dalam grid compact yang responsif.
+- Header panel Informasi pengajuan, Ringkasan, dan Rincian realisasi dibuat compact; judul Rincian realisasi dan badge jumlah rincian tetap dalam satu baris.
+- Referensi pekerjaan pada detail lembur harus menyebutkan jenis referensi secara jelas dan menampilkan nama yang mudah dibaca. Untuk Project, tampilkan Client dan perusahaan internal pemilik Project; Opportunity menampilkan Client dan perusahaan internal terkait. Informasi referensi dimuat secara eager agar tidak menambah query per relasi.
+- Badge jenis referensi (Project, Opportunity, atau Internal / tanpa referensi) berada di sisi kanan header accordion Referensi pekerjaan. Accordion ini tertutup secara default dan dapat dibuka pengguna.
+- Metadata di dalam accordion Referensi pekerjaan tidak memakai garis horizontal atau ruang atas berlebih sebelum daftar Client, pemilik perusahaan, dan status referensi.
+- Pada layar mobile, jarak vertikal antara panel Referensi pekerjaan, Riwayat workflow, dan Rincian realisasi harus compact; gutter kolom tidak boleh menimbulkan ruang kosong berlebihan.
+- Pada detail lembur, Informasi pengajuan dan Ringkasan berada di bagian atas area utama. Referensi pekerjaan berbentuk accordion berada di bawah keduanya dan selebar area utama; Riwayat workflow menjadi sidebar kanan yang dimulai sejajar dengan Ringkasan dan membentang di samping referensi serta rincian realisasi. Pada layar sempit, konten utama dan sidebar bertumpuk.
+- Jarak vertikal antara baris Informasi pengajuan/Ringkasan dan accordion Referensi pekerjaan pada desktop harus rapat (maksimal 8 px selain border); jarak horizontal sidebar tetap mengikuti gutter 16 px.
+- Halaman approval lembur tidak menampilkan bagian atau modal Dokumen pendukung. Informasi permohonan disajikan sebagai grid dua kolom yang compact, dengan hierarki label/nilai, separator halus, dan alasan selebar baris; field tidak dibuat sebagai kartu individual. Grid harus menumpuk dengan rapi pada layar kecil dan tabel rincian tetap berada di bawah informasi.
+- Ringkasan informasi approval lembur memiliki jarak bawah yang tampak sebelum tabel rincian, serta label status berbahasa Indonesia yang konsisten dengan detail lembur (Menunggu Atasan, Menunggu HR, Perlu revisi, Disetujui HR, Ditolak).
+- Detail lembur memakai resource Blade yang sama pada route Pengajuan Lembur dan Ringkasan Lembur. Route Pengajuan Lembur memeriksa owner scope (`requester_user_id`, `created_by`, atau user pemilik Employee), setara dengan detail dari menu Pengajuan Cuti; route Ringkasan Lembur memakai permission `view_overtime` dan scope perusahaan. Navigasi aktif serta tombol Kembali pada route ringkasan tetap mengikuti halaman pemanggil.
+- Form pengajuan lembur menempatkan jenis lembur dan accordion informasi karyawan/alur approval pada kolom kiri, serta rincian lembur pada kolom kanan. Pilihan jenis lembur menggunakan kartu compact berikon yang konsisten dengan form reimbursement.
+- Form create/edit cuti/sakit menempatkan nomor pengajuan, jenis pengajuan, dokumen pendukung, serta accordion informasi karyawan/alur persetujuan pada kolom kiri. Panel kuota/tanggal dan field alasan berada di kolom kanan. Accordion informasi karyawan dan approver tertutup secara default dan mengikuti pola form lembur; kartu pilihan jenis dibuat compact, separator dekoratif yang tidak perlu dihilangkan, dan pada layar kecil kolom ditumpuk dengan urutan yang sama.
+- Baris tanggal pada form cuti/sakit menyelaraskan tinggi nomor urut, input tanggal, dan tombol hapus.
+- Pesan validasi tanggal ditampilkan di bawah field tanpa mengubah posisi vertikal field, badge nomor, atau tombol hapus.
+- Halaman daftar Cuti & Sakit tidak menampilkan panel terpisah untuk draft; penyimpanan draft baru maupun perubahan draft mengarahkan pengguna ke halaman edit draft.
+- Perubahan draft cuti/sakit mempertahankan ID record draft sehingga tautan edit tetap valid setelah penyimpanan.
+- Panel detail cuti/sakit tidak menampilkan garis horizontal antara daftar tanggal dan alasan pengajuan.
+- Label Alasan pengajuan pada detail cuti/sakit ditampilkan tebal untuk membedakannya dari isi alasan.
+- Ringkasan cuti bersama pada form cuti/sakit dapat dibuka/tutup dan default tertutup; judul panel tetap menampilkan jumlah hari yang mengurangi kuota.
+- Pada kolom kiri, panel nomor pengajuan harus berada paling atas sebelum pilihan jenis lembur.
+- Label Jenis lembur harus memiliki jarak yang jelas dari kartu pilihan; kartu pilihan dibuat ringkas tanpa mengurangi keterbacaan.
+- Isi accordion informasi karyawan dan alur persetujuan pada form lembur harus compact, memakai aksen warna lembut untuk membedakan ringkasan karyawan, atasan, dan HR approver, serta tetap terbaca pada layar kecil.
+- Form create/edit lembur tidak memakai garis bawah pada tiap section; jarak setelah informasi nomor pengajuan dan setelah section jenis/lokasi dirapatkan agar tidak menyisakan ruang kosong berlebih.
+- Form create/edit lembur selalu menyediakan aksi Simpan draft. Pada pengajuan berstatus `needs_revision`, aksi ini menyimpan perubahan sambil mempertahankan status, alasan, dan metadata permintaan revisi; Kirim ulang revisi tetap menjadi aksi terpisah.
+- Tombol aksi footer form lembur (Batal, Simpan draft, dan Kirim) menggunakan ukuran small agar proporsional terhadap form.
+- Tombol Ajukan Lembur pada halaman daftar memakai ikon tambah yang mudah dikenali, gaya modern, dan state hover/focus yang terlihat.
+- Urutan kolom tabel Cuti & Sakit menempatkan Nomor pengajuan sebelum Karyawan, dengan layout tabel native.
 
 - Pemohon memilih karyawan yang dapat diakses, jenis lembur internal atau
   external/project, lokasi kerja, alasan umum, serta satu atau lebih rincian.
@@ -138,6 +178,9 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Setiap permintaan revisi dan pengiriman ulang disimpan sebagai approval event
 - Setiap pengajuan cuti/sakit, lembur, reimbursement, dan cash advance memiliki nomor pengajuan unik otomatis yang tampil pada form, daftar, detail, dan notifikasi.
 - Tautan notifikasi approval hanya membuka detail aksi saat status masih menunggu tahap tersebut; notifikasi lama setelah keputusan mengarah ke daftar approval dan tidak menghasilkan 404.
+- Notifikasi aplikasi, Web Push, dan email untuk pengajuan menyertakan tujuan langsung ke detail pengajuan; notifikasi yang meminta tindakan approval membuka detail approval pada tahap yang sesuai.
+- Detail approval cuti/sakit mempertahankan posisi panel informasi, tindakan, dan timeline; panel informasi menyajikan identitas pemohon, status/tahap, tanggal, durasi, dan alasan dengan hierarki visual yang mudah dibaca dan compact, tanpa memecah setiap informasi menjadi kartu terpisah.
+- Timeline pada detail approval cuti/sakit dan lembur disajikan sebagai accordion yang aksesibel, dengan ikon/status berwarna untuk pengajuan dibuat, persetujuan, penolakan, dan revisi.
   beserta aktor, waktu, jenis revisi, dan alasan.
 - Status dan tanggal pengajuan disimpan untuk kebutuhan timeline approval.
 - Halaman daftar menyediakan filter personal berdasarkan jenis, status, dan
@@ -158,6 +201,11 @@ audit, dan layout aplikasi yang sudah tersedia.
 - Detail cuti/sakit menyediakan preview dialog untuk PDF/gambar dan unduhan untuk
   jenis file lain melalui private storage dengan authorization policy pemohon atau
   scope HRIS yang sesuai.
+- Mengunduh dokumen pendukung tidak menampilkan overlay pemuatan halaman karena
+  unduhan tidak mengganti halaman yang sedang dibuka.
+- Preview gambar pada form edit draft/revisi dan detail pengajuan merender partial
+  viewer gambar melalui directive Blade terpisah dari kondisi PDF; source Blade
+  tidak boleh tampil sebagai teks di dalam dialog.
 - Daftar approval HRIS menggunakan dialog preview untuk dokumen PDF/gambar;
   jenis file lain tetap tersedia sebagai unduhan.
 - Detail approval HRIS menggunakan dialog preview untuk dokumen pendukung PDF/gambar;
