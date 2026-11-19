@@ -3,6 +3,20 @@
 @section('content')
 <style>
 .workspace-leave-request-table tbody td.workspace-leave-request-number{color:var(--bs-code-color);font-family:var(--bs-font-monospace);font-size:.875em;overflow-wrap:anywhere;}
+.workspace-leave-quota.workspace-overtime-summary-panel{background:linear-gradient(108deg,#e9f3ff 0%,#f8fbff 32%,#fff 53%,#f5f7ff 76%,#eeeaff 100%);border:1px solid #dfe8f5;border-radius:18px;box-shadow:0 8px 24px rgba(42,91,145,.09);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;overflow:hidden;padding:6px;position:relative}
+.workspace-leave-quota.workspace-overtime-summary-panel::before{background:linear-gradient(100deg,#328fe0 0%,#67bde0 48%,#a18be4 100%);content:"";height:3px;inset:0 0 auto;opacity:.84;position:absolute}
+.workspace-leave-quota.workspace-overtime-summary-panel::after{background:radial-gradient(circle at 100% 0%,rgba(172,151,237,.22) 0 54px,transparent 56px),radial-gradient(circle at 100% 0%,transparent 0 72px,rgba(116,155,226,.16) 73px 74px,transparent 75px 94px,rgba(116,155,226,.11) 95px 111px,transparent 112px),radial-gradient(ellipse at 5% 100%,rgba(75,164,220,.08),transparent 38%);content:"";inset:0;pointer-events:none;position:absolute}
+.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card{background:transparent;border:0;border-radius:0;box-shadow:none;color:inherit;display:flex;flex-direction:column;gap:2px;justify-content:center;min-height:60px;padding:5px 14px;position:relative;text-align:left;transition:background-color .18s ease;z-index:1}
+.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card+.workspace-overtime-summary-card{border-left:1px solid #e3e9f1}
+.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card:hover,.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card:focus-visible{background:rgba(255,255,255,.55);border-color:#e3e9f1;outline:0}
+.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card::after{display:none}
+.workspace-leave-quota.workspace-overtime-summary-panel .workspace-overtime-summary-card span{color:#617087;font-size:.74rem;font-weight:600;letter-spacing:.01em}
+.workspace-leave-quota.workspace-overtime-summary-panel .workspace-overtime-summary-card strong{color:#1c2d46;font-size:1.25rem;letter-spacing:-.025em;line-height:1.15}
+@media(max-width:991.98px){.workspace-leave-quota.workspace-overtime-summary-panel{grid-template-columns:repeat(3,minmax(0,1fr))}.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card:nth-child(4){border-left:0}}
+@media(max-width:767.98px){.workspace-mobile-panel.is-open .workspace-leave-quota.workspace-overtime-summary-panel{display:grid}}
+@media(max-width:768px){.workspace-leave-summary-panel:not(.is-open) .workspace-leave-quota.workspace-overtime-summary-panel{display:none}.workspace-leave-summary-panel.is-open .workspace-leave-quota.workspace-overtime-summary-panel{display:grid}}
+@media(max-width:768px){.workspace-leave-summary-panel{background:transparent;border:0;border-radius:0;overflow:visible}.workspace-leave-summary-panel>.workspace-mobile-panel-toggle{background:transparent;padding:10px 6px}.workspace-leave-summary-panel.is-open .workspace-leave-quota.workspace-overtime-summary-panel{border:1px solid #dfe8f5;border-radius:18px;margin-top:6px!important}}
+@media(max-width:575.98px){.workspace-leave-quota.workspace-overtime-summary-panel{grid-template-columns:repeat(2,minmax(0,1fr));padding:5px}.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card{min-height:58px;padding:6px 9px}.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card:nth-child(odd){border-left:0!important}.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card:nth-child(n+3){border-top:1px solid rgba(105,130,164,.25)}.workspace-leave-quota.workspace-overtime-summary-panel>.workspace-overtime-summary-card:last-child{grid-column:span 2;border-left:0!important}.workspace-leave-quota.workspace-overtime-summary-panel .workspace-leave-kpi-divider-left::before{border-left:1px solid rgba(89,119,158,.5);content:"";inset:0 auto 0 0;pointer-events:none;position:absolute;z-index:3}.workspace-leave-quota.workspace-overtime-summary-panel::after{opacity:.55}.workspace-leave-quota.workspace-overtime-summary-panel .workspace-overtime-summary-card strong{font-size:1.2rem}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,14 +39,14 @@ document.addEventListener('DOMContentLoaded', () => {
     @if($canCreate && ! $summaryView)<a href="{{ route('workspace.hris.leave-requests.create') }}" class="btn leave-request-create-button"><span class="leave-request-create-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><span>Ajukan cuti/sakit</span></a>@endif
 </div>
 
-<section class="workspace-mobile-panel mb-3" data-mobile-panel>
-<button type="button" class="workspace-mobile-panel-toggle" data-mobile-toggle aria-expanded="false">Ringkasan cuti & sakit <span data-mobile-toggle-icon>+</span></button>
-<div class="workspace-leave-quota workspace-mobile-panel-content" data-quota-panel>
-    <button type="button" class="workspace-leave-kpi" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="quota"><span>Kuota cuti {{ $metricYear }}</span><strong>{{ $quota }} hari</strong></button>
-    <button type="button" class="workspace-leave-kpi" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="collective"><span>Cuti bersama</span><strong>{{ $collectiveDays }} hari</strong></button>
-    <button type="button" class="workspace-leave-kpi" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="used"><span>Cuti terpakai</span><strong>{{ $usedLeave }} hari</strong></button>
-    <button type="button" class="workspace-leave-kpi" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="remaining"><span>Sisa cuti</span><strong>{{ $remainingLeave }} hari</strong></button>
-    <button type="button" class="workspace-leave-kpi" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="sick"><span>Sakit tercatat</span><strong>{{ $sickDays }} hari</strong></button>
+<section class="workspace-mobile-panel workspace-leave-summary-panel is-open mb-3" data-mobile-panel>
+<button type="button" class="workspace-mobile-panel-toggle" data-mobile-toggle aria-expanded="true">Ringkasan cuti & sakit <span data-mobile-toggle-icon>−</span></button>
+<div class="workspace-leave-quota workspace-overtime-summary-panel workspace-mobile-panel-content" data-quota-panel>
+    <button type="button" class="workspace-leave-kpi workspace-overtime-summary-card" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="quota"><span>Kuota cuti {{ $metricYear }}</span><strong>{{ $quota }} hari</strong></button>
+    <button type="button" class="workspace-leave-kpi workspace-overtime-summary-card workspace-leave-kpi-divider-left" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="collective"><span>Cuti bersama</span><strong>{{ $collectiveDays }} hari</strong></button>
+    <button type="button" class="workspace-leave-kpi workspace-overtime-summary-card" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="used"><span>Cuti terpakai</span><strong>{{ $usedLeave }} hari</strong></button>
+    <button type="button" class="workspace-leave-kpi workspace-overtime-summary-card workspace-leave-kpi-divider-left" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="remaining"><span>Sisa cuti</span><strong>{{ $remainingLeave }} hari</strong></button>
+    <button type="button" class="workspace-leave-kpi workspace-overtime-summary-card" data-bs-toggle="modal" data-bs-target="#leave-kpi-modal" data-kpi="sick"><span>Sakit tercatat</span><strong>{{ $sickDays }} hari</strong></button>
 </div>
 </section>
 

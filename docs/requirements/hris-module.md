@@ -182,6 +182,11 @@ audit, dan layout aplikasi yang sudah tersedia.
 - KPI cuti/sakit menampilkan jumlah pengajuan pada tahun aktif, hari cuti dan
   sakit yang berstatus disetujui, serta sisa kuota cuti setelah pengurangan
   cuti bersama sesuai aturan perusahaan.
+- Panel KPI daftar cuti/sakit memakai satu wadah gradasi biru–putih–pastel
+  dengan metrik datar, pemisah yang jelas di mobile, tanpa kartu bersarang;
+  setiap metrik tetap membuka rincian. Panel mobile terbuka secara default dan
+  dapat diciutkan melalui kontrol yang state aksesibelnya diperbarui. Tinggi
+  panel dan padding metrik dijaga compact pada desktop maupun mobile.
 - KPI lembur menampilkan jumlah pengajuan dengan rincian tanggal kerja pada
   bulan berjalan, jumlah pengajuan yang disetujui, dan durasi approved dari
   rincian lembur pada bulan tersebut.

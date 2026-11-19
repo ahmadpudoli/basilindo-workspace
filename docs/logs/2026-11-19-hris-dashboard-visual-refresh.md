@@ -63,3 +63,40 @@ Tanggal: 2026-11-19
 ## Risiko tersisa
 
 - Verifikasi visual langsung di browser belum dilakukan.
+# Penyempurnaan KPI daftar lembur
+
+- Menghilangkan tampilan kartu berbingkai di dalam panel ringkasan lembur.
+- Lima metrik kini tampil sebagai satu baris ringkasan datar dengan pemisah tipis; warna hanya menjadi aksen pada nilai status.
+- Tata letak tablet dan mobile tetap responsif dengan jarak yang lebih ringkas.
+- Panel luar memakai gradasi diagonal biru–teal–ungu dan aksen cahaya tipis, mengikuti karakter kartu Dashboard tanpa menambah kartu di dalamnya.
+- Pada layar mobile, pemisah horizontal ditambahkan untuk setiap baris metrik agar susunan dua kolom lebih mudah dipindai; ornamen lingkaran dibuat lebih lembut.
+- Memulihkan garis vertikal pada kolom kanan baris kedua mobile yang sebelumnya tertimpa aturan breakpoint tablet.
+- Menyamakan panel KPI halaman Cuti & Sakit dengan pola satu kartu gradasi biru–putih–pastel pada halaman Lembur; aksi buka rincian per metrik dan perilaku collapse mobile tetap dipertahankan.
+- Memperkuat pemisah kolom kanan pada seluruh baris KPI mobile agar garis “Cuti bersama / Sisa cuti” tetap terlihat.
+- Memastikan panel KPI benar-benar tersembunyi saat collapse; aturan grid KPI sebelumnya mengalahkan `display:none` pada panel mobile. Pemisah kolom kini memakai inset divider agar tidak tertimpa border lain.
+- Panel KPI cuti/sakit disetel terbuka secara default pada mobile dengan `aria-expanded` dan ikon minus yang sesuai; tombol tetap dapat menutup panel.
+- Garis kolom kanan KPI mobile ditandai eksplisit pada metrik kanan agar tampil pada kedua baris.
+- Metrik terakhir “Sakit tercatat” membentang dua kolom di mobile agar garis pemisah terakhir selebar panel, mengikuti susunan ringkasan lembur.
+- Garis vertikal pemisah KPI mobile diperpanjang penuh dari batas atas ke batas bawah setiap baris agar terhubung visual dengan divider horizontal.
+- Panel KPI lembur kini memakai kontrol collapse yang sama dengan ringkasan cuti pada mobile, terbuka secara default; skrip pemindah panel kini memindahkan wrapper beserta tombolnya agar kontrol tetap berfungsi.
+- Tab Reimbursement daftar pribadi mendapat panel KPI satu kartu bergaya lembur. Agregat jumlah, status, dan nominal disusun dari query daftar sebelum pagination sehingga mengikuti filter aktif dan scope pemohon.
+- Mengurangi padding dan tinggi minimum KPI reimbursement, serta menata ulang rasio kolom filter pada desktop lebar dan menambah ruang atas agar label floating tidak terpotong.
+- Atas umpan balik tampilan, KPI reimbursement di mobile kini collapsed secara default. Filter desktop lebar mendapat gutter terkontrol, kolom tanpa overflow, serta ruang label yang lebih lega.
+- Mengurangi min-height serta padding panel dan metrik KPI lembur dan cuti agar mengambil ruang vertikal lebih sedikit pada desktop dan mobile.
+- Mempertegas container filter reimbursement dengan latar putih kebiruan, border inset, radius, dan bayangan yang terlihat; jarak dari KPI serta ruang label ditambah.
+- Menambahkan field kata kunci pada filter daftar claim untuk mencari nama karyawan atau nomor pengajuan; pencarian diterapkan pada hasil sesuai filter dan scope pemohon, serta query tetap terbawa oleh pagination. Tab reimbursement dipertahankan saat Reset.
+- Mengatur ulang grid filter desktop lebar untuk menyediakan ruang bagi field pencarian tanpa memotong kontrol.
+- Menempatkan field Nama / nomor sebagai filter pertama dan memperlebar kolom Periode sampai pada grid desktop; lebar Bootstrap default dinonaktifkan di grid agar aksi filter tidak terdorong ke baris berikutnya.
+- Mengaktifkan CSS grid desktop filter klaim agar ukuran kolom khusus benar-benar diterapkan; kolom Periode sampai kini memiliki lebar 260 px.
+- Memastikan lebar 260 px untuk field Periode sampai juga diterapkan pada tab Semua di lebar desktop yang belum mencapai breakpoint grid lebar.
+- Setelah review visual menunjukkan field Periode sampai masih sempit, memperkuat selector kolom dan menaikkan lebarnya menjadi 260 px termasuk pada layout grid.
+- Memperbaiki tombol Terapkan yang meluber dari panel filter dengan meniadakan margin negatif baris Bootstrap pada grid desktop, mengizinkan kolom menyusut, dan membagi lebar tombol aksi secara seimbang.
+- Menambah lebar minimum kolom nama, kategori, periode, dan aksi pada filter desktop agar label/nilai tidak terpotong; placeholder pencarian dipersingkat agar muat.
+- Menempatkan tombol Reset dan Terapkan pada baris terpisah di bawah seluruh field filter dengan rata kiri, serta mengurangi padding vertikal container filter.
+- Memindahkan aturan ringkas panel dan penghilangan gutter vertikal ke style bersama semua tab claim; sebelumnya aturan tersebut berada di blok khusus tab Reimbursement.
+- Menyamakan lebar kolom Periode sampai dengan Periode dari dan menambah lebar minimum kolom Jenis pengajuan serta Kategori; pengaturan lama 260 px khusus Periode sampai dihapus.
+- Menyatukan gaya panel filter klaim dengan class umum yang sudah ada `workspace-list-filter-form` di `workspace/resources/css/app.css`; padding vertikal kini konsisten dan dapat dipakai oleh semua halaman daftar.
+- Mengembalikan lebar tombol Reset/Terapkan ke ukuran konten di baris aksi bawah agar tidak melebar setengah panel.
+- Build aset front-end berhasil melalui `npm.cmd run build`; aset publik memuat class panel filter bersama yang baru.
+- Verifikasi: `git diff --check`.
+- Risiko tersisa: tampilan visual belum diperiksa lewat browser pada ukuran layar nyata.

@@ -10,6 +10,11 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 ## Acceptance criteria daftar klaim
 
 - Daftar kerja `/workspace/hris/claims` dan tab Semua/Reimbursement/Cash Advance hanya menampilkan klaim milik pengguna login (requester atau karyawan yang terhubung ke akun); draft yang dibuat pengguna sendiri juga tetap terlihat. Hak akses scope perusahaan tidak memperluas daftar pribadi ini.
+- Tab Reimbursement menampilkan panel KPI compact satu panel seperti daftar lembur: total pengajuan, disetujui/dibayar beserta nominalnya, dalam proses, ditolak, dan draft. Agregasi mengikuti filter daftar aktif (periode, status, kategori, dan jenis) serta scope data pemohon; cash advance tidak masuk hitungan. Status disetujui/dibayar mencakup approved, pending payment, paid, dan completed; nominal ditampilkan per mata uang.
+- Panel KPI reimbursement mobile dapat diciutkan/dibuka dan tertutup secara default untuk menghemat ruang; desktop menampilkan panel tanpa kontrol tambahan.
+- Panel KPI memakai tinggi compact dan filter daftar pada desktop lebar menjaga label floating serta seluruh kontrol tetap terlihat di dalam panel.
+- Filter reimbursement memakai class umum yang sudah tersedia `workspace-list-filter-form` dari CSS utama agar container, gradasi lembut, dan padding vertikal konsisten di semua halaman daftar; padding memberi ruang untuk label floating.
+- Daftar claim pribadi Semua dan Reimbursement menyediakan pencarian server-side berdasarkan nama karyawan dan nomor pengajuan; keyword bekerja bersama filter lain dan dipertahankan melalui pagination.
 - Pemohon dapat membuka detail klaim miliknya sendiri meskipun perusahaan klaim tidak termasuk scope perusahaan yang diberikan lewat role; akses data pengguna lain tetap mengikuti policy dan scope yang berlaku.
 - Halaman ringkasan reimbursement/cash advance tetap menjadi laporan berbasis scope perusahaan dan terpisah dari daftar kerja pribadi.
 - Ringkasan reimbursement/cash advance tidak menampilkan panel ikhtisar terpisah; gradasi visual diterapkan pada panel KPI agar tata letak lebih compact.
@@ -20,7 +25,7 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 - Tombol `Buat Pengajuan` menyediakan pilihan terpisah untuk Reimbursement dan Cash Advance. Reimbursement membuka form yang tersedia; Cash Advance membuka halaman terpisah yang menjelaskan form belum tersedia sampai workflow-nya diimplementasikan.
 - Dropdown `Buat Pengajuan` menampilkan kedua tipe sebagai pilihan yang mudah dibedakan, dengan ikon berwarna, deskripsi singkat, hover/focus state, dan tata letak yang tetap nyaman pada layar kecil.
 - Pemilihan tipe tidak mengubah permission saat ini; permission dan workflow Cash Advance dapat dipisahkan saat fitur pengajuan Cash Advance dibangun.
-- Pada viewport desktop lebar (minimal 1400 px), filter jenis, status, kategori, rentang tanggal, jumlah baris, dan aksi Reset/Terapkan tersusun dalam satu baris tanpa kolom kosong di antaranya.
+- Pada viewport desktop lebar (minimal 1400 px), field jenis, status, kategori, rentang tanggal, dan jumlah baris tersusun di baris pertama; aksi Reset/Terapkan berada rata kiri di baris kedua.
 - Lebar kolom mengikuti isi: pilihan kategori/status dan rentang tanggal tetap mudah digunakan, sementara jumlah baris dan aksi tidak mengambil ruang berlebih.
 - Pada viewport yang lebih kecil, filter tetap membungkus secara responsif dan ringkasan klaim tidak terpengaruh.
 - Kolom Kategori pada tabel daftar dibatasi sekitar 19% lebar tabel (maksimum 290 px) dan badge kategori membungkus; tabel tetap dapat digeser horizontal pada viewport sempit.

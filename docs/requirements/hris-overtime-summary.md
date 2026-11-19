@@ -6,7 +6,10 @@ Memudahkan peninjauan pengajuan lembur pada cakupan perusahaan yang diizinkan, d
 
 ## Acceptance criteria
 
-- Panel ringkasan menampilkan total pengajuan, pengajuan dalam proses, dan durasi lembur disetujui dalam satu panel compact berwarna.
+- Panel ringkasan menampilkan total pengajuan, pengajuan dalam proses, dan durasi lembur disetujui dalam satu panel compact berwarna; metrik ditampilkan datar dengan pemisah halus tanpa kartu bersarang atau bingkai warna per status.
+- Tinggi panel desktop dan mobile dijaga compact dengan padding dan tinggi minimum metrik yang ringkas.
+- Pada tata letak mobile dua kolom, pemisah vertikal dan horizontal harus terlihat jelas di antara metrik.
+- Pada mobile, panel dapat diciutkan/dibuka melalui kontrol ringkasan dan terbuka secara default; di desktop panel tetap tampil tanpa kontrol tambahan.
 - Filter mendukung pencarian server-side berdasarkan nama karyawan, NIP/nomor karyawan, dan nomor pengajuan.
 - Filter perusahaan dan status mendukung pilihan berganda melalui dropdown dan hanya menawarkan pilihan yang berada dalam scope akses pengguna.
 - Periode mulai default ke 1 Januari tahun berjalan dan periode akhir default ke hari ini; filter tanggal, perusahaan, status, kata kunci, dan pagination bekerja bersama.

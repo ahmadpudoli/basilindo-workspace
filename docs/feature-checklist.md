@@ -30,11 +30,17 @@
 - [x] Detail dari menu pribadi Reimbursement & Cash Advance hanya dapat dibuka pemilik/pemohon; detail dari route Ringkasan memakai permission ringkasan/`view_any_claim`, scope perusahaan, dan mengecualikan draft.
 - [x] Detail dari Ringkasan Reimbursement memakai route terpisah, mempertahankan menu aktif dan query filter saat kembali, serta tetap memeriksa policy owner dan scope perusahaan.
 - [x] Ringkasan reimbursement/cash advance menghilangkan panel ikhtisar terpisah dan menerapkan gradasi background pada panel KPI.
+- [x] Tab Reimbursement pada daftar pribadi menampilkan KPI total, disetujui/dibayar dan nominal per mata uang, dalam proses, ditolak, serta draft sesuai filter aktif; panel mengikuti gaya lembur dan collapse mobile.
+- [x] Panel KPI reimbursement dibuat lebih rendah, collapsed secara default pada mobile, dan panel filter desktop memiliki padding serta jarak KPI agar label/kontrol tidak terpotong
 - [x] Dropdown mata uang pada form reimbursement hanya menawarkan IDR dan validasi server menolak mata uang lain.
 - [x] Tabel pribadi Reimbursement & Cash Advance menampilkan nomor pengajuan dengan style `<code>` yang sama seperti tabel Pengajuan Lembur.
 - [x] Ikon menu aksi daftar klaim dibedakan sesuai tindakan Detail, Edit draft, dan Hapus draft.
 - [x] Kolom status pada daftar klaim cukup lebar untuk menjaga label status tetap satu baris, dengan kolom aksi tetap ringkas.
 - [x] Filter ringkasan klaim menyediakan kata kunci nama/nomor/status/kategori, rentang nominal total, dan tata letak dua baris responsif.
+- [x] Daftar claim pribadi Semua dan Reimbursement menyediakan pencarian server-side berdasarkan nama karyawan dan nomor pengajuan pada posisi pertama; keyword bekerja bersama filter lain dan dipertahankan melalui pagination.
+- [x] Field Periode sampai pada filter daftar claim pribadi memiliki lebar yang sama dengan Periode dari; kolom Jenis pengajuan dan Kategori mendapat lebar minimum yang lebih lega.
+- [x] Grid filter klaim desktop menjaga teks kontrol tetap terbaca dan menempatkan tombol Reset/Terapkan yang ringkas pada baris bawah.
+- [x] Container filter memakai class bersama `workspace-list-filter-form` dari CSS utama dengan padding vertikal yang cukup untuk label floating di semua daftar.
 - [x] Filter tanggal ringkasan terisi dari awal bulan hingga hari ini, dan tombol Reset/Terapkan didekatkan ke kolom nominal maksimum.
 - [x] Tabel ringkasan pada layar kecil menjaga kolom kategori, nominal, status, dan aksi agar tidak bertumpuk; tombol serta menu dropdown aksi tampil compact.
 - [x] Tabel daftar Semua, Reimbursement, dan Cash Advance memakai dropdown aksi tiga titik yang compact dan mempertahankan aksi serta authorization yang tersedia.
@@ -656,6 +662,10 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
 - [x] Daftar lembur memakai rentang tanggal default awal bulan sampai hari ini dan panel ringkasan jumlah serta total durasi sesuai filter
 - [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
+- [x] KPI daftar lembur memakai satu panel ringkasan compact tanpa kartu bersarang, pemisah tipis, dan aksen warna status yang lembut serta responsif
+- [x] Panel KPI lembur dapat diciutkan pada mobile, terbuka secara default, dan tetap statis di desktop
+- [x] KPI cuti/sakit pada halaman daftar memakai pola satu panel compact gradasi lembut seperti KPI lembur, dengan metrik tetap dapat dibuka untuk rincian
+- [x] Ringkasan KPI cuti/sakit pada mobile terbuka secara default dan dapat diciutkan/dibuka kembali
   - [x] Ringkasan lembur menyediakan pencarian kata kunci, filter multi-select perusahaan/status, tanggal default awal tahun–hari ini, pagination, nomor pengajuan, sortir server-side, dan menu aksi detail
   - [x] Halaman Pengajuan Lembur hanya menampilkan pengajuan milik akun pengguna yang sedang login, bukan seluruh pengajuan dalam company scope
   - [x] Panel ringkasan Pengajuan Lembur menyatu dalam satu wadah dan mempertahankan warna masing-masing status

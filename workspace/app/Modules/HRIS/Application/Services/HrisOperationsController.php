@@ -282,7 +282,8 @@ class HrisOperationsController extends Controller
             'min_amount' => ['nullable', 'numeric', 'min:0'],
             'max_amount' => ['nullable', 'numeric', 'min:0'],
         ]) : [];
-        $searchKeyword = trim((string) ($summaryFilterInput['q'] ?? ''));
+        $listFilterInput = $summaryView ? [] : $request->validate(['q' => ['nullable', 'string', 'max:120']]);
+        $searchKeyword = trim((string) (($summaryFilterInput['q'] ?? null) ?? ($listFilterInput['q'] ?? '')));
         $minimumAmount = isset($summaryFilterInput['min_amount']) ? (float) $summaryFilterInput['min_amount'] : null;
         $maximumAmount = isset($summaryFilterInput['max_amount']) ? (float) $summaryFilterInput['max_amount'] : null;
         if ($minimumAmount !== null && $maximumAmount !== null && $minimumAmount > $maximumAmount) {
@@ -296,8 +297,15 @@ class HrisOperationsController extends Controller
             ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
             ->when($selectedCompanyIds !== [], fn ($q) => $q->whereIn('company_id', $selectedCompanyIds))
             ->when($selectedCategories !== [], fn ($q) => $q->whereHas('expenseItems', fn ($detail) => $detail->whereIn('category', $selectedCategories)))
-            ->when($searchKeyword !== '', function ($query) use ($searchKeyword, $statusOptions): void {
+            ->when($searchKeyword !== '', function ($query) use ($searchKeyword, $statusOptions, $summaryView): void {
                 $pattern = '%'.$searchKeyword.'%';
+                if (! $summaryView) {
+                    $query->where(function ($search) use ($pattern): void {
+                        $search->whereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern))
+                            ->orWhere('request_number', 'ilike', $pattern);
+                    });
+                    return;
+                }
                 $matchingStatuses = collect($statusOptions)->filter(fn ($label) => mb_stripos($label, $searchKeyword) !== false)->keys()->all();
                 $query->where(function ($search) use ($pattern, $matchingStatuses): void {
                     $search->whereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern))
@@ -309,6 +317,27 @@ class HrisOperationsController extends Controller
             })
             ->when($minimumAmount !== null, fn ($q) => $q->where('amount', '>=', $minimumAmount))
             ->when($maximumAmount !== null, fn ($q) => $q->where('amount', '<=', $maximumAmount));
+        $claimListMetrics = null;
+        if (! $summaryView && $activeTabType === 'reimbursement') {
+            $statusCounts = (clone $filteredClaims)
+                ->selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')
+                ->pluck('total', 'status');
+            $approvedStatuses = ['approved', 'pending_payment', 'paid', 'completed'];
+            $claimListMetrics = [
+                'total' => (int) $statusCounts->sum(),
+                'approved' => (int) $statusCounts->only($approvedStatuses)->sum(),
+                'approved_amounts' => (clone $filteredClaims)
+                    ->whereIn('status', $approvedStatuses)
+                    ->selectRaw('currency, SUM(amount) as total')
+                    ->groupBy('currency')
+                    ->orderBy('currency')
+                    ->get(),
+                'in_progress' => (int) $statusCounts->only(['submitted', 'pending_manager', 'pending_finance', 'pending_final', 'needs_revision'])->sum(),
+                'rejected' => (int) ($statusCounts['rejected'] ?? 0),
+                'draft' => (int) ($statusCounts['draft'] ?? 0),
+            ];
+        }
         $summaryMetrics = null;
         if ($summaryView) {
             $summaryMetrics = [
@@ -323,7 +352,7 @@ class HrisOperationsController extends Controller
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
-        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount'));
+        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'claimListMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount'));
     }
     public function claimCreate(Request $request): View
     {
