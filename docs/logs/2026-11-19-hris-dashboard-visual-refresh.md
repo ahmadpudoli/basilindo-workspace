@@ -98,7 +98,17 @@ Tanggal: 2026-11-19
 - Menyatukan gaya panel filter klaim dengan class umum yang sudah ada `workspace-list-filter-form` di `workspace/resources/css/app.css`; padding vertikal kini konsisten dan dapat dipakai oleh semua halaman daftar.
 - Mengembalikan lebar tombol Reset/Terapkan ke ukuran konten di baris aksi bawah agar tidak melebar setengah panel.
 - Menyamakan KPI Ringkasan Reimbursement dan Cash Advance dengan panel cuti/lembur menggunakan class global `workspace-overtime-summary-panel` dan `workspace-overtime-summary-card`; varian empat metrik memakai grid 2x2 dan divider mobile dari CSS global.
+- Menyamakan padding panel dan jarak vertikal field pada filter HRIS lewat class global `workspace-list-filter-form`; menghapus override padding lokal pada filter ringkasan klaim dan cuti.
+- Menambahkan class filter global pada halaman persetujuan, dokumen karyawan, dan daftar karyawan agar seluruh filter HRIS memakai container yang sama.
+- Verifikasi padding: `git diff --check` bersih dan `npm.cmd run build` berhasil; peringatan chunk besar Vite tetap muncul.
+- Memperbaiki filter daftar Reimbursement: padding vertikal setiap kolom sebelumnya bertumpuk dengan gutter/row-gap Bootstrap sehingga tombol baris kedua tampak jauh. Jarak baris kini dikelola satu kali oleh class global, sementara padding luar panel tetap seragam.
+- Menyamakan padding global panel filter menjadi 20px di semua sisi, sesuai padding card-body Workspace, dengan selector yang lebih kuat agar label floating tidak terpotong pada filter klaim.
+- Memindahkan aturan padding global ke akhir `app.css` dan memberi kekhususan yang jelas untuk form filter claim agar aturan kartu/halaman lain tidak menimpanya.
+- Verifikasi perbaikan filter: `git diff --check` bersih dan `npm.cmd run build` berhasil; peringatan chunk besar Vite tetap muncul.
+- Verifikasi: `git diff --check` bersih dan `npm.cmd run build` berhasil; peringatan chunk besar Vite tetap muncul.
 - Verifikasi: `git diff --check` bersih dan `npm.cmd run build` berhasil; Vite tetap memberi peringatan chunk besar yang sudah ada.
 - Build aset front-end berhasil melalui `npm.cmd run build`; aset publik memuat class panel filter bersama yang baru.
 - Verifikasi: `git diff --check`.
 - Risiko tersisa: tampilan visual belum diperiksa lewat browser pada ukuran layar nyata.
+- Perbaikan lanjutan filter klaim: padding 12px vertikal dan 16px horizontal sekarang melekat langsung pada baris isi filter global; padding luar form dinetralkan agar tidak bertumpuk dengan gutter Bootstrap atau aturan `.card-body`.
+- Verifikasi: `git diff --check` dan build Vite.

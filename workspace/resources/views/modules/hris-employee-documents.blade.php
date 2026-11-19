@@ -6,7 +6,7 @@
     <div><div class="text-uppercase text-secondary small fw-semibold mb-2">Master HRIS</div><h1 class="h3 mb-1">Dokumen Karyawan</h1><p class="text-secondary mb-0">Kelola kontrak dan dokumen personal karyawan dalam scope perusahaan Anda.</p></div>
     @can('create', App\Modules\HRIS\Domain\Models\EmployeeDocument::class)<a href="{{ route('workspace.hris.employee-documents.create') }}" class="btn btn-primary">Upload dokumen</a>@endcan
 </div>
-<form class="card card-body border-0 shadow-sm mb-3" method="GET"><div class="row g-2 align-items-end">
+<form class="card card-body border-0 shadow-sm mb-3 workspace-list-filter-form" method="GET"><div class="row g-2 align-items-end">
     <div class="col-md-4"><label class="form-label">Cari dokumen</label><input class="form-control" name="q" value="{{ request('q') }}" placeholder="Nomor, judul, atau nama file"></div>
     <div class="col-md-3"><label class="form-label">Karyawan</label><select class="form-select" name="employee_id"><option value="">Semua karyawan</option>@foreach($employees as $employee)<option value="{{ $employee->id }}" @selected(request('employee_id') === $employee->id)>{{ $employee->full_name }} ({{ $employee->employee_number }})</option>@endforeach</select></div>
     <div class="col-md-2"><label class="form-label">Jenis</label><select class="form-select" name="type"><option value="">Semua jenis</option>@foreach(['employment_contract'=>'Kontrak kerja','contract_addendum'=>'Addendum kontrak','appointment_letter'=>'Surat pengangkatan','identity_document'=>'Dokumen identitas','other'=>'Dokumen lainnya'] as $key => $label)<option value="{{ $key }}" @selected(request('type') === $key)>{{ $label }}</option>@endforeach</select></div>

@@ -40,7 +40,7 @@
 - [x] Daftar claim pribadi Semua dan Reimbursement menyediakan pencarian server-side berdasarkan nama karyawan dan nomor pengajuan pada posisi pertama; keyword bekerja bersama filter lain dan dipertahankan melalui pagination.
 - [x] Field Periode sampai pada filter daftar claim pribadi memiliki lebar yang sama dengan Periode dari; kolom Jenis pengajuan dan Kategori mendapat lebar minimum yang lebih lega.
 - [x] Grid filter klaim desktop menjaga teks kontrol tetap terbaca dan menempatkan tombol Reset/Terapkan yang ringkas pada baris bawah.
-- [x] Container filter memakai class bersama `workspace-list-filter-form` dari CSS utama dengan padding vertikal yang cukup untuk label floating di semua daftar.
+- [x] Seluruh panel filter HRIS memakai class `workspace-list-filter-form` dan padding luar serta jarak field yang konsisten dari CSS global, termasuk tab ringkasan.
 - [x] Filter tanggal ringkasan terisi dari awal bulan hingga hari ini, dan tombol Reset/Terapkan didekatkan ke kolom nominal maksimum.
 - [x] Tabel ringkasan pada layar kecil menjaga kolom kategori, nominal, status, dan aksi agar tidak bertumpuk; tombol serta menu dropdown aksi tampil compact.
 - [x] Tabel daftar Semua, Reimbursement, dan Cash Advance memakai dropdown aksi tiga titik yang compact dan mempertahankan aksi serta authorization yang tersedia.
@@ -639,6 +639,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Form reimbursement menyediakan pilihan Project dan Opportunity lintas perusahaan dengan validasi server atas keberadaan dan permission lihat
 - [x] Dropdown referensi pekerjaan memiliki input pencarian tetap dan overflow vertikal/horizontal hanya pada tabel
 - [x] Daftar klaim memiliki filter multi-select status, jenis, kategori, rentang tanggal default bulan berjalan, dan menampilkan kategori distinct per pengajuan
+- [x] Panel filter global memakai gutter isi 12px vertikal dan 16px horizontal pada baris filter agar label floating tidak terpotong dan padding konsisten.
 - [x] Dropdown Opportunity reimbursement identik dengan pola lembur: tabel searchable, tanpa tombol Pilih, klik baris memilih data, dan detail status/client/kontak tampil setelah pemilihan
 - [x] Renderer dropdown Opportunity reimbursement ditandai siap agar tidak membuat wrapper dropdown ganda setelah perubahan pilihan
 - [x] Dropdown native dan fallback Opportunity reimbursement disembunyikan/dicegah agar hanya satu komponen tampil
