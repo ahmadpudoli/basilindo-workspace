@@ -29,7 +29,7 @@
 - [x] Tabel ringkasan klaim menyamakan gaya nomor pengajuan dengan Ringkasan Cuti Karyawan, menjaga teks tetap di dalam kolom, dan memberi akses detail read-only pada klaim revisi sesuai scope perusahaan.
 - [x] Detail dari menu pribadi Reimbursement & Cash Advance hanya dapat dibuka pemilik/pemohon; detail dari route Ringkasan memakai permission ringkasan/`view_any_claim`, scope perusahaan, dan mengecualikan draft.
 - [x] Detail dari Ringkasan Reimbursement memakai route terpisah, mempertahankan menu aktif dan query filter saat kembali, serta tetap memeriksa policy owner dan scope perusahaan.
-- [x] Ringkasan reimbursement/cash advance menghilangkan panel ikhtisar terpisah dan menerapkan gradasi background pada panel KPI.
+- [x] Ringkasan reimbursement/cash advance menghilangkan panel ikhtisar terpisah dan memakai class KPI global yang sama dengan halaman cuti/lembur; divider empat metrik tetap jelas pada mobile.
 - [x] Tab Reimbursement pada daftar pribadi menampilkan KPI total, disetujui/dibayar dan nominal per mata uang, dalam proses, ditolak, serta draft sesuai filter aktif; panel mengikuti gaya lembur dan collapse mobile.
 - [x] Panel KPI reimbursement dibuat lebih rendah, collapsed secara default pada mobile, dan panel filter desktop memiliki padding serta jarak KPI agar label/kontrol tidak terpotong
 - [x] Dropdown mata uang pada form reimbursement hanya menawarkan IDR dan validasi server menolak mata uang lain.

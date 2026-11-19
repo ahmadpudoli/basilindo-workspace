@@ -1536,6 +1536,40 @@ html[data-theme="dark"] .workspace-audit-sidebar .workspace-audit-panel { backgr
 .workspace-overtime-summary-card.is-pending { border-color: #f3d58b; background: linear-gradient(135deg, #fffdf6, #fff); }
 .workspace-overtime-summary-card.is-rejected { border-color: #f1b9c0; background: linear-gradient(135deg, #fff8f8, #fff); }
 .workspace-overtime-summary-card.is-draft { border-color: #f3d58b; background: linear-gradient(135deg, #fffdf6, #fff); }
+.workspace-overtime-summary-panel { background: linear-gradient(108deg, #e9f3ff 0%, #f8fbff 32%, #fff 53%, #f5f7ff 76%, #eeeaff 100%); border: 1px solid #dfe8f5; border-radius: 18px; box-shadow: 0 8px 24px rgba(42,91,145,.09); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; overflow: hidden; padding: 6px; position: relative; }
+.workspace-overtime-summary-panel::before { background: linear-gradient(100deg, #328fe0 0%, #67bde0 48%, #a18be4 100%); content: ""; height: 3px; inset: 0 0 auto; opacity: .84; position: absolute; }
+.workspace-overtime-summary-panel::after { background: radial-gradient(circle at 100% 0%, rgba(172,151,237,.22) 0 54px, transparent 56px), radial-gradient(circle at 100% 0%, transparent 0 72px, rgba(116,155,226,.16) 73px 74px, transparent 75px 94px, rgba(116,155,226,.11) 95px 111px, transparent 112px), radial-gradient(ellipse at 5% 100%, rgba(75,164,220,.08), transparent 38%); content: ""; inset: 0; pointer-events: none; position: absolute; }
+.workspace-overtime-summary-panel > .workspace-overtime-summary-card { background: transparent; border: 0; border-radius: 0; box-shadow: none; color: inherit; display: flex; flex-direction: column; gap: 2px; justify-content: center; min-height: 60px; padding: 5px 14px; position: relative; text-align: left; transition: background-color .18s ease; z-index: 1; }
+.workspace-overtime-summary-panel > .workspace-overtime-summary-card + .workspace-overtime-summary-card { border-left: 1px solid #e3e9f1; }
+.workspace-overtime-summary-panel > .workspace-overtime-summary-card:hover { background: rgba(255,255,255,.55); }
+.workspace-overtime-summary-panel .workspace-overtime-summary-card span { color: #617087; font-size: .74rem; font-weight: 600; letter-spacing: .01em; }
+.workspace-overtime-summary-panel .workspace-overtime-summary-card strong { color: #1c2d46; font-size: 1.4rem; letter-spacing: -.025em; line-height: 1.15; }
+.workspace-overtime-summary-panel .workspace-overtime-summary-card small { color: #7a8799; font-size: .68rem; line-height: 1.35; }
+.workspace-overtime-summary-panel .workspace-overtime-summary-card.is-approved strong { color: #178052; }
+.workspace-overtime-summary-panel .workspace-overtime-summary-card.is-pending strong, .workspace-overtime-summary-panel .workspace-overtime-summary-card.is-draft strong { color: #a36a0a; }
+.workspace-overtime-summary-panel .workspace-overtime-summary-card.is-rejected strong { color: #bb4650; }
+.workspace-overtime-summary-panel--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.workspace-overtime-summary-panel--four .workspace-claim-summary-amount { font-size: .82rem; overflow-wrap: anywhere; }
+@media (max-width: 991.98px) {
+  .workspace-overtime-summary-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .workspace-overtime-summary-panel > .workspace-overtime-summary-card:nth-child(4) { border-left: 0; }
+  .workspace-overtime-summary-panel--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-overtime-summary-panel--four > .workspace-overtime-summary-card:nth-child(3) { border-left: 0; }
+  .workspace-overtime-summary-panel--four > .workspace-overtime-summary-card:nth-child(4) { border-left: 1px solid rgba(105,130,164,.25); }
+  .workspace-overtime-summary-panel--four > .workspace-overtime-summary-card:nth-child(n+3) { border-top: 1px solid rgba(105,130,164,.25); }
+}
+@media (max-width: 575.98px) {
+  .workspace-overtime-summary-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 5px; }
+  .workspace-overtime-summary-panel > .workspace-overtime-summary-card { min-height: 58px; padding: 6px 9px; }
+  .workspace-overtime-summary-panel > .workspace-overtime-summary-card:nth-child(odd) { border-left: 0; }
+  .workspace-overtime-summary-panel > .workspace-overtime-summary-card:nth-child(4) { border-left: 1px solid rgba(105,130,164,.25); }
+  .workspace-overtime-summary-panel > .workspace-overtime-summary-card:nth-child(n+3) { border-top: 1px solid rgba(105,130,164,.25); }
+  .workspace-overtime-summary-panel > .workspace-overtime-summary-card:last-child { grid-column: span 2; border-left: 0; }
+  .workspace-overtime-summary-panel::after { opacity: .55; }
+  .workspace-overtime-summary-panel .workspace-overtime-summary-card strong { font-size: 1.2rem; }
+  .workspace-overtime-summary-panel--four > .workspace-overtime-summary-card:nth-child(4) { border-left: 1px solid rgba(105,130,164,.25); }
+  .workspace-overtime-summary-panel--four > .workspace-overtime-summary-card:last-child { grid-column: auto; }
+}
 .workspace-supporting-document-compact { align-items: center; flex-direction: row; gap: 12px; justify-content: space-between; padding: 9px 11px; }
 .workspace-supporting-document-meta { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .workspace-supporting-document-meta strong { font-size: .82rem; }

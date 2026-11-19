@@ -97,6 +97,8 @@ Tanggal: 2026-11-19
 - Menyamakan lebar kolom Periode sampai dengan Periode dari dan menambah lebar minimum kolom Jenis pengajuan serta Kategori; pengaturan lama 260 px khusus Periode sampai dihapus.
 - Menyatukan gaya panel filter klaim dengan class umum yang sudah ada `workspace-list-filter-form` di `workspace/resources/css/app.css`; padding vertikal kini konsisten dan dapat dipakai oleh semua halaman daftar.
 - Mengembalikan lebar tombol Reset/Terapkan ke ukuran konten di baris aksi bawah agar tidak melebar setengah panel.
+- Menyamakan KPI Ringkasan Reimbursement dan Cash Advance dengan panel cuti/lembur menggunakan class global `workspace-overtime-summary-panel` dan `workspace-overtime-summary-card`; varian empat metrik memakai grid 2x2 dan divider mobile dari CSS global.
+- Verifikasi: `git diff --check` bersih dan `npm.cmd run build` berhasil; Vite tetap memberi peringatan chunk besar yang sudah ada.
 - Build aset front-end berhasil melalui `npm.cmd run build`; aset publik memuat class panel filter bersama yang baru.
 - Verifikasi: `git diff --check`.
 - Risiko tersisa: tampilan visual belum diperiksa lewat browser pada ukuran layar nyata.

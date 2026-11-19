@@ -18,6 +18,7 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 - Pemohon dapat membuka detail klaim miliknya sendiri meskipun perusahaan klaim tidak termasuk scope perusahaan yang diberikan lewat role; akses data pengguna lain tetap mengikuti policy dan scope yang berlaku.
 - Halaman ringkasan reimbursement/cash advance tetap menjadi laporan berbasis scope perusahaan dan terpisah dari daftar kerja pribadi.
 - Ringkasan reimbursement/cash advance tidak menampilkan panel ikhtisar terpisah; gradasi visual diterapkan pada panel KPI agar tata letak lebih compact.
+- Panel KPI ringkasan reimbursement/cash advance menggunakan class global bersama dengan halaman cuti dan lembur, termasuk varian empat metrik responsif.
 - Nomor pengajuan pada tabel ringkasan menggunakan gaya monospace seperti tabel Ringkasan Cuti Karyawan; isi tabel membungkus teks di dalam kolom agar tidak menimpa kolom tetangga.
 - Route detail dari menu Reimbursement & Cash Advance hanya dapat dibuka pemilik/pemohon klaim; akses `view_any_claim` tidak memperluas akses detail pribadi.
 - Route detail dari Ringkasan Reimbursement/Cash Advance terpisah dan hanya dapat dibuka pengguna dengan izin ringkasan yang sesuai atau `view_any_claim`, dengan pemeriksaan scope perusahaan dan tanpa akses draft.
