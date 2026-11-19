@@ -10,6 +10,7 @@ audit, dan layout aplikasi yang sudah tersedia.
 
 ## Keputusan requirement
 
+- Dashboard `/workspace/hris` memakai satu Blade utama dengan susunan visual dasar yang sama bagi semua pengguna. KPI pengajuan pribadi ditampilkan untuk setiap pengguna HRIS dan hanya menghitung pengajuan milik akun tersebut; KPI tenaga kerja, tabel karyawan, CTA, dan panel approval mengikuti permission. Tidak memilih dashboard berbeda berdasarkan akses daftar karyawan.
 - Panel Early Warning Approval pada dashboard HRIS hanya ditampilkan kepada pengguna yang berhak melihat approval dan ketika terdapat pengajuan yang menunggu persetujuan pengguna tersebut; panel disembunyikan saat kosong.
 - Judul notifikasi HRIS untuk approval, penolakan, permintaan revisi, dan tindakan yang menunggu harus menyebut tahap/role terkait (Atasan, HR, Finance, atau Approver final); notifikasi lama dengan metadata tahap menampilkan judul yang sama jelasnya.
 - Istilah bisnis yang digunakan adalah **karyawan**, bukan mahasiswa.

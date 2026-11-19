@@ -38,6 +38,7 @@ class Employee extends Model
     public function leaveRequests() { return $this->hasMany(LeaveRequest::class); }
     public function overtimeRequests() { return $this->hasMany(OvertimeRequest::class); }
     public function employeeDocuments() { return $this->hasMany(EmployeeDocument::class); }
+    public function paymentAccounts() { return $this->hasMany(EmployeePaymentAccount::class); }
 
     public function scopeVisibleTo(Builder $query, User $user): Builder
     {

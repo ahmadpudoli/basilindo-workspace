@@ -66,6 +66,10 @@ class RoleSeeder extends Seeder
             'print_hris_overtime',
             'print_hris_leave',
             'process_hris_payment',
+            'view_employee_payroll_account',
+            'update_employee_payroll_account',
+            'view_employee_reimbursement_account',
+            'update_employee_reimbursement_account',
         ] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
@@ -90,6 +94,7 @@ class RoleSeeder extends Seeder
         $adminPermissions = Permission::whereNotIn('name', [
             'delete_user', 'view_email_queue', 'retry_queue_jobs',
             'print_hris_reimbursement', 'print_hris_cash_advance', 'print_hris_overtime', 'print_hris_leave',
+            'process_hris_payment',
         ])->get();
         $admin->syncPermissions($adminPermissions);
 
@@ -103,6 +108,7 @@ class RoleSeeder extends Seeder
         ])->get();
         $documentAdmin->syncPermissions($documentPermissions);
         $financeAdmin->syncPermissions($documentPermissions);
+        $financeAdmin->givePermissionTo(Permission::firstOrCreate(['name' => 'process_hris_payment', 'guard_name' => 'web']));
         $financeReviewer->syncPermissions($documentPermissions->filter(fn ($permission) => str_starts_with($permission->name, 'view')));
         $documentAuditPermission = Permission::firstOrCreate(['name' => 'view_document_audit_trail', 'guard_name' => 'web']);
         $documentAdmin->givePermissionTo($documentAuditPermission);

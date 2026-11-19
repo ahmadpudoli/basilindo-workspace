@@ -10,7 +10,9 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 ## Acceptance criteria daftar klaim
 
 - Daftar kerja `/workspace/hris/claims` dan tab Semua/Reimbursement/Cash Advance hanya menampilkan klaim milik pengguna login (requester atau karyawan yang terhubung ke akun); draft yang dibuat pengguna sendiri juga tetap terlihat. Hak akses scope perusahaan tidak memperluas daftar pribadi ini.
-- Tab Reimbursement menampilkan panel KPI compact satu panel seperti daftar lembur: total pengajuan, disetujui/dibayar beserta nominalnya, dalam proses, ditolak, dan draft. Agregasi mengikuti filter daftar aktif (periode, status, kategori, dan jenis) serta scope data pemohon; cash advance tidak masuk hitungan. Status disetujui/dibayar mencakup approved, pending payment, paid, dan completed; nominal ditampilkan per mata uang.
+- Tab Reimbursement menampilkan panel KPI compact satu panel seperti daftar lembur: total pengajuan, disetujui beserta nominalnya, dalam proses, ditolak, dan draft. Agregasi mengikuti filter daftar aktif serta scope data pemohon; cash advance tidak masuk hitungan.
+- `status` hanya menyimpan status pengajuan/approval. `payment_status` terpisah dan bernilai `null` sebelum approval selesai; setelah status pengajuan menjadi `approved`, status pembayaran otomatis menjadi `pending_payment`, lalu berubah menjadi `paid` setelah Finance mencatat pembayaran. Pengajuan tetap `approved` setelah dibayar; tidak ada transisi reimbursement ke `completed`.
+- Daftar dan ringkasan menyediakan kolom Status pengajuan dan Status pembayaran, serta filter mandiri untuk keduanya. Status pembayaran hanya berlaku untuk Reimbursement; opsi `Belum ada` menyaring nilai `null`.
 - Panel KPI reimbursement mobile memakai komponen global `workspace-mobile-kpi-panel`, dapat diciutkan/dibuka dan tertutup secara default; desktop menampilkan panel tanpa kontrol tambahan.
 - Panel KPI tab Reimbursement memakai bingkai collapsible, header, dan padding mobile yang sama dengan KPI ringkasan reimbursement.
 - Panel KPI memakai tinggi compact dan filter daftar pada desktop lebar menjaga label floating serta seluruh kontrol tetap terlihat di dalam panel.
@@ -89,7 +91,7 @@ Keputusan teknis lampiran: [Unggah bukti reimbursement](hris-reimbursement-attac
 - Nama dan waktu approver hanya ditampilkan pada blok persetujuan footer agar tidak berulang pada ringkasan; footer juga menyediakan ruang tanda tangan pemohon beserta nama dan waktu pengajuan.
 - Nama perusahaan hanya tampil pada kop dokumen dan tidak diulang dalam ringkasan.
 - Tabel `hris_claims` menyimpan `submitted_at`; migration mengisi pengajuan lama non-draft dari `created_at` dan tidak mengubah waktu tersebut saat revisi.
-- Route cetak memakai policy `view` klaim yang sama dan hanya menyajikan reimbursement yang telah melewati seluruh approval (status `approved`, `pending_payment`, `paid`, atau `completed`); status `pending_final` ditolak sampai approver final memutuskan. Halaman menyediakan dialog cetak browser dan format ramah kertas.
+- Route cetak memakai policy `view` klaim yang sama dan hanya menyajikan reimbursement yang telah melewati seluruh approval (`status=approved`); status `pending_final` ditolak sampai approver final memutuskan. Status pembayaran tidak mengubah kelayakan cetak. Halaman menyediakan dialog cetak browser dan format ramah kertas.
 - Pratinjau dan hasil cetak klaim memakai ukuran A4; lampiran gambar mengalir secara proporsional dengan batas tinggi 90 mm dan dapat berbagi halaman agar hemat kertas.
 - PDF reimbursement dirender sebagai halaman individual melalui PDF.js lokal: setiap halaman dokumen menjadi satu lembar A4 baru, tanpa menyematkan PDF viewer. Sumber file tetap endpoint privat terotorisasi dan tombol cetak menunggu seluruh halaman selesai dirender.
 - Tinggi setiap lembar PDF cetak harus sama dengan area konten A4 setelah margin halaman, agar page break tidak menghasilkan halaman kosong tambahan.
@@ -109,7 +111,7 @@ Keputusan teknis lampiran: [Unggah bukti reimbursement](hris-reimbursement-attac
 - Header rincian dan kontrol bukti memakai jarak yang cukup, tombol bergaya lembut dengan ikon tindakan, serta indikator fokus yang tetap terlihat.
 - Draft dapat dibuka pada halaman detail, diedit kembali, atau dihapus oleh pemohon.
 - Simpan draft dan Kirim pengajuan menampilkan indikator loading selama unggah bukti dan pengiriman form berlangsung.
-- Alur dasar adalah Atasan -> Finance -> Disetujui -> Menunggu pembayaran -> Dibayar -> Selesai.
+- Alur dasar reimbursement adalah Atasan -> Finance -> (Approver final bila threshold berlaku) -> status pengajuan `approved`; setelah approval lengkap status pembayaran otomatis menjadi `pending_payment`, lalu Finance mencatat `paid`. Status pengajuan tetap `approved` setelah pembayaran.
 - Approval tambahan dapat diarahkan ke approver final berdasarkan threshold nominal yang aktif pada perusahaan pengajuan.
 - Form konfigurasi workflow claim menyediakan accordion informasi ringkas yang menjelaskan perbedaan tugas Finance dan Approver final serta hubungan tahap final dengan ambang nominal perusahaan.
 - Jika threshold tambahan tidak dikonfigurasi, pengajuan tidak memiliki tahap approval tambahan.
@@ -128,6 +130,13 @@ deskripsi, mata uang, nominal, referensi nota opsional, dan satu file bukti waji
 
 Pembayaran: metode pembayaran, penerima, bank, nomor rekening, tanggal pembayaran,
 nominal dibayar, referensi pembayaran, dan bukti pembayaran.
+
+- Metode transfer memakai rekening reimbursement aktif pada data karyawan dan mengambil snapshot pemilik, bank, serta nomor rekening saat pembayaran dicatat; transfer ditolak bila rekening aktif belum tersedia.
+- Status rekening aktif pada popup pembayaran dibaca dari metadata tombol pembayaran yang tetap tersedia setelah dropdown aksi dipindahkan ke `body`; tombol tersebut hanya tersedia untuk pemegang permission proses pembayaran dan menampilkan nomor lengkap untuk keperluan transfer. Nomor rekening tidak ditanam pada baris tabel umum.
+- Metode tunai menetapkan penerima otomatis ke nama pemohon/karyawan.
+- Metode kas kecil menetapkan penerima otomatis ke nama pemohon/karyawan dan mewajibkan sumber kas kecil berupa teks bebas (maksimum 150 karakter). Nilai sumber disimpan sebagai informasi transaksi; sistem belum mencatat saldo atau mutasi petty cash.
+- Detail reimbursement dari halaman ringkasan menampilkan informasi pembayaran yang telah dicatat hanya kepada `process_hris_payment` atau `super_admin`; metode, penerima, snapshot bank/rekening transfer, sumber kas kecil, nominal, tanggal, referensi, dan status bukti mengikuti metode yang digunakan.
+- Panel informasi pembayaran di detail reimbursement memakai gaya ringkasan compact dengan aksen warna lembut dan separator tipis; setiap field tidak dibungkus kotak individual.
 
 ## Acceptance criteria
 
@@ -163,8 +172,9 @@ nominal dibayar, referensi pembayaran, dan bukti pembayaran.
 - Admin dapat memahami bahwa Finance memeriksa claim setelah Atasan, sedangkan Approver final memberi persetujuan tambahan setelah Finance untuk nominal yang memenuhi ambang.
 - Pengajuan dengan threshold terpenuhi tanpa approver final aktif tidak dapat disetujui.
 - Approver final yang bukan konfigurasi perusahaan tidak dapat memproses pengajuan.
-- Finance dapat mencatat pembayaran hanya pada pengajuan berstatus `approved` atau `pending_payment`.
-- Setelah pembayaran valid dicatat, status menjadi `paid`, lalu dapat ditandai `completed`.
+- Sebelum approval lengkap, `payment_status` harus tetap `null`; setelah approval final, sistem mengubahnya menjadi `pending_payment`.
+- Finance dapat mencatat pembayaran hanya ketika status pengajuan `approved` dan status pembayaran `pending_payment`.
+- Setelah pembayaran valid dicatat, hanya `payment_status` yang berubah menjadi `paid`; `status` pengajuan tetap `approved` dan tidak ada aksi Tandai selesai.
 - Aksi approval dan pembayaran mencatat approval/audit event tanpa menyimpan isi dokumen sensitif di log.
 - Form memiliki validasi, empty state, dan pesan error yang dapat dibaca.
 - Aksi Simpan draft dan Kirim pengajuan menjalankan validasi client-side sebelum form dikirim; server tetap memvalidasi ulang semua input pada kedua aksi.
@@ -187,5 +197,9 @@ nominal dibayar, referensi pembayaran, dan bukti pembayaran.
 - Form revisi claim menyediakan aksi Simpan perubahan yang mempertahankan status `needs_revision`, catatan revisi, dan tahap approver agar pemohon dapat melanjutkan nanti.
 - Aksi Kirim revisi memperbarui pengajuan dan memulai kembali approval hanya setelah pengguna menyetujui dialog konfirmasi.
 - Detail claim menampilkan riwayat workflow kronologis dari pengajuan pertama, termasuk semua permintaan revisi, kirim ulang, dan keputusan tahap approval; identitas pelaku, komentar, dan snapshot revisi mengikuti permission audit trail claim.
+- Pada detail claim layar lebar, panel riwayat menggunakan kolom yang lebih ramping daripada area konteks dan rincian; pada layar kecil panel kembali memenuhi lebar yang tersedia.
+- Pemegang `process_hris_payment` atau `super_admin` yang membuka detail reimbursement dari ringkasan dapat melihat bukti pembayaran di popup dan mengunduh file bukti yang sama melalui endpoint privat; kedua aksi memeriksa permission, status pembayaran, scope perusahaan, dan keberadaan object.
+- Popup bukti pembayaran menampilkan dokumen pada satu kolom dengan dimensi yang proporsional terhadap viewport, tanpa kolom rincian nota yang tidak relevan.
+- Panel konteks pengajuan memakai aksen warna pastel yang lembut, hirarki judul dan label yang jelas, serta tetap compact tanpa kartu terpisah per field.
 - Kolom kategori pada daftar klaim menampilkan kategori rincian yang unik per pengajuan; kategori sama pada beberapa rincian ditampilkan satu kali.
 

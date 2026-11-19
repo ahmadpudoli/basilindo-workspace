@@ -21,10 +21,12 @@ Pagination Workspace menggunakan Bootstrap 5 sebagai fondasi UI, dengan warna da
 - dropdown multiselect di dalam `.workspace-floating-field` wajib mengikuti tinggi dan padding kontrol input/select global agar tidak membuat field lebih tinggi;
 - wrapper `.workspace-dropdown-multiselect` juga wajib memakai tinggi dan padding vertikal yang sama, bukan hanya tombol trigger di dalamnya;
 - menggunakan baris tabel compact dengan padding vertikal yang tidak berlebihan;
+- menggunakan style tabel global `.workspace-table-card` pada container, `.workspace-data-table` pada tabel, serta `.workspace-list-pagination` pada footer bila tabel membutuhkan tampilan kartu putih, header abu-abu uppercase, divider halus, hover lembut, dan pagination yang konsisten; lebar scroll minimum dapat diatur melalui `--workspace-table-min-width` dan modifier konteks seperti `.workspace-data-table--claims`;
+- memakai `.workspace-table-action-toggle` dan `.workspace-table-action-menu` untuk aksi per baris; menu diposisikan fixed di luar container tabel dan dapat dipindahkan ke `document.body` agar tidak terpotong overflow;
 - menetapkan lebar kolom tabel secara proporsional terhadap isi dan prioritas informasi; kolom nominal cukup untuk angka/mata uang, status dibatasi agar tidak mengambil ruang berlebih, dan Aksi tetap ringkas;
 - menggunakan tombol aksi ukuran `btn-sm` dan tabel `table-sm` untuk daftar data yang padat;
 - bila tabel memiliki aksi per baris, kolom `Aksi` hanya menampilkan tombol dropdown compact berikon tiga titik vertikal; seluruh tautan/form aksi ditempatkan di menu ringkas dengan ikon, dan authorization setiap aksi tetap dipertahankan;
-- menu aksi baris harus tampil di atas container tabel dan tidak terpotong oleh scroll/overflow; gunakan pola dropdown klaim HRIS (`data-claim-action-toggle`, menu fixed yang dipindahkan ke `document.body`) sebagai implementasi acuan untuk tabel berikutnya;
+- menu aksi baris harus tampil di atas container tabel dan tidak terpotong oleh scroll/overflow; gunakan class global `.workspace-table-action-toggle`/`.workspace-table-action-menu` dan pindahkan menu fixed ke `document.body`;
 - menyediakan state loading, empty state, dan error state yang layak.
 
 `pos-laravel-admin` menjadi referensi pola pagination Bootstrap, sedangkan warna aktif, border, radius, dan ukuran diselaraskan dengan token visual Workspace.

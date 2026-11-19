@@ -54,7 +54,7 @@ class EmployeeController extends Controller
     public function destroy(Request $request, Employee $employee): RedirectResponse
     {
         Gate::authorize('delete', $employee);
-        if ($employee->leaveRequests()->exists() || $employee->overtimeRequests()->exists() || $employee->subordinates()->exists()) {
+        if ($employee->leaveRequests()->exists() || $employee->overtimeRequests()->exists() || $employee->subordinates()->exists() || $employee->paymentAccounts()->exists()) {
             $employee->update(['status' => 'archived']);
             return back()->with('status', "Karyawan {$employee->full_name} memiliki relasi dan dipindahkan ke arsip.");
         }

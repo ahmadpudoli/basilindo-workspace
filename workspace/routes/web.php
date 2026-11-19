@@ -31,6 +31,7 @@ use App\Modules\DocumentManagement\Http\Controllers\DocumentManagementDashboardC
 use App\Modules\DocumentManagement\Http\Controllers\DocumentManagementController;
 use App\Modules\HRIS\Application\Services\HrisDashboardController;
 use App\Modules\HRIS\Application\Services\EmployeeController;
+use App\Modules\HRIS\Application\Services\EmployeePaymentAccountController;
 use App\Modules\HRIS\Application\Services\EmployeeDocumentController;
 use App\Modules\HRIS\Application\Services\LeaveRequestController;
 use App\Modules\HRIS\Application\Services\LeaveSummaryController;
@@ -156,6 +157,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/hris/employees', [EmployeeController::class, 'index'])->name('workspace.hris.employees');
     Route::get('/workspace/hris/employees/create', [EmployeeController::class, 'create'])->name('workspace.hris.employees.create');
     Route::post('/workspace/hris/employees', [EmployeeController::class, 'store'])->name('workspace.hris.employees.store');
+    Route::get('/workspace/hris/employees/{employee}/payment-accounts', [EmployeePaymentAccountController::class, 'show'])->name('workspace.hris.employees.payment-accounts');
+    Route::post('/workspace/hris/employees/{employee}/payment-accounts/{paymentAccount}/reveal', [EmployeePaymentAccountController::class, 'reveal'])->middleware('throttle:6,1')->name('workspace.hris.employees.payment-accounts.reveal');
+    Route::post('/workspace/hris/employees/{employee}/payment-accounts/enrich-payroll', [EmployeePaymentAccountController::class, 'enrichFromPayroll'])->middleware('throttle:6,1')->name('workspace.hris.employees.payment-accounts.enrich-payroll');
+    Route::put('/workspace/hris/employees/{employee}/payment-accounts/{accountType}', [EmployeePaymentAccountController::class, 'update'])->name('workspace.hris.employees.payment-accounts.update');
     Route::get('/workspace/hris/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('workspace.hris.employees.edit');
     Route::put('/workspace/hris/employees/{employee}', [EmployeeController::class, 'update'])->name('workspace.hris.employees.update');
     Route::delete('/workspace/hris/employees/{employee}', [EmployeeController::class, 'destroy'])->name('workspace.hris.employees.destroy');
@@ -196,6 +201,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/workspace/hris/claims', [HrisOperationsController::class, 'claimStore'])->name('workspace.hris.claims.store');
     Route::get('/workspace/hris/claims/{claim}/print', [HrisOperationsController::class, 'claimPrint'])->name('workspace.hris.claims.print');
     Route::get('/workspace/hris/claims/summary/{claim}', [HrisOperationsController::class, 'claimShow'])->name('workspace.hris.claims.summary.show');
+    Route::get('/workspace/hris/claims/{claim}/payment-proof', [HrisOperationsController::class, 'claimPaymentProof'])->name('workspace.hris.claims.payment-proof');
     Route::get('/workspace/hris/claims/{claim}', [HrisOperationsController::class, 'claimShow'])->name('workspace.hris.claims.show');
     Route::get('/workspace/hris/claims/{claim}/edit', [HrisOperationsController::class, 'claimEdit'])->name('workspace.hris.claims.edit');
     Route::put('/workspace/hris/claims/{claim}', [HrisOperationsController::class, 'claimUpdate'])->name('workspace.hris.claims.update');
@@ -206,10 +212,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/workspace/hris/{type}/{id}/supporting-document/{step}', [HrisOperationsController::class, 'supportingDocument'])->name('workspace.hris.supporting-document');
     Route::post('/workspace/hris/{type}/{id}/approve/{step}', [HrisOperationsController::class, 'approve'])->name('workspace.hris.approve');
     Route::post('/workspace/hris/claims/{id}/accountability', [HrisOperationsController::class, 'accountability'])->name('workspace.hris.claims.accountability');
-    Route::get('/workspace/hris/claims/{id}/payment', [HrisOperationsController::class, 'claimPayment'])->name('workspace.hris.claims.payment');
-    Route::post('/workspace/hris/claims/{id}/payment/start', [HrisOperationsController::class, 'claimPaymentStart'])->name('workspace.hris.claims.payment.start');
     Route::post('/workspace/hris/claims/{id}/payment', [HrisOperationsController::class, 'claimPaymentStore'])->name('workspace.hris.claims.payment.store');
-    Route::post('/workspace/hris/claims/{id}/complete', [HrisOperationsController::class, 'claimComplete'])->name('workspace.hris.claims.complete');
     Route::get('/workspace/settings/hris', [HrisSettingsController::class, 'index'])->name('workspace.settings.hris');
     Route::get('/workspace/settings/hris/workflow', [HrisSettingsController::class, 'workflow'])->name('workspace.settings.hris.workflow');
     Route::get('/workspace/settings/hris/workflow/{approver}/edit', [HrisSettingsController::class, 'workflowEdit'])->name('workspace.settings.hris.workflow.edit');

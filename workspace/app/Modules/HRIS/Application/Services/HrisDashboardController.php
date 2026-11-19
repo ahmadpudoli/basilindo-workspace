@@ -68,8 +68,9 @@ class HrisDashboardController extends Controller
         $canViewLeave = $user->hasRole('super_admin') || $user->can('view_any_leave_request');
         $canViewApprovals = $user->hasRole('super_admin') || $user->can('view_hris_approvals');
         $approvalRows = $this->approvalRows($user);
+        $personalStats = null;
 
-        if (! $canViewEmployees) {
+        {
             $canCreateOvertime = $user->hasRole('super_admin') || $user->can('create_overtime');
             $canCreateClaim = $user->hasRole('super_admin') || $user->can('create_claim');
             $activeYear = (int) HrisSetting::resolve(null, 'hris.active_year', now()->year);
@@ -118,25 +119,27 @@ class HrisDashboardController extends Controller
                 })->sum('duration_minutes');
 
             $monthlyClaims = (clone $personalClaims)->where('type', 'reimbursement')->where('status', '!=', 'draft')->whereBetween('created_at', [$monthStart, $monthEnd]);
-            $approvedClaimStatuses = ['approved', 'pending_payment', 'paid', 'completed'];
-            $monthlyApprovedClaims = (clone $monthlyClaims)->whereIn('status', $approvedClaimStatuses);
+            $monthlyApprovedClaims = (clone $monthlyClaims)->where('status', 'approved');
 
-            return view('modules.hris-dashboard-personal-cards', [
-                'canCreateLeave' => $canCreateLeave,
-                'canViewApprovals' => $canViewApprovals,
-                'approvalRows' => $approvalRows,
-                'personalStats' => [
+            $personalStats = [
                     ['label' => 'Cuti & sakit', 'value' => $annualLeaveRequestQuery->count(), 'period' => "Tahun {$activeYear}", 'details' => ["Cuti disetujui: {$approvedLeaveDays} hari", "Sakit disetujui: {$approvedSickDays} hari", 'Sisa kuota cuti: '.($employee ? "{$remainingLeave} hari" : 'belum tersedia')], 'view_url' => $user->hasRole('super_admin') || $user->can('access_hris') ? route('workspace.hris.leave-requests', ['year' => $activeYear]) : null, 'create_url' => $canCreateLeave ? route('workspace.hris.leave-requests.create') : null],
                     ['label' => 'Lembur', 'value' => $monthlyOvertime->count(), 'period' => now()->translatedFormat('F Y'), 'details' => ['Disetujui: '.$monthlyApprovedOvertime->count().' pengajuan', 'Durasi disetujui: '.intdiv($approvedOvertimeMinutes, 60).' jam '.($approvedOvertimeMinutes % 60).' menit'], 'view_url' => $user->hasRole('super_admin') || $user->can('view_any_overtime') ? route('workspace.hris.overtime', ['date_from' => $monthStart->toDateString(), 'date_to' => now()->toDateString()]) : null, 'create_url' => $canCreateOvertime ? route('workspace.hris.overtime.create') : null],
                     ['label' => 'Reimbursement', 'value' => $monthlyClaims->count(), 'period' => now()->translatedFormat('F Y'), 'details' => ['Disetujui: '.$monthlyApprovedClaims->count().' pengajuan', 'Total disetujui: Rp '.number_format((float) $monthlyApprovedClaims->sum('amount'), 0, ',', '.')], 'view_url' => $user->hasRole('super_admin') || $user->can('view_any_claim') ? route('workspace.hris.claims', ['type' => 'reimbursement', 'from' => $monthStart->toDateString(), 'to' => now()->toDateString()]) : null, 'create_url' => $canCreateClaim ? route('workspace.hris.claims.create', ['type' => 'reimbursement']) : null],
-                ],
-            ]);
+            ];
         }
-
         $employees = $canViewEmployees ? Employee::query()->visibleTo($user) : null;
-        $leave = $canViewLeave
+        $leave = $canViewEmployees && $canViewLeave
             ? LeaveRequest::query()->when(! $user->hasRole('super_admin'), fn ($q) => $q->whereIn('company_id', $user->companies()->pluck('companies.id')))
             : null;
+
+        $stats = [];
+        if ($employees) {
+            $stats[] = ['label' => 'Karyawan aktif', 'value' => (clone $employees)->where('status', 'active')->count()];
+        }
+        if ($leave) {
+            $stats[] = ['label' => 'Pengajuan menunggu', 'value' => (clone $leave)->whereIn('status', ['pending_manager', 'pending_hr'])->count()];
+            $stats[] = ['label' => 'Cuti disetujui tahun ini', 'value' => (clone $leave)->where('type', 'leave')->where('status', 'approved')->whereHas('dates', fn ($q) => $q->whereYear('leave_date', now()->year))->sum('total_days')];
+        }
 
         return view('modules.hris-dashboard', [
             'canCreateEmployees' => $canCreateEmployees,
@@ -144,11 +147,8 @@ class HrisDashboardController extends Controller
             'canViewApprovals' => $canViewApprovals,
             'approvalRows' => $approvalRows,
             'canViewEmployees' => $canViewEmployees,
-            'stats' => [
-                ['label' => 'Karyawan aktif', 'value' => $employees ? (clone $employees)->where('status', 'active')->count() : 0],
-                ['label' => 'Pengajuan menunggu', 'value' => $leave ? (clone $leave)->whereIn('status', ['pending_manager', 'pending_hr'])->count() : 0],
-                ['label' => 'Cuti disetujui tahun ini', 'value' => $leave ? (clone $leave)->where('type', 'leave')->where('status', 'approved')->whereHas('dates', fn ($q) => $q->whereYear('leave_date', now()->year))->sum('total_days') : 0],
-            ],
+            'personalStats' => $personalStats,
+            'stats' => $stats,
             'employees' => $employees ? $employees->with(['company', 'manager'])->latest()->limit(5)->get() : collect(),
         ]);
     }

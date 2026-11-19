@@ -39,6 +39,8 @@ Dokumentasi ini menjadi sumber kebenaran proyek selain kode. Agen wajib membaca 
 - [Monitoring](operations/monitoring.md)
 - [Requirement health dan monitoring](requirements/monitoring-and-health.md)
 - [Requirement modul HRIS](requirements/hris-module.md)
+- [Requirement data pembayaran karyawan HRIS](requirements/hris-employee-payment-accounts.md)
+- [Keputusan sumber dan identitas master bank HRIS](decisions/hris-bank-master-source.md)
 - [Requirement reimbursement HRIS](requirements/hris-reimbursement.md)
 - [Requirement approval final pada cetakan reimbursement](requirements/hris-claim-print-final-approval.md)
 - [Requirement ringkasan reimbursement dan cash advance HRIS](requirements/hris-claim-summary-dashboard.md)

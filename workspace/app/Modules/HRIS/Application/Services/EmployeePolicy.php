@@ -12,5 +12,9 @@ class EmployeePolicy
     public function create(User $user): bool { return $user->hasRole('super_admin') || $user->can('create_employee'); }
     public function update(User $user, Employee $employee): bool { return ($user->hasRole('super_admin') || $user->can('update_employee')) && $this->scope($user, $employee); }
     public function delete(User $user, Employee $employee): bool { return ($user->hasRole('super_admin') || $user->can('delete_employee')) && $this->scope($user, $employee); }
+    public function viewPayrollAccount(User $user, Employee $employee): bool { return ($user->hasRole('super_admin') || $user->can('view_employee_payroll_account')) && $this->scope($user, $employee); }
+    public function updatePayrollAccount(User $user, Employee $employee): bool { return ($user->hasRole('super_admin') || $user->can('update_employee_payroll_account')) && $this->scope($user, $employee); }
+    public function viewReimbursementAccount(User $user, Employee $employee): bool { return ($user->hasRole('super_admin') || $user->can('view_employee_reimbursement_account')) && $this->scope($user, $employee); }
+    public function updateReimbursementAccount(User $user, Employee $employee): bool { return ($user->hasRole('super_admin') || $user->can('update_employee_reimbursement_account')) && $this->scope($user, $employee); }
     private function scope(User $user, Employee $employee): bool { return $user->hasRole('super_admin') || $user->companies()->whereKey($employee->company_id)->exists(); }
 }

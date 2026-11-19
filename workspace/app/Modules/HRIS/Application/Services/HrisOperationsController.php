@@ -14,6 +14,7 @@ use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
 use App\Modules\HRIS\Domain\Models\HrisExpenseCategory;
 use Core\Models\Company;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -222,14 +223,12 @@ class HrisOperationsController extends Controller
         $statusOptions = [
             'draft' => 'Draft', 'submitted' => 'Diajukan', 'pending_manager' => 'Menunggu persetujuan atasan',
             'pending_finance' => 'Menunggu persetujuan Finance', 'pending_final' => 'Menunggu persetujuan final',
-            'pending_payment' => 'Menunggu pembayaran', 'awaiting_accountability' => 'Menunggu pertanggungjawaban',
-            'needs_revision' => 'Perlu revisi', 'approved' => 'Disetujui', 'paid' => 'Dibayar',
+            'awaiting_accountability' => 'Menunggu pertanggungjawaban',
+            'needs_revision' => 'Perlu revisi', 'approved' => 'Disetujui',
             'completed' => 'Selesai', 'rejected' => 'Ditolak',
         ];
+        $paymentStatusOptions = ['not_started' => 'Belum ada', 'pending_payment' => 'Menunggu pembayaran', 'paid' => 'Dibayar'];
         if ($summaryView) unset($statusOptions['draft']);
-        $selectedStatuses = is_array($request->query('statuses'))
-            ? array_values(array_unique(array_filter($request->query('statuses'), fn ($value) => is_string($value) && array_key_exists($value, $statusOptions))))
-            : [];
         $typeOptions = ['reimbursement' => 'Reimbursement', 'cash_advance' => 'Cash Advance'];
         $selectedTypes = is_array($request->query('types'))
             ? array_values(array_unique(array_filter($request->query('types'), fn ($value) => is_string($value) && array_key_exists($value, $typeOptions))))
@@ -240,6 +239,18 @@ class HrisOperationsController extends Controller
             $selectedTypes = [$type];
         }
         $activeTabType = ! $summaryView && count($selectedTypes) === 1 ? $selectedTypes[0] : ($summaryView ? $type : null);
+        // Accountability is a claim status; payment lifecycle is filtered separately below.
+        if ($activeTabType === 'reimbursement') {
+            unset($statusOptions['awaiting_accountability'], $statusOptions['completed']);
+        } elseif ($activeTabType === 'cash_advance') {
+            unset($paymentStatusOptions['pending_payment'], $paymentStatusOptions['paid']);
+        }
+        $selectedStatuses = is_array($request->query('statuses'))
+            ? array_values(array_unique(array_filter($request->query('statuses'), fn ($value) => is_string($value) && array_key_exists($value, $statusOptions))))
+            : [];
+        $selectedPaymentStatuses = is_array($request->query('payment_statuses'))
+            ? array_values(array_unique(array_filter($request->query('payment_statuses'), fn ($value) => is_string($value) && array_key_exists($value, $paymentStatusOptions))))
+            : [];
         $isValidDate = static function ($value): bool {
             if (! is_string($value) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) return false;
             [$year, $month, $day] = array_map('intval', explode('-', $value));
@@ -295,9 +306,19 @@ class HrisOperationsController extends Controller
             ->whereDate('created_at', '<=', $periodTo)
             ->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))
             ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
+            ->when($selectedPaymentStatuses !== [], function ($q) use ($selectedPaymentStatuses): void {
+                $paymentStates = array_values(array_intersect($selectedPaymentStatuses, ['pending_payment', 'paid']));
+                $q->where('type', 'reimbursement')->where(function ($paymentQuery) use ($selectedPaymentStatuses, $paymentStates): void {
+                    if (in_array('not_started', $selectedPaymentStatuses, true)) $paymentQuery->whereNull('payment_status');
+                    if ($paymentStates !== []) {
+                        if (in_array('not_started', $selectedPaymentStatuses, true)) $paymentQuery->orWhereIn('payment_status', $paymentStates);
+                        else $paymentQuery->whereIn('payment_status', $paymentStates);
+                    }
+                });
+            })
             ->when($selectedCompanyIds !== [], fn ($q) => $q->whereIn('company_id', $selectedCompanyIds))
             ->when($selectedCategories !== [], fn ($q) => $q->whereHas('expenseItems', fn ($detail) => $detail->whereIn('category', $selectedCategories)))
-            ->when($searchKeyword !== '', function ($query) use ($searchKeyword, $statusOptions, $summaryView): void {
+            ->when($searchKeyword !== '', function ($query) use ($searchKeyword, $statusOptions, $paymentStatusOptions, $summaryView): void {
                 $pattern = '%'.$searchKeyword.'%';
                 if (! $summaryView) {
                     $query->where(function ($search) use ($pattern): void {
@@ -307,12 +328,14 @@ class HrisOperationsController extends Controller
                     return;
                 }
                 $matchingStatuses = collect($statusOptions)->filter(fn ($label) => mb_stripos($label, $searchKeyword) !== false)->keys()->all();
-                $query->where(function ($search) use ($pattern, $matchingStatuses): void {
+                $matchingPaymentStatuses = collect($paymentStatusOptions)->filter(fn ($label) => mb_stripos($label, $searchKeyword) !== false)->keys()->reject(fn ($key) => $key === 'not_started')->values()->all();
+                $query->where(function ($search) use ($pattern, $matchingStatuses, $matchingPaymentStatuses): void {
                     $search->whereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern))
                         ->orWhere('request_number', 'ilike', $pattern)
                         ->orWhere('status', 'ilike', $pattern)
                         ->orWhereHas('expenseItems', fn ($detail) => $detail->where('category', 'ilike', $pattern));
                     if ($matchingStatuses !== []) $search->orWhereIn('status', $matchingStatuses);
+                    if ($matchingPaymentStatuses !== []) $search->orWhereIn('payment_status', $matchingPaymentStatuses);
                 });
             })
             ->when($minimumAmount !== null, fn ($q) => $q->where('amount', '>=', $minimumAmount))
@@ -323,7 +346,7 @@ class HrisOperationsController extends Controller
                 ->selectRaw('status, COUNT(*) as total')
                 ->groupBy('status')
                 ->pluck('total', 'status');
-            $approvedStatuses = ['approved', 'pending_payment', 'paid', 'completed'];
+            $approvedStatuses = ['approved'];
             $claimListMetrics = [
                 'total' => (int) $statusCounts->sum(),
                 'approved' => (int) $statusCounts->only($approvedStatuses)->sum(),
@@ -344,15 +367,15 @@ class HrisOperationsController extends Controller
                 'count' => (clone $filteredClaims)->count(),
                 'amounts' => (clone $filteredClaims)->selectRaw('currency, SUM(amount) as total')->groupBy('currency')->orderBy('currency')->get(),
                 'in_progress' => (clone $filteredClaims)->whereIn('status', ['submitted', 'pending_manager', 'pending_finance', 'pending_final', 'needs_revision'])->count(),
-                'completed' => (clone $filteredClaims)->whereIn('status', ['approved', 'pending_payment', 'paid', 'completed'])->count(),
+                'completed' => (clone $filteredClaims)->where('status', $type === 'reimbursement' ? 'approved' : 'completed')->count(),
             ];
         }
         $items = $filteredClaims
-            ->with(['employee.company', 'project'])
+            ->with(['employee.company', 'employee.paymentAccounts' => fn ($accounts) => $accounts->where('account_type', 'reimbursement')->where('is_current', true), 'project'])
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
-        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'claimListMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount'));
+        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedPaymentStatuses', 'paymentStatusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'claimListMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount'));
     }
     public function claimCreate(Request $request): View
     {
@@ -409,17 +432,21 @@ class HrisOperationsController extends Controller
     {
         Gate::authorize($request->routeIs('workspace.hris.claims.summary.show') ? 'viewFromSummary' : 'view', $claim);
         $claim->load(['employee.company', 'project.clients', 'opportunity.account', 'opportunity.contact', 'expenseItems']);
+        $canViewPaymentDetails = $request->routeIs('workspace.hris.claims.summary.show')
+            && $claim->type === 'reimbursement'
+            && $claim->payment_status === 'paid'
+            && ($request->user()->hasRole('super_admin') || $request->user()->can('process_hris_payment'));
         $canViewAuditTrail = Gate::allows('viewAuditTrail', $claim);
         $statusTimeline = collect();
         if ($claim->status !== 'draft') {
             $statusTimeline->push(['label' => 'Pengajuan dikirim', 'state' => 'done', 'at' => $claim->submitted_at ?: $claim->created_at]);
             $managerState = $claim->status === 'needs_revision' && $claim->revision_requested_role === 'manager'
                 ? 'revision'
-                : ($claim->manager_approved_at || in_array($claim->status, ['pending_finance', 'pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true) ? 'done' : ($claim->status === 'pending_manager' ? 'current' : 'upcoming'));
+                : ($claim->manager_approved_at || in_array($claim->status, ['pending_finance', 'pending_final', 'approved', 'completed', 'awaiting_accountability'], true) ? 'done' : ($claim->status === 'pending_manager' ? 'current' : 'upcoming'));
             $statusTimeline->push(['label' => 'Pemeriksaan Atasan', 'state' => $managerState, 'at' => $claim->manager_approved_at ?: ($managerState === 'revision' ? $claim->revision_requested_at : null)]);
             $financeState = $claim->status === 'needs_revision' && $claim->revision_requested_role === 'finance'
                 ? 'revision'
-                : ($claim->finance_approved_at || in_array($claim->status, ['pending_final', 'approved', 'pending_payment', 'paid', 'completed'], true) ? 'done' : ($claim->status === 'pending_finance' ? 'current' : 'upcoming'));
+                : ($claim->finance_approved_at || in_array($claim->status, ['pending_final', 'approved', 'completed', 'awaiting_accountability'], true) ? 'done' : ($claim->status === 'pending_finance' ? 'current' : 'upcoming'));
             $statusTimeline->push(['label' => 'Pemeriksaan Finance', 'state' => $financeState, 'at' => $claim->finance_approved_at ?: ($financeState === 'revision' ? $claim->revision_requested_at : null)]);
             if ($claim->status === 'pending_final' || $claim->final_approved_at || ($claim->status === 'needs_revision' && $claim->revision_requested_role === 'final')) {
                 $finalState = $claim->status === 'needs_revision' && $claim->revision_requested_role === 'final' ? 'revision' : ($claim->final_approved_at ? 'done' : 'current');
@@ -462,7 +489,7 @@ class HrisOperationsController extends Controller
             ? route('workspace.hris.claims', array_merge($request->query(), ['view' => 'summary', 'type' => $claim->type]))
             : route('workspace.hris.claims');
 
-        return view('modules.hris-claim-detail', compact('claim', 'statusTimeline', 'timelineEntries', 'canViewAuditTrail', 'backUrl'));
+        return view('modules.hris-claim-detail', compact('claim', 'statusTimeline', 'timelineEntries', 'canViewAuditTrail', 'canViewPaymentDetails', 'backUrl'));
     }
 
     public function claimPrint(Request $request, Claim $claim): View
@@ -471,11 +498,16 @@ class HrisOperationsController extends Controller
         abort_unless(
             $claim->type === 'reimbursement'
                 && $claim->finance_approved_at !== null
-                && in_array($claim->status, ['approved', 'pending_payment', 'paid', 'completed'], true),
+                && $claim->status === 'approved',
             404,
         );
 
         $claim->load(['employee.company', 'project.clients', 'opportunity.account', 'opportunity.contact', 'expenseItems', 'managerApprover', 'financeApprover', 'finalApprover']);
+        $printedBy = (string) ($request->user()->name ?? 'Pengguna Workspace');
+        $printedAt = now(config('app.timezone'));
+        $canViewPaymentDetails = $claim->payment_status === 'paid'
+            && ($request->user()->hasRole('super_admin') || $request->user()->can('process_hris_payment'));
+        $paymentProof = null;
         $attachmentDisk = Storage::disk((string) config('hris.claim_attachment_disk', 's3'));
         $printAttachments = $claim->expenseItems
             ->filter(fn (ClaimExpenseItem $item): bool => filled($item->attachment_object_key))
@@ -494,6 +526,21 @@ class HrisOperationsController extends Controller
             })
             ->values();
 
+        if ($canViewPaymentDetails && filled($claim->payment_proof_object_key)) {
+            $paymentProofKey = (string) $claim->payment_proof_object_key;
+            try {
+                $paymentProofMimeType = $attachmentDisk->mimeType($paymentProofKey) ?: 'application/octet-stream';
+                if ($attachmentDisk->exists($paymentProofKey) && in_array($paymentProofMimeType, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], true)) {
+                    $paymentProof = [
+                        'mime_type' => $paymentProofMimeType,
+                        'url' => route('workspace.hris.claims.payment-proof', ['claim' => $claim, 'preview' => 1]),
+                    ];
+                }
+            } catch (\Throwable) {
+                $paymentProof = null;
+            }
+        }
+
         $attachmentPages = [];
         foreach ($printAttachments as $attachment) {
             $pageType = str_starts_with($attachment['mime_type'], 'image/') ? 'images' : ($attachment['mime_type'] === 'application/pdf' ? 'pdf' : 'unsupported');
@@ -507,7 +554,7 @@ class HrisOperationsController extends Controller
             $attachmentPages[] = ['type' => $pageType, 'attachments' => [$attachment]];
         }
 
-        return view('modules.hris-claim-print', compact('claim', 'printAttachments', 'attachmentPages'));
+        return view('modules.hris-claim-print', compact('claim', 'printAttachments', 'attachmentPages', 'canViewPaymentDetails', 'paymentProof', 'printedBy', 'printedAt'));
     }
 
     public function claimUpdate(ClaimRequestForm $request, Claim $claim, ClaimService $service): RedirectResponse
@@ -553,7 +600,7 @@ class HrisOperationsController extends Controller
         $isAuthorizedPrintPreview = $request->boolean('preview')
             && $claim->type === 'reimbursement'
             && $claim->finance_approved_at !== null
-            && in_array($claim->status, ['approved', 'pending_payment', 'paid', 'completed'], true)
+            && $claim->status === 'approved'
             && $user->can('print', $claim);
         abort_unless($user->hasRole('super_admin') || $isOwner || $isCompanyViewer || $isManager || $isFinanceApprover || $isFinalApprover || $isAuthorizedPrintPreview, 403);
 
@@ -577,55 +624,101 @@ class HrisOperationsController extends Controller
         ]);
     }
 
-    public function claimPayment(Request $request, string $id): View
-    {
-        $this->authorizePayment($request);
-        $claim = Claim::query()->with(['employee.company', 'expenseItems'])->findOrFail($id);
-        abort_unless($request->user()->hasRole('super_admin') || $request->user()->companies()->whereKey($claim->company_id)->exists(), 403);
-        abort_unless($claim->status === 'pending_payment', 404);
-        return view('modules.hris-claim-payment', compact('claim'));
-    }
-
-    public function claimPaymentStart(Request $request, string $id): RedirectResponse
+    public function claimPaymentStore(Request $request, string $id): RedirectResponse|JsonResponse
     {
         $this->authorizePayment($request);
         $claim = Claim::query()->findOrFail($id);
         abort_unless($request->user()->hasRole('super_admin') || $request->user()->companies()->whereKey($claim->company_id)->exists(), 403);
-        abort_unless($claim->status === 'approved', 422, 'Pengajuan belum disetujui sepenuhnya.');
-        $claim->update(['status' => 'pending_payment']);
-        ApprovalEvent::create(['request_type' => 'claim', 'request_id' => $claim->getKey(), 'step' => 'payment', 'action' => 'pending_payment', 'actor_id' => $request->user()->getKey(), 'comment' => null, 'created_at' => now('UTC')]);
-        return redirect()->route('workspace.hris.claims.payment', $claim->id);
-    }
-
-    public function claimPaymentStore(Request $request, string $id): RedirectResponse
-    {
-        $this->authorizePayment($request);
-        $claim = Claim::query()->findOrFail($id);
-        abort_unless($request->user()->hasRole('super_admin') || $request->user()->companies()->whereKey($claim->company_id)->exists(), 403);
-        abort_unless($claim->status === 'pending_payment', 422, 'Pengajuan belum berada pada tahap pembayaran.');
+        abort_unless($claim->type === 'reimbursement' && $claim->status === 'approved' && $claim->payment_status === 'pending_payment', 422, 'Pembayaran baru dapat dicatat setelah approval selesai.');
         $data = $request->validate([
             'payment_method' => ['required', 'in:transfer,cash,petty_cash'],
-            'paid_to' => ['required', 'string', 'max:150'],
-            'bank_name' => ['nullable', 'string', 'max:100', 'required_if:payment_method,transfer'],
-            'bank_account' => ['nullable', 'string', 'max:100', 'required_if:payment_method,transfer'],
+            'petty_cash_source' => ['nullable', 'string', 'max:150', 'required_if:payment_method,petty_cash'],
             'paid_amount' => ['required', 'numeric', 'min:0.01'],
+            'amount_difference_confirmed' => ['nullable', 'boolean'],
             'paid_at' => ['required', 'date'],
             'payment_reference' => ['nullable', 'string', 'max:150'],
             'payment_proof_id' => ['nullable', 'string', 'max:255'],
+            'payment_proof_file' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
         ]);
-        abort_unless((float) $data['paid_amount'] === (float) $claim->amount, 422, 'Nominal pembayaran harus sama dengan total pengajuan.');
-        $claim->update($data + ['paid_by' => $request->user()->getKey(), 'status' => 'paid']);
+        if (round((float) $data['paid_amount'] * 100) !== round((float) $claim->amount * 100)) {
+            abort_unless(($data['amount_difference_confirmed'] ?? false) === true || ($data['amount_difference_confirmed'] ?? null) === '1', 422, 'Konfirmasi diperlukan karena nominal pembayaran berbeda dari total pengajuan.');
+        }
+        $employee = $claim->employee()->firstOrFail();
+        if ($data['payment_method'] === 'transfer') {
+            $activeAccount = $employee->paymentAccounts()
+                ->where('company_id', $claim->company_id)
+                ->where('account_type', 'reimbursement')
+                ->where('is_current', true)
+                ->first();
+            abort_unless($activeAccount, 422, 'Karyawan belum memiliki rekening reimbursement aktif. Lengkapi data rekening sebelum mencatat pembayaran transfer.');
+            $data['paid_to'] = (string) $activeAccount->account_holder;
+            $data['bank_name'] = (string) $activeAccount->bank_name;
+            $data['bank_account'] = (string) $activeAccount->account_number;
+            $data['petty_cash_source'] = null;
+        } else {
+            $data['paid_to'] = (string) $employee->full_name;
+            $data['bank_name'] = null;
+            $data['bank_account'] = null;
+            if ($data['payment_method'] !== 'petty_cash') $data['petty_cash_source'] = null;
+            else $data['petty_cash_source'] = trim((string) $data['petty_cash_source']);
+        }
+        $proofObjectKey = null;
+        $proofFile = $request->file('payment_proof_file');
+        if ($proofFile) {
+            $extension = strtolower($proofFile->extension() ?: 'bin');
+            $proofObjectKey = 'hris/claim-payment-proofs/'.$claim->getKey().'/'.(string) \Illuminate\Support\Str::uuid().'.'.$extension;
+            $disk = Storage::disk((string) config('hris.claim_attachment_disk', 's3'));
+            abort_unless($disk->putFileAs(dirname($proofObjectKey), $proofFile, basename($proofObjectKey), ['visibility' => 'private']), 500, 'Bukti pembayaran gagal disimpan.');
+        }
+        try {
+            DB::connection('hris')->transaction(function () use ($claim, $data, $request, $proofObjectKey): void {
+                $lockedClaim = Claim::query()->whereKey($claim->getKey())->lockForUpdate()->firstOrFail();
+                abort_unless($lockedClaim->type === 'reimbursement' && $lockedClaim->status === 'approved' && $lockedClaim->payment_status === 'pending_payment', 422, 'Pembayaran klaim ini sudah dicatat atau belum dapat diproses.');
+                unset($data['payment_proof_file']);
+                $lockedClaim->update($data + ['payment_proof_object_key' => $proofObjectKey, 'paid_by' => $request->user()->getKey(), 'payment_status' => 'paid']);
+                ApprovalEvent::create(['request_type' => 'claim', 'request_id' => $lockedClaim->getKey(), 'step' => 'payment', 'action' => 'paid', 'actor_id' => $request->user()->getKey(), 'comment' => null, 'created_at' => now('UTC')]);
+            });
+        } catch (\Throwable $exception) {
+            if ($proofObjectKey) Storage::disk((string) config('hris.claim_attachment_disk', 's3'))->delete($proofObjectKey);
+            throw $exception;
+        }
+        $claim->refresh();
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Pembayaran reimbursement berhasil dicatat.',
+                'payment_status' => $claim->payment_status,
+                'payment_status_label' => $claim->payment_status_label,
+                'paid_at' => $claim->paid_at?->format('d/m/Y'),
+            ]);
+        }
         return redirect()->route('workspace.hris.claims')->with('status', 'Pembayaran reimbursement berhasil dicatat.');
     }
 
-    public function claimComplete(Request $request, string $id): RedirectResponse
+    public function claimPaymentProof(Request $request, Claim $claim): StreamedResponse
     {
         $this->authorizePayment($request);
-        $claim = Claim::query()->findOrFail($id);
+        abort_unless($claim->type === 'reimbursement' && $claim->payment_status === 'paid', 404);
         abort_unless($request->user()->hasRole('super_admin') || $request->user()->companies()->whereKey($claim->company_id)->exists(), 403);
-        abort_unless($claim->status === 'paid', 422, 'Pengajuan belum berstatus dibayar.');
-        $claim->update(['status' => 'completed', 'completed_at' => now()]);
-        return back()->with('status', 'Pengajuan reimbursement ditandai selesai.');
+
+        $objectKey = (string) $claim->payment_proof_object_key;
+        $disk = Storage::disk((string) config('hris.claim_attachment_disk', 's3'));
+        abort_unless($objectKey !== '' && $disk->exists($objectKey), 404, 'File bukti pembayaran tidak ditemukan.');
+        $stream = $disk->readStream($objectKey);
+        abort_unless(is_resource($stream), 404, 'File bukti pembayaran tidak dapat dibaca.');
+
+        $mimeType = $disk->mimeType($objectKey) ?: 'application/octet-stream';
+        abort_unless(in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], true), 415);
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response()->stream(function () use ($stream): void {
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => $disposition.'; filename="bukti-pembayaran-'.(string) $claim->getKey().'.'.strtolower(pathinfo($objectKey, PATHINFO_EXTENSION)).'"',
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     private function authorizePayment(Request $request): void

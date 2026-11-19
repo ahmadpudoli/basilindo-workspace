@@ -75,6 +75,9 @@ class HrisWorkflowService
             }
             if ($requestType === 'claim' && $step === 'final' && $action === 'approve') $nextStatus = 'approved';
             $request->status = $nextStatus;
+            if ($requestType === 'claim' && $request->type === 'reimbursement' && $nextStatus === 'approved') {
+                $request->payment_status ??= 'pending_payment';
+            }
             $field = $step.'_approved_by'; $time = $step.'_approved_at';
             if ($action === 'approve') $request->forceFill([$field => $actor->getKey(), $time => now()]);
             $request->forceFill(['decision_reason' => $comment]);

@@ -274,7 +274,7 @@
                         @php
                             $currentPath = parse_url(request()->url(), PHP_URL_PATH);
                             $navigationPath = $currentPath;
-                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.show', 'workspace.hris.claims.summary.show', 'workspace.hris.claims.payment', 'workspace.hris.claims.payment.start', 'workspace.hris.claims.payment.store', 'workspace.hris.claims.complete')) {
+                            if (request()->routeIs('workspace.hris.claims', 'workspace.hris.claims.create', 'workspace.hris.claims.edit', 'workspace.hris.claims.show', 'workspace.hris.claims.summary.show', 'workspace.hris.claims.payment.store')) {
                                 $navigationPath = request()->routeIs('workspace.hris.claims.summary.show') || request('view') === 'summary'
                                     ? (request('type') === 'cash_advance' ? 'hris-claims-summary-cash-advance' : 'hris-claims-summary-reimbursement')
                                     : 'hris-claims-list';

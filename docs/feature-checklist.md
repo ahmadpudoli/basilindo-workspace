@@ -1,4 +1,29 @@
 # Feature Checklist
+- [x] Cetakan reimbursement memiliki panel terpisah untuk rincian biaya dan tanda tangan/persetujuan, serta mencantumkan pengguna dan waktu cetak.
+- [x] Pratinjau cetak menempatkan rincian biaya dan persetujuan pada ruang halaman yang tersedia, memindahkannya bila tidak muat, dan memulai lampiran pada halaman baru.
+- [x] Halaman cetak reimbursement menyediakan pilihan A4, Letter, Legal, dan A3; preview seluruh lembar dan ukuran cetak mengikuti pilihan aktif.
+- [x] Detail pembayaran pada dokumen cetak dikelompokkan di dalam panel informasi pengajuan dan status pembayaran ditampilkan dengan badge berwarna sesuai status.
+- [x] Dokumen cetak reimbursement menampilkan status pembayaran, detail pembayaran sesuai permission, dan bukti pembayaran sebagai lampiran terakhir bila tersedia.
+- [x] Panel konteks pengajuan pada detail reimbursement memakai aksen pastel, hierarki informasi yang jelas, dan tata letak compact tanpa kotak per field.
+- [x] Popup preview bukti pembayaran menggunakan satu kolom dengan lebar proporsional dan tinggi viewer yang menyesuaikan viewport.
+- [x] Popup preview bukti pembayaran menggunakan satu kolom dengan lebar proporsional dan tinggi viewer yang menyesuaikan viewport.
+- [x] Bukti pembayaran reimbursement dapat dipreview dalam popup dan diunduh melalui endpoint privat khusus pemegang hak pencatatan pembayaran.
+- [x] Panel riwayat pada detail reimbursement diperkecil menjadi seperempat lebar di desktop, sementara konten utama diperluas dan layout mobile tetap penuh.
+- [x] Panel pembayaran pada detail reimbursement memakai tampilan modern beraksen lembut, layout datar tanpa kotak per field, dan tipografi compact yang mudah dipindai.
+- [x] Detail reimbursement pada ringkasan menampilkan snapshot informasi pembayaran hanya bila sudah dibayar dan pengguna memiliki `process_hris_payment` atau `super_admin`.
+- [x] Popup pembayaran membaca rekening aktif dari tombol khusus pemegang permission proses pembayaran setelah dropdown dipindahkan ke body; nomor lengkap tampil untuk transfer dan tidak ditanam pada baris tabel umum.
+- [x] Panel rekening gaji dan reimbursement pada data pembayaran karyawan memiliki tinggi independen; tabel riwayat tidak terdorong oleh tinggi panel sebelah.
+- [x] Pencatatan reimbursement menggunakan rekening reimbursement aktif untuk transfer (transfer ditolak bila rekening tidak ada), nama karyawan sebagai penerima tunai/kas kecil, dan sumber kas kecil teks bebas disimpan tanpa mencatat saldo/mutasi.
+- [x] Launcher `/dashboard` menampilkan enam kartu modul per baris pada desktop lebar, tiga di tablet, dan dua di mobile dengan ukuran kartu/teks compact dan deskripsi ringkas.
+- [x] Pintasan Pengaturan Workspace tampil compact dalam enam kolom pada layar lebar, dengan tampilan responsif, aksen ikon, warna, dan hover/focus modern.
+- [x] Dashboard HRIS memakai satu template dasar untuk semua role; kartu pengajuan pribadi, KPI tenaga kerja, daftar karyawan, CTA, dan approval digabungkan sesuai permission.
+- [x] Simpan pertama rekening gaji/reimbursement meminta konfirmasi; penggantian versi aktif meminta konfirmasi lalu password dan server mewajibkan password bila rekening aktif sudah ada.
+- [x] Pemegang permission lihat rekening dapat membuka nomor aktif dan riwayat setelah verifikasi password di popup keamanan; endpoint memeriksa scope/relasi, membatasi percobaan, dan mencegah cache. Isi otomatis payroll juga diverifikasi dan tidak menaruh nomor rekening pada HTML.
+- [x] Rekening aktif ditandai badge hijau pada ringkasan dan riwayat; tabel riwayat payment account menggunakan lebar panel, status jelas, dan tidak memotong kolom.
+- [x] Menu aksi karyawan menampilkan ikon ringkas untuk Data pembayaran, Ubah, serta Hapus/Arsipkan.
+- [x] Rekening gaji dan reimbursement memilih bank aktif dari dropdown master Core yang dapat dicari berdasarkan nama/singkatan; singkatan tampil dalam kurung, kode transfer tidak ditampilkan, dan ID master berupa varchar.
+- [x] Rekening gaji dan reimbursement memilih bank aktif dari master Core dengan ID varchar dan kode transfer teks; migration menambahkan data bank Indonesia dan memetakan data lama yang cocok tanpa menghapus snapshot.
+- [x] Rekening gaji dan reimbursement memilih bank aktif dari master Core dengan ID varchar dan kode transfer teks; migration menambahkan data bank Indonesia dan memetakan data lama yang cocok tanpa menghapus snapshot.
 - [x] Ringkasan cuti/sakit mencari nama, NIP, dan nomor pengajuan; menampilkan nomor pengajuan, lebar kolom proporsional, dropdown aksi compact, dan panel metrik terpadu.
 - [x] Gaya nomor pengajuan pada Ringkasan Cuti Karyawan sama dengan daftar Cuti & Sakit: warna kode, font monospace, dan ukuran teks.
 - [x] Gaya nomor pengajuan pada Ringkasan Lembur Karyawan sama dengan daftar Lembur: warna kode, font monospace, dan ukuran teks.
@@ -30,13 +55,26 @@
 - [x] Detail dari menu pribadi Reimbursement & Cash Advance hanya dapat dibuka pemilik/pemohon; detail dari route Ringkasan memakai permission ringkasan/`view_any_claim`, scope perusahaan, dan mengecualikan draft.
 - [x] Detail dari Ringkasan Reimbursement memakai route terpisah, mempertahankan menu aktif dan query filter saat kembali, serta tetap memeriksa policy owner dan scope perusahaan.
 - [x] Ringkasan reimbursement/cash advance menghilangkan panel ikhtisar terpisah dan memakai class KPI global yang sama dengan halaman cuti/lembur; divider empat metrik tetap jelas pada mobile.
-- [x] Tab Reimbursement pada daftar pribadi menampilkan KPI total, disetujui/dibayar dan nominal per mata uang, dalam proses, ditolak, serta draft sesuai filter aktif; panel mengikuti gaya lembur dan collapse mobile.
+- [x] Tab Reimbursement pada daftar pribadi menampilkan KPI total, disetujui dan nominal per mata uang, dalam proses, ditolak, serta draft sesuai filter aktif; panel mengikuti gaya lembur dan collapse mobile.
 - [x] Panel KPI reimbursement dibuat lebih rendah, collapsed secara default pada mobile, dan panel filter desktop memiliki padding serta jarak KPI agar label/kontrol tidak terpotong
 - [x] Dropdown mata uang pada form reimbursement hanya menawarkan IDR dan validasi server menolak mata uang lain.
 - [x] Tabel pribadi Reimbursement & Cash Advance menampilkan nomor pengajuan dengan style `<code>` yang sama seperti tabel Pengajuan Lembur.
 - [x] Ikon menu aksi daftar klaim dibedakan sesuai tindakan Detail, Edit draft, dan Hapus draft.
 - [x] Kolom status pada daftar klaim cukup lebar untuk menjaga label status tetap satu baris, dengan kolom aksi tetap ringkas.
 - [x] Filter ringkasan klaim menyediakan kata kunci nama/nomor/status/kategori, rentang nominal total, dan tata letak dua baris responsif.
+- [x] Filter status ringkasan klaim hanya menawarkan status yang berlaku untuk jenis workflow aktif; status pembayaran khusus reimbursement dan pertanggungjawaban khusus cash advance dipisahkan.
+- [x] Status pengajuan dan status pembayaran reimbursement disimpan, difilter, ditampilkan, serta diagregasi terpisah; status pembayaran tetap null sebelum approval, otomatis menunggu pembayaran setelah approval final, lalu dibayar tanpa mengubah status pengajuan dari Disetujui.
+- [x] Ringkasan Reimbursement menyediakan modal AJAX untuk mencatat pembayaran tanpa meninggalkan halaman, menampilkan loading setelah validasi client lolos hingga response server diterima, memakai format nominal `id-ID` dengan input angka/koma saja dan tanpa pemisah ribuan saat diedit, serta memberi informasi dan konfirmasi melalui modal Workspace ketika nominal pembayaran berbeda dari total pengajuan; aksi dibatasi untuk `finance_admin`/`super_admin` dan endpoint mencegah pencatatan ganda.
+- [x] Ringkasan reimbursement hanya merender satu tabel; popup mewajibkan tanggal dan file bukti pembayaran maksimal 5 MB dengan thumbnail gambar serta aksi ganti/hapus; validasi client/server dan kompresi gambar tetap berlaku.
+- [x] Style tabel ringkasan reimbursement tersedia sebagai class global `.workspace-table-card` dan `.workspace-data-table`, dengan modifier kolom khusus terpisah dan pagination global.
+- [x] Instruksi agen mewajibkan penggunaan class tabel dan dropdown aksi global untuk tabel baru; style dasar tidak ditulis ulang per halaman.
+- [x] Daftar Karyawan HRIS menggunakan style tabel global dengan lebar kolom proporsional, footer pagination Workspace, dan menu aksi tiga titik yang tidak terpotong scroll tabel.
+- [x] Menu dropdown aksi tabel menggunakan ikon yang sesuai untuk setiap tindakan, termasuk Data pembayaran, Ubah, dan Arsipkan; pedoman ini berlaku untuk menu dropdown fitur berikutnya.
+- [x] Dropdown aksi karyawan hanya menampilkan item tindakan dalam layout compact berikon, dengan bayangan lembut, animasi ringan, dan hover/focus yang jelas; instruksi global melarang header/deskripsi tambahan pada dropdown berikutnya.
+- [x] Form Data Pembayaran Karyawan memakai `.workspace-floating-field` untuk semua input floating label; instruksi global mewajibkan komponen tersebut pada form Workspace berikutnya.
+- [x] Semua input rekening memiliki validasi client dan server; panel reimbursement dapat menyalin detail rekening gaji dengan permission lihat dan ubah yang sesuai.
+- [x] Permission `process_hris_payment` dikelompokkan pada HRIS → Approval & ringkasan di form pengelolaan role dan pengguna.
+- [x] Permission `manage_hris_expense_categories` dan `manage_hris_settings` dikelompokkan pada Core & Pengaturan → Pengaturan HRIS di form pengelolaan role dan pengguna.
 - [x] KPI ringkasan reimbursement/cash advance collapsed secara default pada mobile dan tetap terbuka pada desktop.
 - [x] KPI ringkasan klaim memiliki padding internal yang memisahkan kartu metrik dari header toggle dan batas panel saat dibuka di mobile.
 - [x] Panel KPI tab Reimbursement dan halaman ringkasan memakai class global `workspace-mobile-kpi-panel`, sehingga toggle, keadaan collapsed mobile, dan padding konsisten.
@@ -420,6 +458,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Relasi employee satu-perusahaan melalui pilihan karyawan pada form user, dengan scope perusahaan
 
 ## Modul HRIS
+
+- [x] Rekening gaji dan reimbursement karyawan memiliki akses granular di HRIS → Pegawai, enkripsi, masking riwayat, dan audit tanpa nilai sensitif.
 
 - [x] Dokumen kontrak/personal karyawan memiliki domain dan menu khusus HRIS,
   terpisah dari Document Management umum.

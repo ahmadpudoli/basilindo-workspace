@@ -493,6 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmModal = confirmModalElement ? bootstrap.Modal.getOrCreateInstance(confirmModalElement) : null;
     let pendingConfirmForm = null;
     let pendingConfirmSubmitter = null;
+    let pendingConfirmResolve = null;
     const loadingOverlay = document.querySelector('[data-workspace-loading]');
     const loadingMessage = loadingOverlay?.querySelector('[data-workspace-loading-message]');
     const showLoading = (message = 'Memproses...') => {
@@ -502,6 +503,20 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingOverlay.setAttribute('aria-hidden', 'false');
     };
     window.addEventListener('workspace:show-loading', (event) => showLoading(event.detail || 'Memproses...'));
+    window.workspaceConfirm = (message, options = {}) => new Promise((resolve) => {
+        if (!confirmModal || !confirmMessage || !confirmSubmit) {
+            resolve(false);
+            return;
+        }
+        pendingConfirmForm = null;
+        pendingConfirmSubmitter = null;
+        pendingConfirmResolve = resolve;
+        confirmMessage.textContent = message;
+        confirmSubmit.textContent = options.action || 'Lanjutkan';
+        confirmCommentWrap?.classList.add('d-none');
+        if (confirmComment) confirmComment.value = '';
+        confirmModal.show();
+    });
     const formLoadingMessage = (form) => {
         const method = (form.querySelector('input[name="_method"]')?.value || form.method || 'GET').toUpperCase();
         const actionText = form.querySelector('button[type="submit"], button')?.textContent?.trim().toLowerCase() || '';
@@ -566,6 +581,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'hris-workflow') {
             if (!value('company_id')) addError('company_id', 'Perusahaan operasional wajib dipilih.');
             if (!value('user_id')) addError('user_id', 'Approver wajib dipilih.');
+        }
+        if (type === 'payment-account') {
+            if (!form.querySelector('[name="bank_id"]:checked')) addError('bank_id', 'Pilih nama bank dari daftar master.', form.querySelector('[data-account-bank-trigger]'));
+            if (!value('account_holder')) addError('account_holder', 'Nama pemilik rekening wajib diisi.');
+            else if (value('account_holder').length > 160) addError('account_holder', 'Nama pemilik rekening maksimal 160 karakter.');
+            const accountNumber = value('account_number');
+            const accountDigits = accountNumber.replace(/\D/g, '');
+            if (!accountNumber) addError('account_number', 'Nomor rekening wajib diisi.');
+            else if (!/^[0-9 .-]+$/.test(accountNumber) || accountDigits.length < 6 || accountDigits.length > 34) addError('account_number', 'Nomor rekening harus berupa 6 sampai 34 digit.');
         }
         if (type === 'hris-claim') {
             const scope = form.querySelector('[name="expense_scope"]:checked')?.value || '';
@@ -755,6 +779,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }, true);
 
     confirmSubmit?.addEventListener('click', () => {
+        if (pendingConfirmResolve) {
+            const resolve = pendingConfirmResolve;
+            pendingConfirmResolve = null;
+            confirmModal.hide();
+            resolve(true);
+            return;
+        }
         if (!pendingConfirmForm) return;
         const form = pendingConfirmForm;
         pendingConfirmForm = null;
@@ -1094,6 +1125,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     confirmModalElement?.addEventListener('hidden.bs.modal', () => {
+        if (pendingConfirmResolve) {
+            const resolve = pendingConfirmResolve;
+            pendingConfirmResolve = null;
+            resolve(false);
+        }
         pendingConfirmForm = null;
         pendingConfirmSubmitter = null;
     });
