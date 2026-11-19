@@ -519,6 +519,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
 - [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
 - [x] Daftar karyawan dengan filter perusahaan multiple select, pagination, dan aksi ubah/hapus/arsip
+- [x] Tombol Tambah Karyawan memakai ikon orang-plus dan gaya aksi utama global yang modern serta aksesibel.
 - [x] Relasi akun Core User dengan karyawan (Nama dan NIP)
 - [x] Permission HRIS dikelompokkan pada bagian HRIS di form role dan user, termasuk role hris_admin dan hris_member
 - [x] Master role dan permission HRIS diprovision melalui migration data idempotent, termasuk approval dan permission ringkasan

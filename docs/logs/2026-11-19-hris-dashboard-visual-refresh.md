@@ -120,3 +120,6 @@ Tanggal: 2026-11-19
 - Verifikasi: `git diff --check`.
 - Memperbaiki KPI daftar yang sempat hilang di mobile: menghapus aturan halaman yang menyembunyikan tombol, lalu memusatkan toggle/padding/grid terbuka pada class global `workspace-mobile-kpi-panel` yang dipakai daftar dan ringkasan.
 - Verifikasi: `git diff --check`.
+- Memperbarui tombol Tambah Karyawan dengan ikon orang-plus SVG dan style aksi utama global bergradasi, hover, serta focus-visible.
+- Verifikasi: `git diff --check`.
+- Koreksi: route daftar karyawan memakai view `hris-employees-enhanced.blade.php`; perubahan tombol dipindahkan ke view aktif setelah terdeteksi sebelumnya hanya mengubah view legacy. CSS Vite dev server juga sudah memuat class `workspace-primary-action`.

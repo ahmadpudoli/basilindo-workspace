@@ -205,6 +205,7 @@ audit, dan layout aplikasi yang sudah tersedia.
 ### Master karyawan
 
 - Pengguna berizin dapat melihat karyawan sesuai company scope.
+- Tombol Tambah Karyawan memiliki ikon orang-plus yang jelas dan gaya aksi utama modern, dengan fokus keyboard yang terlihat.
 - Data karyawan memiliki nomor karyawan, nama, perusahaan, jabatan, atasan,
   tanggal mulai, dan status.
 - Karyawan yang sudah memiliki relasi tidak dihapus permanen; arsip memakai
