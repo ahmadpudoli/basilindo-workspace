@@ -111,4 +111,4 @@ Tanggal: 2026-11-19
 - Verifikasi: `git diff --check`.
 - Risiko tersisa: tampilan visual belum diperiksa lewat browser pada ukuran layar nyata.
 - Perbaikan lanjutan filter klaim: padding 12px vertikal dan 16px horizontal sekarang melekat langsung pada baris isi filter global; padding luar form dinetralkan agar tidak bertumpuk dengan gutter Bootstrap atau aturan `.card-body`.
-- Verifikasi: `git diff --check` dan build Vite.
+- Verifikasi: `git diff --check` bersih; Vite dev server menyajikan aturan CSS terbaru. Build produksi belum dapat selesai karena Windows menolak penghapusan aset di `public/build` (`EPERM`, file sedang terkunci).
