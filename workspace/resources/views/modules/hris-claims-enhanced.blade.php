@@ -43,11 +43,15 @@ body:has(.claim-summary-hero) .claim-summary-company{display:none}
 .claim-summary-metrics{border-color:#cfe3ff;background:linear-gradient(110deg,#eaf4ff 0%,#fff 48%,#f1efff 100%)}
 </style>
 <section class="claim-summary-hero mb-3"><div class="d-flex flex-wrap align-items-center justify-content-between gap-3"><div><div class="claim-summary-kicker">Ikhtisar pengajuan · {{ $periodFrom === $periodTo ? \Illuminate\Support\Carbon::parse($periodFrom)->translatedFormat('d M Y') : \Illuminate\Support\Carbon::parse($periodFrom)->translatedFormat('d M Y').' – '.\Illuminate\Support\Carbon::parse($periodTo)->translatedFormat('d M Y') }}</div><h2 class="h5 mt-1 mb-1">{{ $activeTabType === 'reimbursement' ? 'Aktivitas reimbursement' : 'Aktivitas cash advance' }}</h2><div class="small text-secondary">Data dibatasi pada perusahaan yang dapat Anda akses. Pengajuan draft tidak termasuk.</div></div><div class="d-flex flex-wrap gap-2">@foreach($items->getCollection()->pluck('employee.company.name')->filter()->unique()->take(3) as $companyName)<span class="claim-summary-company"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 21V5.5L12 2l8 3.5V21M2 21h20M8 8h1m6 0h1M8 12h1m6 0h1M10 21v-4h4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ $companyName }}</span>@endforeach</div></div></section>
-<section class="workspace-overtime-summary-panel workspace-overtime-summary-panel--four mb-3" aria-label="Metrik pengajuan">
+<section class="workspace-mobile-panel workspace-mobile-kpi-panel mb-3" data-mobile-panel>
+<button type="button" class="workspace-mobile-panel-toggle" data-mobile-toggle aria-expanded="false" aria-controls="claim-summary-kpis">Ringkasan {{ $activeTabType === 'reimbursement' ? 'reimbursement' : 'cash advance' }} <span data-mobile-toggle-icon>+</span></button>
+<div class="workspace-mobile-panel-content" id="claim-summary-kpis">
+<div class="workspace-overtime-summary-panel workspace-overtime-summary-panel--four workspace-mobile-kpi-panel-grid" aria-label="Metrik pengajuan">
 <div class="workspace-overtime-summary-card"><span>Total pengajuan</span><strong>{{ number_format($summaryMetrics['count'], 0, ',', '.') }}</strong><small>Pengajuan dalam filter ringkasan</small></div>
 <div class="workspace-overtime-summary-card"><span>Total nominal</span><strong class="workspace-claim-summary-amount">@forelse($summaryMetrics['amounts'] as $amount)<span class="d-block">{{ $amount->currency }} {{ number_format((float) $amount->total, 0, ',', '.') }}</span>@empty<span>—</span>@endforelse</strong></div>
 <div class="workspace-overtime-summary-card is-pending"><span>Dalam proses</span><strong>{{ number_format($summaryMetrics['in_progress'], 0, ',', '.') }}</strong><small>Pengajuan menunggu proses</small></div>
 <div class="workspace-overtime-summary-card is-approved"><span>Disetujui / dibayar</span><strong>{{ number_format($summaryMetrics['completed'], 0, ',', '.') }}</strong><small>Pengajuan selesai disetujui</small></div>
+</div>
 </section>
 @endif
 <style>@unless($summaryView)
@@ -94,19 +98,19 @@ body:has(.claim-summary-hero) .claim-summary-company{display:none}
 .claim-list-reimbursement-kpis>.workspace-overtime-summary-card strong{color:#1c2d46;font-size:1.3rem;letter-spacing:-.025em;line-height:1.15}
 .claim-list-reimbursement-kpis>.workspace-overtime-summary-card small{color:#718198;font-size:.68rem;line-height:1.35}
 .claim-list-reimbursement-kpis>.workspace-overtime-summary-card.is-approved strong{color:#178052}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card.is-pending strong{color:#a36a0a}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card.is-rejected strong{color:#bb4650}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card.is-draft strong{color:#6c5bb5}
-.claim-list-kpi-panel>.workspace-mobile-panel-toggle{display:none}
 @media(max-width:991.98px){.claim-list-reimbursement-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card:nth-child(4){border-left:0}}
-@media(max-width:768px){.claim-list-kpi-panel{background:transparent;border:0;border-radius:0;overflow:visible}.claim-list-kpi-panel>.workspace-mobile-panel-toggle{background:transparent;display:flex;padding:10px 6px}.claim-list-kpi-panel:not(.is-open)>.claim-list-reimbursement-kpis{display:none}.claim-list-kpi-panel.is-open>.claim-list-reimbursement-kpis{display:grid}}
 @media(max-width:575.98px){.claim-list-reimbursement-kpis{grid-template-columns:repeat(2,minmax(0,1fr));padding:7px}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card{min-height:68px;padding:8px 10px}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card:nth-child(odd){border-left:0}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card:nth-child(4){border-left:1px solid rgba(105,130,164,.25)}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card:nth-child(n+3){border-top:1px solid rgba(105,130,164,.25)}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card:last-child{grid-column:span 2;border-left:0}.claim-list-reimbursement-kpis::after{opacity:.55}.claim-list-reimbursement-kpis>.workspace-overtime-summary-card strong{font-size:1.2rem}}
 </style>
-<section class="workspace-mobile-panel claim-list-kpi-panel" data-mobile-panel>
-<button type="button" class="workspace-mobile-panel-toggle" data-mobile-toggle aria-expanded="false">Ringkasan reimbursement <span data-mobile-toggle-icon>+</span></button>
-<div class="claim-list-reimbursement-kpis workspace-mobile-panel-content" aria-label="KPI reimbursement">
+<section class="workspace-mobile-panel workspace-mobile-kpi-panel claim-list-kpi-panel" data-mobile-panel>
+<button type="button" class="workspace-mobile-panel-toggle" data-mobile-toggle aria-expanded="false" aria-controls="claim-list-reimbursement-kpis">Ringkasan reimbursement <span data-mobile-toggle-icon>+</span></button>
+<div class="workspace-mobile-panel-content" id="claim-list-reimbursement-kpis">
+<div class="claim-list-reimbursement-kpis workspace-mobile-kpi-panel-grid" aria-label="KPI reimbursement">
 <div class="workspace-overtime-summary-card"><span>Total pengajuan</span><strong>{{ number_format($claimListMetrics['total'], 0, ',', '.') }}</strong><small>pengajuan pada hasil filter</small></div>
 <div class="workspace-overtime-summary-card is-approved"><span>Disetujui / dibayar</span><strong>{{ number_format($claimListMetrics['approved'], 0, ',', '.') }}</strong><small>@forelse($claimListMetrics['approved_amounts'] as $amount){{ $amount->currency }} {{ number_format((float) $amount->total, 2, ',', '.') }}@if(! $loop->last) · @endif @empty Belum ada nominal disetujui @endforelse</small></div>
 <div class="workspace-overtime-summary-card is-pending"><span>Dalam proses</span><strong>{{ number_format($claimListMetrics['in_progress'], 0, ',', '.') }}</strong><small>pengajuan menunggu proses</small></div>
 <div class="workspace-overtime-summary-card is-rejected"><span>Ditolak</span><strong>{{ number_format($claimListMetrics['rejected'], 0, ',', '.') }}</strong><small>pengajuan ditolak</small></div>
 <div class="workspace-overtime-summary-card is-draft"><span>Draft</span><strong>{{ number_format($claimListMetrics['draft'], 0, ',', '.') }}</strong><small>belum dikirim</small></div>
+</div>
 </div>
 </section>
 @endif

@@ -37,6 +37,9 @@
 - [x] Ikon menu aksi daftar klaim dibedakan sesuai tindakan Detail, Edit draft, dan Hapus draft.
 - [x] Kolom status pada daftar klaim cukup lebar untuk menjaga label status tetap satu baris, dengan kolom aksi tetap ringkas.
 - [x] Filter ringkasan klaim menyediakan kata kunci nama/nomor/status/kategori, rentang nominal total, dan tata letak dua baris responsif.
+- [x] KPI ringkasan reimbursement/cash advance collapsed secara default pada mobile dan tetap terbuka pada desktop.
+- [x] KPI ringkasan klaim memiliki padding internal yang memisahkan kartu metrik dari header toggle dan batas panel saat dibuka di mobile.
+- [x] Panel KPI tab Reimbursement dan halaman ringkasan memakai class global `workspace-mobile-kpi-panel`, sehingga toggle, keadaan collapsed mobile, dan padding konsisten.
 - [x] Daftar claim pribadi Semua dan Reimbursement menyediakan pencarian server-side berdasarkan nama karyawan dan nomor pengajuan pada posisi pertama; keyword bekerja bersama filter lain dan dipertahankan melalui pagination.
 - [x] Field Periode sampai pada filter daftar claim pribadi memiliki lebar yang sama dengan Periode dari; kolom Jenis pengajuan dan Kategori mendapat lebar minimum yang lebih lega.
 - [x] Grid filter klaim desktop menjaga teks kontrol tetap terbaca dan menempatkan tombol Reset/Terapkan yang ringkas pada baris bawah.

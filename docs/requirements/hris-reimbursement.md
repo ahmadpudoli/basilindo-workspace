@@ -11,7 +11,8 @@ berjenjang sesuai scope perusahaan dan proses pembayaran terpisah oleh Finance.
 
 - Daftar kerja `/workspace/hris/claims` dan tab Semua/Reimbursement/Cash Advance hanya menampilkan klaim milik pengguna login (requester atau karyawan yang terhubung ke akun); draft yang dibuat pengguna sendiri juga tetap terlihat. Hak akses scope perusahaan tidak memperluas daftar pribadi ini.
 - Tab Reimbursement menampilkan panel KPI compact satu panel seperti daftar lembur: total pengajuan, disetujui/dibayar beserta nominalnya, dalam proses, ditolak, dan draft. Agregasi mengikuti filter daftar aktif (periode, status, kategori, dan jenis) serta scope data pemohon; cash advance tidak masuk hitungan. Status disetujui/dibayar mencakup approved, pending payment, paid, dan completed; nominal ditampilkan per mata uang.
-- Panel KPI reimbursement mobile dapat diciutkan/dibuka dan tertutup secara default untuk menghemat ruang; desktop menampilkan panel tanpa kontrol tambahan.
+- Panel KPI reimbursement mobile memakai komponen global `workspace-mobile-kpi-panel`, dapat diciutkan/dibuka dan tertutup secara default; desktop menampilkan panel tanpa kontrol tambahan.
+- Panel KPI tab Reimbursement memakai bingkai collapsible, header, dan padding mobile yang sama dengan KPI ringkasan reimbursement.
 - Panel KPI memakai tinggi compact dan filter daftar pada desktop lebar menjaga label floating serta seluruh kontrol tetap terlihat di dalam panel.
 - Semua panel filter HRIS memakai class global `workspace-list-filter-form`; padding 12px vertikal dan 16px horizontal diterapkan pada baris konten secara konsisten agar label floating tidak terpotong dan gutter Bootstrap tidak menggandakan jarak.
 - Daftar claim pribadi Semua dan Reimbursement menyediakan pencarian server-side berdasarkan nama karyawan dan nomor pengajuan; keyword bekerja bersama filter lain dan dipertahankan melalui pagination.

@@ -112,3 +112,11 @@ Tanggal: 2026-11-19
 - Risiko tersisa: tampilan visual belum diperiksa lewat browser pada ukuran layar nyata.
 - Perbaikan lanjutan filter klaim: padding 12px vertikal dan 16px horizontal sekarang melekat langsung pada baris isi filter global; padding luar form dinetralkan agar tidak bertumpuk dengan gutter Bootstrap atau aturan `.card-body`.
 - Verifikasi: `git diff --check` bersih; Vite dev server menyajikan aturan CSS terbaru. Build produksi belum dapat selesai karena Windows menolak penghapusan aset di `public/build` (`EPERM`, file sedang terkunci).
+- KPI halaman ringkasan reimbursement/cash advance sekarang memakai panel collapsible global dengan kondisi awal collapsed pada mobile; toggle tersembunyi di desktop sehingga KPI tetap tampil.
+- Verifikasi: markup memakai mekanisme `data-mobile-panel`/`data-mobile-toggle` yang sama dengan panel KPI lembur; `git diff --check`.
+- Menambah padding mobile 8px di atas, 10px horizontal, dan 10px di bawah konten KPI ringkasan klaim agar kartu metrik terpisah dari divider header dan tepi container.
+- Verifikasi: `git diff --check`.
+- Menyamakan panel KPI tab Reimbursement dengan ringkasan: bingkai collapsible global, header toggle, padding mobile, dan kartu gradasi di dalam container.
+- Verifikasi: `git diff --check`.
+- Memperbaiki KPI daftar yang sempat hilang di mobile: menghapus aturan halaman yang menyembunyikan tombol, lalu memusatkan toggle/padding/grid terbuka pada class global `workspace-mobile-kpi-panel` yang dipakai daftar dan ringkasan.
+- Verifikasi: `git diff --check`.

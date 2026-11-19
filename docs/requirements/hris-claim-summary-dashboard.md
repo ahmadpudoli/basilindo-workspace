@@ -21,6 +21,8 @@ Menyajikan ikhtisar pengajuan biaya karyawan yang mudah dibaca pada desktop dan 
 - Header ringkasan compact dengan aksen warna, empat metrik disatukan dalam satu panel tipis, dan form filter memakai grid responsif dengan tombol Reset/Terapkan sejajar.
 - Header ikhtisar tidak menampilkan badge nama perusahaan; filter Perusahaan menyediakan multi-select dropdown yang hanya berisi perusahaan dalam scope pengguna dan mempertahankan pilihan melalui query string.
 - KPI ringkasan memakai class global `workspace-overtime-summary-panel` dan `workspace-overtime-summary-card` yang sama dengan halaman cuti/lembur; varian empat metrik menampilkan divider yang jelas pada layar kecil.
+- Panel KPI ringkasan reimbursement/cash advance memakai komponen global `workspace-mobile-kpi-panel`, dapat dibuka dan ditutup pada mobile dengan kondisi awal collapsed; pada desktop KPI selalu tampil tanpa toggle.
+- Saat terbuka di mobile, panel KPI memiliki ruang 8px di atas, 10px di sisi, dan 10px di bawah antara header toggle/container dan kartu metrik.
 - Tombol Reset dan Terapkan berdempetan sebagai satu grup aksi.
 - Pencarian kata kunci menyaring nama karyawan, nomor pengajuan, label/kode status, dan kategori rincian.
 - Filter rentang nominal minimum/maksimum menyaring total pengajuan, memvalidasi nilai numerik non-negatif, dan mengikuti seluruh agregat serta pagination.
