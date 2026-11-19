@@ -1,22 +1,18 @@
 @extends('layouts.app', ['title' => 'Ringkasan HRIS'])
 
 @section('content')
-<div class="mb-4">
-    <div class="text-uppercase text-secondary small fw-semibold mb-2">Ringkasan pribadi</div>
-    <h1 class="h3 mb-1">Ringkasan HRIS</h1>
-    <p class="text-secondary mb-0">Pantau pengajuan HRIS yang Anda buat atau terkait dengan akun Anda.</p>
-</div>
+<style>
+.hris-personal-hero{position:relative;overflow:hidden;padding:2rem 2.25rem;border-radius:1.35rem;color:#fff;background:linear-gradient(118deg,#102b53 0%,#174e78 55%,#287f87 100%);box-shadow:0 18px 44px rgba(18,55,91,.16)}.hris-personal-hero:after{content:"";position:absolute;width:290px;height:290px;right:5%;top:-205px;border:1px solid rgba(255,255,255,.16);border-radius:50%;box-shadow:0 0 0 35px rgba(255,255,255,.035),0 0 0 75px rgba(255,255,255,.025)}.hris-personal-kicker{font-size:.68rem;font-weight:750;letter-spacing:.14em;color:#d7edf8}.hris-personal-title{position:relative;margin:.55rem 0 .4rem;color:#fff!important;font-size:clamp(1.8rem,3vw,2.45rem);font-weight:750;letter-spacing:-.035em;text-shadow:0 1px 1px rgba(7,29,53,.18)}.hris-personal-copy{position:relative;margin:0;color:#e1edf5}.hris-personal-metric{position:relative;height:100%;min-height:145px;overflow:hidden;padding:1.1rem 1.25rem;border:1px solid #e5ebf3;border-radius:1rem;background:linear-gradient(135deg,#fff 0%,#f1f6ff 100%);box-shadow:0 7px 22px rgba(22,43,68,.055)}.row>.col-md-4:nth-child(2) .hris-personal-metric{background:linear-gradient(135deg,#fff 0%,#fff8ea 100%)}.row>.col-md-4:nth-child(3) .hris-personal-metric{background:linear-gradient(135deg,#fff 0%,#edf9f5 100%)}.hris-personal-metric:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#76a5ff,#477bdf)}.row>.col-md-4:nth-child(2) .hris-personal-metric:before{background:linear-gradient(180deg,#f3ca72,#d99125)}.row>.col-md-4:nth-child(3) .hris-personal-metric:before{background:linear-gradient(180deg,#70d0b5,#269477)}.hris-personal-metric-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;color:#53667e;font-size:.84rem;font-weight:650}.hris-personal-icon{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:#e7efff;color:#376dc2;font-size:1rem}.row>.col-md-4:nth-child(2) .hris-personal-icon{background:#fff0d2;color:#a96b11}.row>.col-md-4:nth-child(3) .hris-personal-icon{background:#dff4ec;color:#18785f}.hris-personal-number{margin-top:.6rem;color:#172b46;font-size:2.1rem;font-weight:750;line-height:1;letter-spacing:-.04em}.hris-personal-note{margin-top:.45rem;color:#687e98;font-size:.77rem}.hris-personal-action{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:1.25rem 1.5rem;border:1px solid #e2ebf5;border-radius:1rem;background:linear-gradient(110deg,#fff 0%,#f1f7fd 62%,#edf7f6 100%);box-shadow:0 8px 24px rgba(20,44,70,.05)}.hris-personal-action-icon{display:grid;place-items:center;flex:0 0 46px;height:46px;border-radius:15px;background:linear-gradient(145deg,#e8f0ff,#dceaff);color:#2869bd;font-size:1.25rem}.hris-personal-action-copy{display:flex;align-items:center;gap:1rem}.hris-personal-action h2{color:#20334d;font-size:1rem;font-weight:700}.hris-personal-action p{color:#536a85;font-size:.88rem}.hris-personal-button{border:0;border-radius:.7rem;padding:.65rem 1rem;background:linear-gradient(120deg,#1767bd,#1485cc);font-weight:650;box-shadow:0 6px 16px rgba(28,104,196,.22)}.hris-personal-button:hover,.hris-personal-button:focus{background:linear-gradient(120deg,#1159a8,#0873b9)}.workspace-hris-approval-warning{overflow:hidden;border:1px solid #f1e5c9!important;border-left:4px solid #e9b24f!important;border-radius:1rem!important;box-shadow:0 8px 22px rgba(70,55,20,.04)}.workspace-hris-approval-warning .card-header{padding:1.1rem 1.3rem;border-bottom:1px solid #f3ead7}.workspace-hris-approval-warning .list-group-item{padding:1rem 1.3rem}@media(max-width:575.98px){.hris-personal-hero{padding:1.45rem;border-radius:1rem}.hris-personal-action{align-items:flex-start;flex-direction:column}.hris-personal-action-copy{align-items:flex-start}}
+</style>
+<style>
+.hris-personal-action{justify-content:flex-start;gap:1rem}.hris-personal-action-copy{flex:1 1 320px;margin-right:auto}.hris-personal-action>a{flex:0 0 auto;white-space:nowrap}.hris-personal-action>a[href*="leave-requests/create"]{font-size:0}.hris-personal-action>a[href*="leave-requests/create"]:before{content:"Cuti / sakit";font-size:.875rem}.hris-personal-action>a[href*="leave-requests/create"]:after{content:" →";font-size:.875rem}@media(max-width:575.98px){.hris-personal-action-copy{flex-basis:100%;margin:0}}
+.hris-personal-hero{padding:1.45rem 1.8rem;border-radius:1.1rem}.hris-personal-title{margin:.35rem 0;font-size:clamp(1.55rem,2.5vw,2rem)}.hris-personal-metric{min-height:122px;padding:.85rem 1rem;border-radius:.85rem}.hris-personal-number{margin-top:.45rem;font-size:1.8rem}.hris-personal-note{margin-top:.3rem;font-size:.72rem}.hris-personal-icon{width:31px;height:31px;border-radius:10px}.hris-personal-action{display:grid;grid-template-columns:minmax(220px,1fr) repeat(3,max-content);align-items:center;gap:.6rem .75rem;padding:.8rem 1rem;border-radius:.85rem}.hris-personal-action-copy{min-width:0;flex:auto;margin:0}.hris-personal-action-copy h2{font-size:.92rem}.hris-personal-action-copy p{font-size:.8rem;line-height:1.35}.hris-personal-action-icon{flex-basis:36px;height:36px;border-radius:11px;font-size:1rem}.hris-personal-action>a{padding:.48rem .7rem;border-radius:.6rem;font-size:.78rem}.hris-personal-action>a[href*="leave-requests/create"]:before{content:"▦  Cuti / sakit";font-size:.78rem}.hris-personal-action>a[href*="leave-requests/create"]:after{content:""}.hris-personal-action>a[href*="overtime/create"]:before{content:"◷  ";font-size:.9rem}.hris-personal-action>a[href*="claims/create"]:before{content:"▤  ";font-size:.9rem}@media(max-width:767.98px){.hris-personal-hero{padding:1.1rem 1.2rem}.hris-personal-action{grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem;padding:.8rem}.hris-personal-action-copy{grid-column:1/-1}.hris-personal-action>a{justify-self:stretch;text-align:center;padding:.55rem .3rem;font-size:.74rem}.hris-personal-action>a[href*="leave-requests/create"]:before{content:"▦  Cuti / sakit";font-size:.74rem}.hris-personal-action>a[href*="overtime/create"]:before{content:"◷  Lembur";font-size:.74rem}.hris-personal-action>a[href*="claims/create"]:before{content:"▤  Reimburse";font-size:.74rem}.hris-personal-action>a[href*="overtime/create"],.hris-personal-action>a[href*="claims/create"]{font-size:0}}@media(max-width:380px){.hris-personal-action{grid-template-columns:1fr}.hris-personal-action-copy{grid-column:1}.hris-personal-action>a{width:100%}}
+</style>
+<section class="hris-personal-hero mb-4"><div class="position-relative"><div class="hris-personal-kicker">PEOPLE &amp; OPERATIONS · RUANG PRIBADI</div><h1 class="hris-personal-title">Ringkasan HRIS</h1><p class="hris-personal-copy">Pantau pengajuan yang Anda buat dan aktivitas administrasi pribadi.</p></div></section>
 
 <div class="row g-3 mb-4">
-    @foreach($personalStats as $stat)
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="text-secondary small">{{ $stat['label'] }}</div>
-                    <div class="display-6 fw-semibold text-primary">{{ number_format($stat['value']) }}</div>
-                </div>
-            </div>
-        </div>
+    @foreach($personalStats as $index => $stat)
+        <div class="col-md-4"><article class="hris-personal-metric"><div class="hris-personal-metric-top"><span>{{ $stat['label'] }}</span><span class="hris-personal-icon">{{ ['◷','✳','▤'][$index] ?? '•' }}</span></div><div class="hris-personal-number">{{ number_format($stat['value']) }}</div><div class="hris-personal-note">Total pengajuan tercatat</div></article></div>
     @endforeach
 </div>
 
@@ -27,15 +23,17 @@
     </div>
 @endif
 
-<div class="card">
-    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div>
-            <h2 class="h6 mb-1">Pengajuan pribadi</h2>
-            <p class="text-secondary mb-0">Akses daftar pengajuan diberikan sesuai permission yang Anda miliki.</p>
-        </div>
+@if($canCreateLeave || $canCreateOvertime || $canCreateClaim)
+<section class="hris-personal-action">
+    <div class="hris-personal-action-copy"><span class="hris-personal-action-icon">＋</span><div>
+            <h2 class="mb-1">Mulai pengajuan</h2>
+            <p class="mb-0">Pilih jenis pengajuan. Pantau prosesnya sesuai akses akun.</p>
+        </div></div>
         @if($canCreateLeave)
-            <a href="{{ route('workspace.hris.leave-requests.create') }}" class="btn btn-sm btn-primary">Ajukan cuti/sakit</a>
+            <a href="{{ route('workspace.hris.leave-requests.create') }}" class="btn btn-primary hris-personal-button">Buat pengajuan <span aria-hidden="true">→</span></a>
         @endif
-    </div>
-</div>
+        @if($canCreateOvertime)<a href="{{ route('workspace.hris.overtime.create') }}" class="btn btn-primary hris-personal-button">Lembur</a>@endif
+        @if($canCreateClaim)<a href="{{ route('workspace.hris.claims.create') }}" class="btn btn-primary hris-personal-button">Reimbursement</a>@endif
+</section>
+@endif
 @endsection

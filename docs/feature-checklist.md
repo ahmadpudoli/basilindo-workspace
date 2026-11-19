@@ -514,6 +514,12 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Permission HRIS dikelompokkan pada bagian HRIS di form role dan user, termasuk role hris_admin dan hris_member
 - [x] Master role dan permission HRIS diprovision melalui migration data idempotent, termasuk approval dan permission ringkasan
 - [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
+- [x] Dashboard HRIS menampilkan hero informatif, metrik berwarna semantik, tabel karyawan yang mudah dipindai, state kosong, dan layout responsif
+- [x] Ringkasan pribadi HRIS memakai hero, kartu metrik beraksen, dan ajakan tindakan yang responsif tanpa memperluas akses data
+- [x] Ringkasan pribadi menyediakan pintasan cuti/sakit, lembur, dan reimbursement sesuai permission; panel early warning tersembunyi saat tidak ada approval yang perlu ditangani
+- [x] Tombol pengajuan pribadi berlabel eksplisit dengan ikon representatif dan tata letak ringkas untuk layar mobile
+- [x] Ringkasan pribadi menggabungkan jumlah, tautan daftar sesuai permission, dan tombol Ajukan per jenis dalam kartu KPI compact
+- [x] KPI personal memakai periode bisnis: cuti/sakit tahun aktif (approved days dan sisa kuota), lembur bulanan (approved count/duration), reimbursement bulanan (approved count/nominal)
 - [x] Sidebar menampilkan Ringkasan HRIS berbasis `access_hris` dengan mode ringkasan pengajuan pribadi
 - [x] Daftar cuti memiliki resume tahunan, filter, pagination, detail, dan timeline approval
 - [x] Daftar Cuti & Sakit dan Ringkasan Cuti Karyawan memiliki tombol preview lampiran pada kolom aksi melalui dialog privat
@@ -552,6 +558,9 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Timestamp event HRIS disimpan konsisten dalam UTC dan ditampilkan dalam zona waktu aplikasi
 - [x] Biodata karyawan menampilkan atasan dan treeview bawahan bertingkat
 - [x] Biodata personal mengambil data berdasarkan relasi akun tanpa scope daftar karyawan/company
+- [x] Biodata personal menggunakan layout kompak, field mudah dipindai, dan tree organisasi responsif dengan penanda akun aktif
+- [x] Grid biodata memakai pemisah lembut tanpa kotak individual pada tiap field
+- [x] Struktur organisasi memakai satu panel luar dengan node datar dan garis cabang lembut tanpa nested card
 - [x] Dashboard HRIS dapat diakses dengan `access_hris` dan menghormati permission granular pada data/tombol
 - [x] Daftar karyawan dengan filter perusahaan multiple select, pagination, dan aksi ubah/hapus/arsip
 - [x] Pagination, filter, edit, dan arsip parameter HRIS

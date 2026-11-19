@@ -8,6 +8,9 @@ use App\Modules\HRIS\Domain\Models\Claim;
 use App\Modules\HRIS\Domain\Models\LeaveRequest;
 use App\Modules\HRIS\Domain\Models\OvertimeRequest;
 use App\Modules\HRIS\Domain\Models\HrisWorkflowApprover;
+use App\Modules\HRIS\Domain\Models\HrisSetting;
+use App\Modules\HRIS\Domain\Models\HrisHoliday;
+use App\Modules\HRIS\Domain\Models\OvertimeRequestEntry;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -67,27 +70,65 @@ class HrisDashboardController extends Controller
         $approvalRows = $this->approvalRows($user);
 
         if (! $canViewEmployees) {
+            $canCreateOvertime = $user->hasRole('super_admin') || $user->can('create_overtime');
+            $canCreateClaim = $user->hasRole('super_admin') || $user->can('create_claim');
+            $activeYear = (int) HrisSetting::resolve(null, 'hris.active_year', now()->year);
+            $monthStart = now()->startOfMonth();
+            $monthEnd = now()->endOfMonth();
+            $employee = Employee::query()->where('user_id', $user->getKey())->first();
+
             $personalLeave = LeaveRequest::query()->where(function ($query) use ($user): void {
                 $query->where('created_by', $user->getKey())
+                    ->orWhere('requester_user_id', $user->getKey())
                     ->orWhereHas('employee', fn ($employee) => $employee->where('user_id', $user->getKey()));
             });
             $personalOvertime = OvertimeRequest::query()->where(function ($query) use ($user): void {
                 $query->where('created_by', $user->getKey())
+                    ->orWhere('requester_user_id', $user->getKey())
                     ->orWhereHas('employee', fn ($employee) => $employee->where('user_id', $user->getKey()));
             });
             $personalClaims = Claim::query()->where(function ($query) use ($user): void {
                 $query->where('created_by', $user->getKey())
+                    ->orWhere('requester_user_id', $user->getKey())
                     ->orWhereHas('employee', fn ($employee) => $employee->where('user_id', $user->getKey()));
             });
 
-            return view('modules.hris-dashboard-personal', [
+            $annualLeaveRequestQuery = (clone $personalLeave)->where('status', '!=', 'draft')->whereHas('dates', fn ($dates) => $dates->whereYear('leave_date', $activeYear));
+            $approvedLeave = (clone $personalLeave)->where('type', 'leave')->where('status', 'approved')->whereHas('dates', fn ($dates) => $dates->whereYear('leave_date', $activeYear))->with(['dates' => fn ($dates) => $dates->whereYear('leave_date', $activeYear)])->get();
+            $approvedSick = (clone $personalLeave)->where('type', 'sick')->where('status', 'approved')->whereHas('dates', fn ($dates) => $dates->whereYear('leave_date', $activeYear))->with(['dates' => fn ($dates) => $dates->whereYear('leave_date', $activeYear)])->get();
+            $approvedLeaveDays = (int) $approvedLeave->sum(fn (LeaveRequest $item) => $item->dates->count());
+            $approvedSickDays = (int) $approvedSick->sum(fn (LeaveRequest $item) => $item->dates->count());
+            $leaveQuota = $employee
+                ? max(0, (int) HrisSetting::resolveForYear((int) $employee->company_id, 'hris.annual_leave_quota', $activeYear, 12) - HrisHoliday::collectiveDaysForCompany((int) $employee->company_id, $activeYear))
+                : 0;
+            $remainingLeave = max(0, $leaveQuota - $approvedLeaveDays);
+
+            $monthlyOvertime = (clone $personalOvertime)
+                ->where('status', '!=', 'draft')
+                ->whereHas('entries', fn ($entries) => $entries->whereBetween('work_date', [$monthStart->toDateString(), $monthEnd->toDateString()]));
+            $monthlyApprovedOvertime = (clone $personalOvertime)
+                ->where('status', 'approved')
+                ->whereHas('entries', fn ($entries) => $entries->whereBetween('work_date', [$monthStart->toDateString(), $monthEnd->toDateString()]));
+            $approvedOvertimeMinutes = (int) OvertimeRequestEntry::query()
+                ->whereBetween('work_date', [$monthStart->toDateString(), $monthEnd->toDateString()])
+                ->whereHas('overtimeRequest', function ($overtime) use ($user): void {
+                    $overtime->where('status', 'approved')->where(function ($owner) use ($user): void {
+                        $owner->where('created_by', $user->getKey())->orWhere('requester_user_id', $user->getKey())->orWhereHas('employee', fn ($employee) => $employee->where('user_id', $user->getKey()));
+                    });
+                })->sum('duration_minutes');
+
+            $monthlyClaims = (clone $personalClaims)->where('type', 'reimbursement')->where('status', '!=', 'draft')->whereBetween('created_at', [$monthStart, $monthEnd]);
+            $approvedClaimStatuses = ['approved', 'pending_payment', 'paid', 'completed'];
+            $monthlyApprovedClaims = (clone $monthlyClaims)->whereIn('status', $approvedClaimStatuses);
+
+            return view('modules.hris-dashboard-personal-cards', [
                 'canCreateLeave' => $canCreateLeave,
                 'canViewApprovals' => $canViewApprovals,
                 'approvalRows' => $approvalRows,
                 'personalStats' => [
-                    ['label' => 'Cuti & sakit saya', 'value' => (clone $personalLeave)->count()],
-                    ['label' => 'Lembur saya', 'value' => (clone $personalOvertime)->count()],
-                    ['label' => 'Reimbursement & cash advance saya', 'value' => (clone $personalClaims)->count()],
+                    ['label' => 'Cuti & sakit', 'value' => $annualLeaveRequestQuery->count(), 'period' => "Tahun {$activeYear}", 'details' => ["Cuti disetujui: {$approvedLeaveDays} hari", "Sakit disetujui: {$approvedSickDays} hari", 'Sisa kuota cuti: '.($employee ? "{$remainingLeave} hari" : 'belum tersedia')], 'view_url' => $user->hasRole('super_admin') || $user->can('access_hris') ? route('workspace.hris.leave-requests', ['year' => $activeYear]) : null, 'create_url' => $canCreateLeave ? route('workspace.hris.leave-requests.create') : null],
+                    ['label' => 'Lembur', 'value' => $monthlyOvertime->count(), 'period' => now()->translatedFormat('F Y'), 'details' => ['Disetujui: '.$monthlyApprovedOvertime->count().' pengajuan', 'Durasi disetujui: '.intdiv($approvedOvertimeMinutes, 60).' jam '.($approvedOvertimeMinutes % 60).' menit'], 'view_url' => $user->hasRole('super_admin') || $user->can('view_any_overtime') ? route('workspace.hris.overtime', ['date_from' => $monthStart->toDateString(), 'date_to' => now()->toDateString()]) : null, 'create_url' => $canCreateOvertime ? route('workspace.hris.overtime.create') : null],
+                    ['label' => 'Reimbursement', 'value' => $monthlyClaims->count(), 'period' => now()->translatedFormat('F Y'), 'details' => ['Disetujui: '.$monthlyApprovedClaims->count().' pengajuan', 'Total disetujui: Rp '.number_format((float) $monthlyApprovedClaims->sum('amount'), 0, ',', '.')], 'view_url' => $user->hasRole('super_admin') || $user->can('view_any_claim') ? route('workspace.hris.claims', ['type' => 'reimbursement', 'from' => $monthStart->toDateString(), 'to' => now()->toDateString()]) : null, 'create_url' => $canCreateClaim ? route('workspace.hris.claims.create', ['type' => 'reimbursement']) : null],
                 ],
             ]);
         }

@@ -142,6 +142,61 @@ audit, dan layout aplikasi yang sudah tersedia.
 
 ## Acceptance criteria fase 1
 
+### Biodata personal
+
+- Halaman Biodata menampilkan identitas karyawan dan data organisasi dalam
+  layout compact dengan hierarki label/nilai yang mudah dipindai.
+- Tree organisasi mempertahankan relasi atasan-bawahan dan interaksi buka/tutup,
+  dengan akun aktif terlihat jelas, fokus keyboard tersedia, dan node tetap
+  terbaca pada layar kecil tanpa ruang kosong berlebih.
+- Tree organisasi memakai satu panel luar; wadah tree di dalam dan baris node
+  tidak diberi kotak individual. Hierarki ditunjukkan melalui indentasi dan
+  garis cabang yang lembut.
+- Aksen warna dan gradasi bersifat lembut serta menjaga kontras teks; sumber data
+  tetap terbatas pada karyawan yang terhubung ke akun aktif.
+- Field biodata tidak ditampilkan sebagai kartu individual; gunakan satu panel
+  dengan pemisah halus dan ruang yang konsisten agar permukaan visual terasa
+  ringan.
+
+### Ringkasan HRIS
+
+- Dashboard `/workspace/hris` menyajikan ringkasan pengelola dengan hierarki
+  informasi yang jelas: pengantar modul, aksi sesuai permission, metrik utama,
+  daftar karyawan terbaru, dan approval yang memerlukan tindakan.
+- Metrik memakai warna semantik lembut, angka mudah dipindai, serta keterangan
+  singkat yang menjelaskan konteksnya; warna tidak menjadi satu-satunya penanda.
+- Tampilan responsif pada layar kecil, memakai kontras teks yang terbaca,
+  state kosong yang informatif, dan tetap mempertahankan authorization yang ada.
+- Ringkasan personal tetap tersedia bagi pengguna tanpa permission daftar
+  karyawan; hero, metrik, dan ajakan tindakan memakai hierarki visual yang sama
+  baik pada tampilan pengelola maupun personal. Data perusahaan tidak boleh
+  dibuka lewat ringkasan personal.
+- Ringkasan personal menampilkan pintasan Cuti/Sakit, Lembur, dan Reimbursement
+  hanya jika pengguna memiliki permission create untuk jenis pengajuan tersebut.
+- Ringkasan personal memakai satu kartu ringkas untuk tiap jenis pengajuan.
+  Kartu menampilkan jumlah, ikon, tautan jumlah/judul ke daftar jika list
+  permission tersedia, serta tombol Ajukan di dalam kartu jika create permission
+  tersedia. Tidak ada panel tindakan terpisah yang menduplikasi pintasan.
+- KPI ringkasan personal mengikuti periode masing-masing: cuti/sakit memakai
+  tahun aktif HRIS; lembur dan reimbursement memakai bulan kalender berjalan.
+- KPI cuti/sakit menampilkan jumlah pengajuan pada tahun aktif, hari cuti dan
+  sakit yang berstatus disetujui, serta sisa kuota cuti setelah pengurangan
+  cuti bersama sesuai aturan perusahaan.
+- KPI lembur menampilkan jumlah pengajuan dengan rincian tanggal kerja pada
+  bulan berjalan, jumlah pengajuan yang disetujui, dan durasi approved dari
+  rincian lembur pada bulan tersebut.
+- KPI reimbursement menampilkan jumlah klaim reimbursement yang tercatat pada
+  bulan berjalan (berdasarkan tanggal pencatatan pengajuan), jumlah yang telah
+  disetujui penuh, dan total nominal pengajuan yang disetujui. Draft dan cash
+  advance tidak masuk KPI ini.
+- Pintasan pengajuan memakai ikon yang membedakan jenisnya dan label yang
+  eksplisit. Dashboard pribadi menjaga kepadatan informasi, mengurangi ruang
+  vertikal yang tidak perlu, serta menyusun tombol dalam grid yang tetap mudah
+  digunakan pada viewport mobile.
+- Panel early warning approval hanya dirender jika pengguna berhak melihat
+  approval dan terdapat pengajuan dalam cakupan approver pengguna; jika kosong,
+  panel tidak ditampilkan.
+
 ### Master karyawan
 
 - Pengguna berizin dapat melihat karyawan sesuai company scope.

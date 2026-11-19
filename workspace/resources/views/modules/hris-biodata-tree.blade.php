@@ -1,41 +1,34 @@
 @extends('layouts.app', ['title' => 'Biodata Karyawan'])
 
 @section('content')
-<div class="mb-4">
-    <div class="text-uppercase text-secondary small fw-semibold mb-2">Profil HRIS</div>
-    <h1 class="h3 mb-1">Biodata</h1>
-    <p class="text-secondary mb-0">Data biodata dan struktur organisasi karyawan yang terhubung dengan akun Anda.</p>
-</div>
+<style>
+.hris-biodata-page{--bio-ink:#20334d;--bio-muted:#718198;--bio-line:#e5ebf2}.hris-biodata-hero{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:.75rem;padding:.9rem 1.15rem;border:1px solid #dceaf2;border-radius:.95rem;background:linear-gradient(112deg,#f0f6ff 0%,#f2faf9 100%)}.hris-biodata-eyebrow{color:#597b98;font-size:.64rem;font-weight:750;letter-spacing:.12em}.hris-biodata-title{margin:.15rem 0;color:var(--bio-ink);font-size:1.45rem;font-weight:750;letter-spacing:-.035em}.hris-biodata-copy{margin:0;color:var(--bio-muted);font-size:.82rem}.hris-biodata-hero-mark{display:grid;width:42px;height:42px;place-items:center;border:1px solid #d3e7f2;border-radius:13px;background:linear-gradient(145deg,#fff,#e3f3f5);color:#26799a}.hris-biodata-hero-mark svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.hris-biodata-panel{overflow:hidden;margin-bottom:.75rem;border:1px solid var(--bio-line);border-radius:.9rem;background:#fff;box-shadow:0 5px 16px rgba(26,48,72,.035)}.hris-biodata-panel-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.7rem 1rem;border-bottom:1px solid #edf1f5}.hris-biodata-panel-title{margin:0;color:var(--bio-ink);font-size:.86rem;font-weight:750}.hris-biodata-panel-note{color:#8492a3;font-size:.7rem}.hris-biodata-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;padding:.75rem}.hris-biodata-field{min-width:0;padding:.55rem .7rem;border:1px solid #edf1f5;border-radius:.65rem;background:linear-gradient(145deg,#fff,#f9fbfd)}.hris-biodata-label{display:block;margin-bottom:.15rem;color:#8390a0;font-size:.64rem;font-weight:700;letter-spacing:.055em;text-transform:uppercase}.hris-biodata-value{display:block;overflow:hidden;color:#263a53;font-size:.82rem;font-weight:650;text-overflow:ellipsis;white-space:nowrap}.hris-biodata-value.is-primary{color:#176ba4}.hris-biodata-status{display:inline-flex;align-items:center;gap:.35rem;padding:.16rem .48rem;border-radius:999px;background:#e8f7f0;color:#26815f;font-size:.69rem;font-weight:700}.hris-biodata-status:before{width:6px;height:6px;border-radius:50%;background:#38a87a;content:""}.hris-biodata-tree-wrap{padding:.65rem}.hris-biodata-page .workspace-org-tree-root{padding:9px;border-radius:.75rem;background:linear-gradient(135deg,#f8fbff,#f1f8fb)}.hris-biodata-page .workspace-org-node{gap:8px;margin:4px 0;padding:7px 9px;border-radius:10px;box-shadow:0 2px 7px rgba(31,65,92,.035);min-width:0}.hris-biodata-page .workspace-org-node-main{gap:2px}.hris-biodata-page .workspace-org-node-main strong{font-size:.82rem}.hris-biodata-page .workspace-org-node small{font-size:.69rem;gap:6px}.hris-biodata-page .workspace-org-avatar{flex-basis:32px;width:32px;height:32px;border-radius:9px;font-size:.68rem}.hris-biodata-page .workspace-org-children{margin-left:14px;padding-left:12px}.hris-biodata-page .workspace-org-node.is-current{background:linear-gradient(105deg,#e6f3ff,#f0faff);border-color:#a8d7f5;border-left-color:#1682c7;box-shadow:0 3px 10px rgba(13,117,199,.09)}.hris-biodata-page .workspace-org-current-badge{padding:2px 7px;font-size:.66rem}.hris-biodata-page .workspace-org-expand-label{opacity:1;color:#5b8db0}.hris-biodata-page .workspace-org-branch>summary:focus-visible{outline:2px solid #1682c7;outline-offset:2px}.hris-biodata-page .workspace-org-branch>summary::before{flex-basis:9px;font-size:.72rem}@media(max-width:767.98px){.hris-biodata-hero{padding:.75rem .85rem}.hris-biodata-title{font-size:1.25rem}.hris-biodata-copy{font-size:.76rem}.hris-biodata-hero-mark{width:36px;height:36px}.hris-biodata-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;padding:.55rem}.hris-biodata-field{padding:.48rem .55rem}.hris-biodata-value{font-size:.77rem}.hris-biodata-tree-wrap{padding:.45rem}.hris-biodata-page .workspace-org-children{margin-left:8px;padding-left:8px}.hris-biodata-page .workspace-org-node{gap:6px;padding:6px 7px}.hris-biodata-page .workspace-org-node small{gap:2px 6px}.hris-biodata-page .workspace-org-node-number{font-size:.65rem}}@media(max-width:380px){.hris-biodata-grid{grid-template-columns:1fr}.hris-biodata-panel-note{font-size:.64rem}}
+</style>
+<style>
+.hris-biodata-grid{gap:0;padding:.25rem .7rem}.hris-biodata-field{position:relative;padding:.62rem .8rem;border:0;border-radius:0;background:transparent;transition:background-color .16s ease}.hris-biodata-field:hover{background:linear-gradient(100deg,rgba(237,245,251,.55),rgba(242,249,248,.35))}.hris-biodata-label{margin-bottom:.12rem;color:#8a98a9;font-size:.62rem;letter-spacing:.075em}.hris-biodata-value{color:#33465d;font-weight:600}.hris-biodata-value.is-primary{color:#28739e}.hris-biodata-status{background:#edf8f3;color:#39856a}.hris-biodata-field:not(:nth-child(3n)){border-right:1px solid #eff2f5}.hris-biodata-field:nth-child(-n+3){border-bottom:1px solid #eff2f5}@media(max-width:767.98px){.hris-biodata-grid{padding:.2rem .4rem}.hris-biodata-field{padding:.52rem .58rem}.hris-biodata-field:not(:nth-child(3n)){border-right:0}.hris-biodata-field:nth-child(-n+4){border-bottom:1px solid #eff2f5}.hris-biodata-field:nth-child(2n+1){border-right:1px solid #eff2f5}}@media(max-width:380px){.hris-biodata-field:nth-child(-n+5){border-bottom:1px solid #eff2f5}.hris-biodata-field:nth-child(2n+1){border-right:0}}
+.hris-biodata-page .workspace-org-tree-root{overflow-x:auto;padding:.35rem .8rem;border:0;border-radius:0;background:transparent}.hris-biodata-page .workspace-org-node{gap:8px;margin:1px 0;padding:6px 5px;border:0;border-left:2px solid transparent;border-radius:0;background:transparent;box-shadow:none;transition:background-color .15s ease}.hris-biodata-page .workspace-org-branch>summary:hover{border-color:transparent;border-left-color:#91c8e6;background:rgba(230,243,251,.42);box-shadow:none;transform:none}.hris-biodata-page .workspace-org-node.is-current{border:0;border-left:2px solid #1682c7;border-radius:0;background:transparent;box-shadow:none}.hris-biodata-page .workspace-org-node.is-current .workspace-org-node-main strong{color:#176da4}.hris-biodata-page .workspace-org-children{border-left:1px solid #d9e8f1;margin-left:15px;padding-left:11px}.hris-biodata-page .workspace-org-current-badge{background:#e5f4fb;color:#24739b}.hris-biodata-page .workspace-org-avatar{background:linear-gradient(145deg,#edf5ff,#e9f7f5);border-color:#dceaf2;color:#3378a2}.hris-biodata-page .workspace-org-branch>summary:focus-visible{outline:2px solid #6bb3d8;outline-offset:1px;border-radius:5px}@media(max-width:767.98px){.hris-biodata-page .workspace-org-tree-root{padding:.25rem .4rem}.hris-biodata-page .workspace-org-children{margin-left:9px;padding-left:8px}.hris-biodata-page .workspace-org-node{gap:6px;padding:5px 3px}}
+</style>
+<main class="hris-biodata-page">
+    <header class="hris-biodata-hero">
+        <div><div class="hris-biodata-eyebrow">PROFIL HRIS</div><h1 class="hris-biodata-title">Biodata</h1><p class="hris-biodata-copy">Informasi pribadi dan posisi Anda dalam struktur organisasi.</p></div>
+        <span class="hris-biodata-hero-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.5-3.6 2.7-5.5 6.5-5.5s6 1.9 6.5 5.5M19 8h3M20.5 6.5v3"/></svg></span>
+    </header>
 
-<div class="card mb-3">
-    <div class="card-header">Biodata saya</div>
-    <div class="card-body">
-        <dl class="row mb-0">
-            <dt class="col-sm-2">Nama</dt>
-            <dd class="col-sm-4">{{ $employee->full_name }}</dd>
-            <dt class="col-sm-2">NIP</dt>
-            <dd class="col-sm-4">{{ $employee->employee_number }}</dd>
-            <dt class="col-sm-2">Perusahaan</dt>
-            <dd class="col-sm-4">{{ $employee->company?->name ?? '-' }}</dd>
-            <dt class="col-sm-2">Jabatan</dt>
-            <dd class="col-sm-4">{{ $employee->job_title ?? '-' }}</dd>
-            <dt class="col-sm-2">Tanggal mulai</dt>
-            <dd class="col-sm-4">{{ $employee->hire_date?->format('d/m/Y') ?? '-' }}</dd>
-            <dt class="col-sm-2">Status</dt>
-            <dd class="col-sm-4">{{ ucfirst($employee->status) }}</dd>
-        </dl>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Struktur organisasi</span>
-        <small class="text-secondary">Klik nama untuk buka/tutup cabang</small>
-    </div>
-    <div class="card-body">
-        <div class="workspace-org-tree workspace-org-tree-root">
-            @include('modules.partials.hris-employee-org-tree', ['node' => $organizationTree])
+    <section class="hris-biodata-panel" aria-labelledby="hris-biodata-heading">
+        <div class="hris-biodata-panel-head"><h2 class="hris-biodata-panel-title" id="hris-biodata-heading">Biodata saya</h2><span class="hris-biodata-panel-note">Terhubung ke akun Workspace Anda</span></div>
+        <div class="hris-biodata-grid">
+            <div class="hris-biodata-field"><span class="hris-biodata-label">Nama</span><span class="hris-biodata-value is-primary">{{ $employee->full_name }}</span></div>
+            <div class="hris-biodata-field"><span class="hris-biodata-label">NIP</span><span class="hris-biodata-value">{{ $employee->employee_number }}</span></div>
+            <div class="hris-biodata-field"><span class="hris-biodata-label">Perusahaan</span><span class="hris-biodata-value">{{ $employee->company?->name ?? '-' }}</span></div>
+            <div class="hris-biodata-field"><span class="hris-biodata-label">Jabatan</span><span class="hris-biodata-value">{{ $employee->job_title ?? 'Belum diatur' }}</span></div>
+            <div class="hris-biodata-field"><span class="hris-biodata-label">Tanggal mulai</span><span class="hris-biodata-value">{{ $employee->hire_date?->format('d/m/Y') ?? '-' }}</span></div>
+            <div class="hris-biodata-field"><span class="hris-biodata-label">Status</span><span class="hris-biodata-status">{{ ['active' => 'Aktif', 'inactive' => 'Nonaktif', 'archived' => 'Diarsipkan'][$employee->status] ?? ucfirst($employee->status) }}</span></div>
         </div>
-    </div>
-</div>
+    </section>
+
+    <section class="hris-biodata-panel" aria-labelledby="hris-org-heading">
+        <div class="hris-biodata-panel-head"><h2 class="hris-biodata-panel-title" id="hris-org-heading">Struktur organisasi</h2><span class="hris-biodata-panel-note">Pilih nama untuk buka/tutup cabang</span></div>
+        <div class="hris-biodata-tree-wrap"><div class="workspace-org-tree workspace-org-tree-root">@include('modules.partials.hris-employee-org-tree', ['node' => $organizationTree])</div></div>
+    </section>
+</main>
 @endsection
