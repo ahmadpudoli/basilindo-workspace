@@ -31,10 +31,15 @@
     </div>
 
     <div class="row g-3 workspace-leave-detail-panels">
-        <div class="col-lg-5">
+        <div class="col-lg-7">
             <section class="card workspace-leave-detail-card h-100">
                 <div class="card-header"><span class="workspace-detail-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 3v4M16.5 3v4M4 9.5h16M8 13h2m4 0h2m-8 4h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><strong>Tanggal pengajuan</strong><small>Daftar tanggal yang dipilih</small></div></div>
                 <div class="card-body">
+                    <div class="workspace-leave-requester-context" aria-label="Informasi karyawan pemohon">
+                        <div class="workspace-leave-requester-item is-requester"><span class="workspace-leave-requester-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 20c.5-3.3 2.7-5 6.5-5s6 1.7 6.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><div><small>Pemohon</small><strong>{{ $leaveRequest->employee?->full_name ?? '-' }}</strong><span>NIP: {{ $leaveRequest->employee?->employee_number ?? '-' }}</span></div></div>
+                        <div class="workspace-leave-requester-item"><small>Perusahaan</small><strong>{{ $leaveRequest->employee?->company?->name ?? '-' }}</strong></div>
+                        <div class="workspace-leave-requester-item"><small>Unit / jabatan</small><strong>{{ $leaveRequest->employee?->organizationUnit?->name ?? $leaveRequest->employee?->job_title ?? '-' }}</strong></div>
+                    </div>
                     <div class="workspace-leave-date-list">
                         @forelse ($leaveRequest->dates as $index => $date)
                             <div class="workspace-leave-date-item"><span>{{ $index + 1 }}</span><strong>{{ $date->leave_date?->format('d/m/Y') }}</strong><small>{{ $date->leave_date?->translatedFormat('l') }}</small></div>
@@ -57,7 +62,7 @@
                 </div>
             </section>
         </div>
-        <div class="col-lg-7">
+        <div class="col-lg-5">
             @php($timelineId = 'leave-approval-timeline-'.$leaveRequest->getKey())
             <section class="card workspace-leave-detail-card workspace-leave-timeline-card h-100">
                 <h2 class="card-header p-0 mb-0">

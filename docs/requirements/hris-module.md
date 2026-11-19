@@ -212,6 +212,10 @@ audit, dan layout aplikasi yang sudah tersedia.
   soft delete/status archived.
 - Nomor karyawan unik dalam perusahaan.
 
+### Dokumen karyawan
+
+- Tombol Upload dokumen memakai class aksi utama global dengan ikon dokumen-upload, hover, dan indikator fokus keyboard.
+
 ### Pengajuan cuti/sakit
 
 - Pengguna dapat membuat pengajuan dengan tipe `leave` atau `sick`, satu atau

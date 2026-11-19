@@ -4,7 +4,7 @@
 @php($sortUrl = fn (string $column) => request()->fullUrlWithQuery(['sort' => $column, 'direction' => $sort === $column && $direction === 'asc' ? 'desc' : 'asc', 'page' => null]))
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
     <div><div class="text-uppercase text-secondary small fw-semibold mb-2">Master HRIS</div><h1 class="h3 mb-1">Dokumen Karyawan</h1><p class="text-secondary mb-0">Kelola kontrak dan dokumen personal karyawan dalam scope perusahaan Anda.</p></div>
-    @can('create', App\Modules\HRIS\Domain\Models\EmployeeDocument::class)<a href="{{ route('workspace.hris.employee-documents.create') }}" class="btn btn-primary">Upload dokumen</a>@endcan
+    @can('create', App\Modules\HRIS\Domain\Models\EmployeeDocument::class)<a href="{{ route('workspace.hris.employee-documents.create') }}" class="workspace-primary-action"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 3.75h6.5L19 9.25v10.5A1.5 1.5 0 0 1 17.5 21h-11A1.5 1.5 0 0 1 5 19.5v-14A1.75 1.75 0 0 1 6.75 3.75H7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M13 4v5.5h5.5M12 17v-5m0 0-2 2m2-2 2 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Upload dokumen</span></a>@endcan
 </div>
 <form class="card card-body border-0 shadow-sm mb-3 workspace-list-filter-form" method="GET"><div class="row g-2 align-items-end">
     <div class="col-md-4"><label class="form-label">Cari dokumen</label><input class="form-control" name="q" value="{{ request('q') }}" placeholder="Nomor, judul, atau nama file"></div>

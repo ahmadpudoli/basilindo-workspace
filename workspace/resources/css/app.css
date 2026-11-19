@@ -1272,6 +1272,15 @@ html[data-theme="dark"] .workspace-audit-sidebar .workspace-audit-panel { backgr
 .workspace-detail-icon { background: linear-gradient(145deg, #e6f3ff, #edf0ff); border: 1px solid #dce8f8; border-radius: 11px; flex: 0 0 36px; height: 36px; width: 36px; }
 .workspace-detail-icon svg { height: 18px; width: 18px; }
 .workspace-leave-detail-card > .card-body { padding: 16px; }
+.workspace-leave-requester-context { background: linear-gradient(120deg, #f5f9ff, #fbfcff); border: 1px solid #e2eaf5; border-radius: 11px; display: grid; gap: 10px; grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr)); margin-bottom: 13px; padding: 10px 12px; }
+.workspace-leave-requester-item { display: flex; flex-direction: column; gap: 2px; justify-content: center; min-width: 0; }
+.workspace-leave-requester-item > small { color: var(--workspace-muted); font-size: .68rem; }
+.workspace-leave-requester-item > strong { color: #293f55; font-size: .77rem; line-height: 1.35; overflow-wrap: anywhere; }
+.workspace-leave-requester-item > span:not(.workspace-leave-requester-icon) { color: var(--workspace-muted); font-size: .68rem; }
+.workspace-leave-requester-item.is-requester { align-items: center; flex-direction: row; gap: 9px; }
+.workspace-leave-requester-item.is-requester > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.workspace-leave-requester-icon { align-items: center; background: #e7f1ff; border: 1px solid #d7e7fb; border-radius: 9px; color: #2675c3; display: inline-flex; flex: 0 0 32px; height: 32px; justify-content: center; width: 32px; }
+.workspace-leave-requester-icon svg { height: 18px; width: 18px; }
 .workspace-leave-date-list { gap: 7px; }
 .workspace-leave-date-list { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .workspace-leave-date-item { background: linear-gradient(135deg, #f1f7ff, #f8faff); border: 1px solid #e1eaf5; border-radius: 10px; grid-template-columns: 25px 1fr; padding: 9px 10px; }
@@ -1307,7 +1316,7 @@ html[data-theme="dark"] .workspace-audit-sidebar .workspace-audit-panel { backgr
 .workspace-leave-timeline-body .workspace-detail-timeline-item.is-danger .workspace-detail-timeline-dot { background: #ffebed; box-shadow: 0 0 0 1px #f2d0d4; color: #c43b4b; }
 .workspace-leave-timeline-body .workspace-detail-timeline-item strong { color: #293f55; font-size: .78rem; }
 .workspace-leave-timeline-body .workspace-detail-timeline-item small { font-size: .68rem; line-height: 1.45; }
-@media (max-width: 767.98px) { .workspace-leave-detail-hero { align-items: stretch; flex-direction: column; gap: 14px; }.workspace-leave-detail-summary { grid-template-columns: 1fr; }.workspace-leave-date-list { grid-template-columns: 1fr; } }
+@media (max-width: 767.98px) { .workspace-leave-detail-hero { align-items: stretch; flex-direction: column; gap: 14px; }.workspace-leave-detail-summary { grid-template-columns: 1fr; }.workspace-leave-date-list { grid-template-columns: 1fr; }.workspace-leave-requester-context { grid-template-columns: repeat(2, minmax(0, 1fr)); }.workspace-leave-requester-item.is-requester { grid-column: 1 / -1; } }
 /* Final floating-label control sizing: keep native select text fully visible. */
 .workspace-content form .workspace-floating-field > .form-select,
 .workspace-content form [class*="col-"]:has(> .form-label + .form-select) > .form-select {

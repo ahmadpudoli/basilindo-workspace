@@ -14,7 +14,7 @@ class LeaveSummaryController extends Controller
     public function show(Request $request, LeaveRequestModel $leaveRequest): View
     {
         Gate::authorize('view', $leaveRequest);
-        $leaveRequest->load(['employee.company', 'approvalEvents', 'dates']);
+        $leaveRequest->load(['employee.company', 'employee.organizationUnit', 'approvalEvents', 'dates']);
 
         $disk = Storage::disk(config('filesystems.default', 's3'));
         $hasSupportingDocument = filled($leaveRequest->supporting_document_id)

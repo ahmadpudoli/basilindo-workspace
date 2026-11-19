@@ -123,3 +123,7 @@ Tanggal: 2026-11-19
 - Memperbarui tombol Tambah Karyawan dengan ikon orang-plus SVG dan style aksi utama global bergradasi, hover, serta focus-visible.
 - Verifikasi: `git diff --check`.
 - Koreksi: route daftar karyawan memakai view `hris-employees-enhanced.blade.php`; perubahan tombol dipindahkan ke view aktif setelah terdeteksi sebelumnya hanya mengubah view legacy. CSS Vite dev server juga sudah memuat class `workspace-primary-action`.
+- Tombol Upload dokumen pada daftar dokumen karyawan memakai ulang class global `workspace-primary-action` dengan ikon dokumen-upload SVG; permission gate tetap dipertahankan.
+- Verifikasi: `git diff --check`.
+- Detail ringkasan cuti memuat nama/NIP, perusahaan, serta unit/jabatan pemohon pada panel tanggal; eager load unit kerja ditambahkan. Grid desktop diubah menjadi 7/12 untuk panel tanggal dan 5/12 untuk timeline approval.
+- Verifikasi: `git diff --check`.

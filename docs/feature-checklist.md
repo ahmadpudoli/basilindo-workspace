@@ -13,7 +13,7 @@
 - [x] Preview dokumen gambar pada form edit dan detail cuti/sakit merender komponen zoom melalui directive Blade yang terpisah dan tampil tanpa teks directive literal.
 - [x] Unduhan dokumen pendukung tidak meninggalkan overlay “Memuat halaman...” terbuka setelah file berhasil diunduh.
 - [x] Route detail cuti/sakit membatasi akses ke pemilik/pemohon; approver menggunakan route detail approval tersendiri.
-- [x] Detail cuti/sakit menempatkan dokumen pendukung di panel tanggal dan alasan, menggunakan timeline approval collapsible default expanded, serta tampilan compact yang responsif.
+- [x] Detail cuti/sakit menampilkan identitas pemohon pada panel tanggal, memperkecil kolom timeline approval menjadi 5/12 di desktop, dan tetap responsif.
 - [x] Tombol Ajukan cuti/sakit pada daftar memakai ikon tambah dan gaya modern dengan state hover/focus yang aksesibel.
 - [x] Form create/edit cuti/sakit menempatkan nomor, jenis, dokumen, dan accordion informasi karyawan/approver di kiri; panel tanggal/kuota dan alasan di kanan.
 - [x] Accordion informasi karyawan/alur persetujuan pada form cuti/sakit default collapsed, kartu jenis pengajuan compact, separator tak perlu dihilangkan, dan warna accordion memiliki kontras yang jelas.
@@ -520,6 +520,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Workflow approval HRIS memiliki soft archive dan dapat diaktifkan kembali tanpa duplikasi constraint
 - [x] Daftar karyawan dengan filter perusahaan multiple select, pagination, dan aksi ubah/hapus/arsip
 - [x] Tombol Tambah Karyawan memakai ikon orang-plus dan gaya aksi utama global yang modern serta aksesibel.
+- [x] Tombol Upload dokumen karyawan memakai ikon dokumen-upload dan class aksi utama global.
 - [x] Relasi akun Core User dengan karyawan (Nama dan NIP)
 - [x] Permission HRIS dikelompokkan pada bagian HRIS di form role dan user, termasuk role hris_admin dan hris_member
 - [x] Master role dan permission HRIS diprovision melalui migration data idempotent, termasuk approval dan permission ringkasan
