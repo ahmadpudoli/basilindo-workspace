@@ -20,4 +20,9 @@ Memudahkan peninjauan pengajuan lembur pada cakupan perusahaan yang diizinkan, d
 - Kolom aksi memakai tombol dropdown compact berikon tiga titik vertikal dengan menu Lihat detail.
 - Pagination memakai pilihan 10/25/50/100, default 10, dan state filter/sort dipertahankan pada query string. Sortir tanggal dan durasi berjalan server-side dengan indikator arah.
 - Scope perusahaan dan izin summary tetap diperiksa server-side.
+- Ringkasan menyediakan tab “Per pengajuan” dan “Rekap per karyawan” dengan permission `view_hris_overtime_summary` serta scope perusahaan yang sama; tidak ada permission/role baru.
+- Rekap per karyawan mengelompokkan pengajuan berdasarkan karyawan pada filter periode dan filter lain yang sama, dengan pagination serta sorting server-side.
+- Baris rekap menampilkan jumlah pengajuan, jumlah yang disetujui, dan total durasi rincian tanggal kerja dalam periode dari pengajuan berstatus `approved`; setiap baris dapat diperluas untuk meninjau detail pengajuan dan rincian tanggal kerja/status.
+- State filter, tampilan tab, sorting, dan pagination dipertahankan melalui query string; detail pada grup hanya memuat karyawan dari hasil filter dan scope terotorisasi.
+- Pada tab “Rekap per karyawan”, jika parameter tanggal tidak diberikan, periode default adalah tanggal 1 bulan berjalan sampai hari ini. Periode pada URL atau filter yang dipilih pengguna tetap dipakai.
 

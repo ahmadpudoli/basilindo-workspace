@@ -715,6 +715,8 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
 - [x] Header dan KPI ringkasan lembur dibuat lebih compact dengan judul sejajar tanggal dan latar memakai token global panel KPI Workspace.
 - [x] Ringkasan lembur memiliki filter “Disetujui oleh saya” dan “Ditolak oleh saya” berdasarkan event approval pengguna login.
+- [x] Ringkasan lembur memiliki tab per pengajuan dan rekap per karyawan dengan scope/permission yang sama; rekap dipaginasi server-side dan baris grup menampilkan detail expandable.
+- [x] Tab rekap per karyawan memakai default periode tanggal 1 bulan berjalan sampai hari ini; nilai filter tanggal yang dipilih tetap dipertahankan.
 - [x] Ringkasan cuti dan sakit memiliki filter keputusan “Disetujui oleh saya”/“Ditolak oleh saya” berdasarkan event approval pengguna login.
 - [x] KPI Ringkasan Cuti & Sakit memakai style global, tinggi compact, ornamen lingkaran kanan, dan collapsible default tertutup pada mobile.
 - [x] KPI daftar lembur memakai satu panel ringkasan compact tanpa kartu bersarang, pemisah tipis, dan aksen warna status yang lembut serta responsif

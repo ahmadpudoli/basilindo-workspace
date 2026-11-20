@@ -182,11 +182,14 @@ class HrisOperationsController extends Controller
             : ($request->boolean('approved_by_me') ? 'approved' : '');
         $searchKeyword = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:120']])['q'] ?? ''));
         $isValidDate = static function ($value): bool { if (! is_string($value) || ! preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $value)) return false; [$year, $month, $day] = array_map('intval', explode('-', $value)); return checkdate($month, $day, $year); };
-        $periodFrom = $isValidDate($request->query('from')) ? $request->query('from') : now()->startOfYear()->toDateString();
+        $viewMode = $request->query('view') === 'employees' ? 'employees' : 'requests';
+        $defaultPeriodFrom = $viewMode === 'employees' ? now()->startOfMonth()->toDateString() : now()->startOfYear()->toDateString();
+        $periodFrom = $isValidDate($request->query('from')) ? $request->query('from') : $defaultPeriodFrom;
         $periodTo = $isValidDate($request->query('to')) ? $request->query('to') : now()->toDateString();
         if ($periodFrom > $periodTo) [$periodFrom, $periodTo] = [$periodTo, $periodFrom];
         $perPage = in_array($request->integer('limit'), [10, 25, 50, 100], true) ? $request->integer('limit') : 10;
-        $sort = in_array($request->string('sort')->toString(), ['request_number', 'work_date', 'duration_minutes', 'status', 'created_at'], true) ? $request->string('sort')->toString() : 'created_at';
+        $allowedSorts = $viewMode === 'employees' ? ['employee', 'requests_count', 'approved_minutes'] : ['request_number', 'work_date', 'duration_minutes', 'status', 'created_at'];
+        $sort = in_array($request->string('sort')->toString(), $allowedSorts, true) ? $request->string('sort')->toString() : ($viewMode === 'employees' ? 'employee' : 'created_at');
         $direction = $request->string('direction')->toString() === 'asc' ? 'asc' : 'desc';
         $filteredQuery = OvertimeRequest::query()
             ->when($companyScope !== null, fn ($query) => $query->whereIn('company_id', $companyScope))
@@ -195,21 +198,60 @@ class HrisOperationsController extends Controller
             ->when($selectedStatuses !== [], fn ($query) => $query->whereIn('status', $selectedStatuses))
             ->when($approvalByMe !== '', fn ($query) => $query->whereHas('approvalEvents', fn ($events) => $events->where('actor_id', $request->user()->getKey())->where('action', $approvalByMe === 'approved' ? 'approve' : 'reject')))
             ->when($searchKeyword !== '', function ($query) use ($searchKeyword): void { $pattern = '%'.$searchKeyword.'%'; $query->where(function ($search) use ($pattern): void { $search->where('request_number', 'ilike', $pattern)->orWhereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern)->orWhere('employee_number', 'ilike', $pattern)); }); });
-        $itemsQuery = (clone $filteredQuery)->with(['employee.company', 'entries']);
-        if ($sort === 'work_date') {
-            $itemsQuery->orderBy(OvertimeRequestEntry::query()->select('work_date')->whereColumn('overtime_request_id', 'overtime_requests.id')->orderBy('work_date')->limit(1), $direction);
+        if ($viewMode === 'employees') {
+            $overtimeModel = new OvertimeRequest;
+            $overtimeConnection = $overtimeModel->getConnection();
+            $overtimeTable = $overtimeConnection->getQueryGrammar()->wrapTable($overtimeModel->getTable());
+            $periodAlias = $overtimeConnection->getTablePrefix().'overtime_period_entries';
+            $periodEntryMinutes = OvertimeRequestEntry::query()
+                ->select('overtime_request_id')
+                ->selectRaw('SUM(duration_minutes) as period_minutes')
+                ->whereDate('work_date', '>=', $periodFrom)
+                ->whereDate('work_date', '<=', $periodTo)
+                ->groupBy('overtime_request_id');
+            $itemsQuery = (clone $filteredQuery)
+                ->leftJoinSub($periodEntryMinutes, 'overtime_period_entries', fn ($join) => $join->on('overtime_period_entries.overtime_request_id', '=', 'overtime_requests.id'))
+                ->select('overtime_requests.employee_id', 'overtime_requests.company_id')
+                ->selectRaw("COUNT(*) as requests_count, SUM(CASE WHEN {$overtimeTable}.status = 'approved' THEN 1 ELSE 0 END) as approved_count, SUM(CASE WHEN {$overtimeTable}.status = 'approved' THEN COALESCE({$periodAlias}.period_minutes, 0) ELSE 0 END) as approved_minutes")
+                ->with('employee.company')
+                ->groupBy('overtime_requests.employee_id', 'overtime_requests.company_id');
+            if ($sort === 'employee') {
+                $itemsQuery->orderBy(Employee::query()->select('full_name')->whereColumn('employees.id', 'overtime_requests.employee_id')->limit(1), $direction);
+            } else {
+                $itemsQuery->orderBy($sort, $direction);
+            }
+            $items = $itemsQuery->paginate($perPage)->withQueryString();
+            $employeeIds = $items->getCollection()->pluck('employee_id')->all();
+            $detailsByEmployee = $employeeIds === [] ? collect() : (clone $filteredQuery)
+                ->whereIn('employee_id', $employeeIds)
+                ->with(['entries' => fn ($entries) => $entries->whereDate('work_date', '>=', $periodFrom)->whereDate('work_date', '<=', $periodTo)->orderBy('sort_order')])
+                ->orderBy(OvertimeRequestEntry::query()->select('work_date')->whereColumn('overtime_request_id', 'overtime_requests.id')->orderBy('work_date')->limit(1))
+                ->get()
+                ->groupBy('employee_id');
+            $items->getCollection()->each(function ($group) use ($detailsByEmployee): void {
+                $group->details = $detailsByEmployee->get($group->employee_id, collect());
+            });
         } else {
-            $itemsQuery->orderBy($sort, $direction);
+            $itemsQuery = (clone $filteredQuery)->with(['employee.company', 'entries']);
+            if ($sort === 'work_date') {
+                $itemsQuery->orderBy(OvertimeRequestEntry::query()->select('work_date')->whereColumn('overtime_request_id', 'overtime_requests.id')->orderBy('work_date')->limit(1), $direction);
+            } else {
+                $itemsQuery->orderBy($sort, $direction);
+            }
+            $items = $itemsQuery->paginate($perPage)->withQueryString();
         }
-        $items = $itemsQuery->paginate($perPage)->withQueryString();
         $metricsQuery = clone $filteredQuery;
         $metrics = [
             'total' => (clone $metricsQuery)->count(),
             'pending' => (clone $metricsQuery)->whereIn('status', ['pending_manager', 'pending_hr'])->count(),
-            'approved_minutes' => (int) (clone $metricsQuery)->where('status', 'approved')->sum('duration_minutes'),
+            'approved_minutes' => (int) OvertimeRequestEntry::query()
+                ->whereDate('work_date', '>=', $periodFrom)
+                ->whereDate('work_date', '<=', $periodTo)
+                ->whereIn('overtime_request_id', (clone $metricsQuery)->where('status', 'approved')->select('id'))
+                ->sum('duration_minutes'),
         ];
 
-        return view('modules.hris-overtime-summary', compact('items', 'metrics', 'companies', 'statusOptions', 'selectedCompanyIds', 'selectedStatuses', 'approvalByMe', 'searchKeyword', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction'));
+        return view('modules.hris-overtime-summary', compact('items', 'metrics', 'companies', 'statusOptions', 'selectedCompanyIds', 'selectedStatuses', 'approvalByMe', 'searchKeyword', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'viewMode'));
     }
     public function overtimeCreate(Request $request): View { Gate::authorize('create', OvertimeRequest::class); $requestNumber = OvertimeRequest::generateRequestNumber(); $request->session()->put('hris.request_number.overtime', $requestNumber); return view('modules.hris-overtime-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get(), 'requestNumber' => $requestNumber]); }
     public function overtimeStore(OvertimeRequestForm $request, OvertimeService $service): RedirectResponse { Gate::authorize('create', OvertimeRequest::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $data = $request->validated(); $data['request_number'] = $request->session()->pull('hris.request_number.overtime', null); $service->submit($employee, $data, $request->user()->id); return redirect()->route('workspace.hris.overtime')->with('status', 'Pengajuan lembur berhasil dikirim.'); }
