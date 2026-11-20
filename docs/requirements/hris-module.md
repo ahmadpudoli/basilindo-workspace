@@ -350,6 +350,7 @@ audit, dan layout aplikasi yang sudah tersedia.
   approval khusus untuk cuti, sakit, lembur, reimbursement, dan cash advance.
 - Permission `view_hris_approvals` menjadi permission granular untuk menu inbox
   approval; data approval manager dibatasi pada bawahan langsung user.
+- Panel filter inbox Persetujuan HRIS memakai `.workspace-list-filter-form` langsung pada elemen form, tanpa pembungkus `.card-body` bersarang. Padding vertikal global row filter adalah 6px di atas dan 10px di bawah.
 - Dashboard HRIS menampilkan early warning daftar approval yang menunggu jika
   user memiliki `view_hris_approvals`; setiap item mengikuti scope inbox dan
   mengarah ke detail approval yang terotorisasi. Daftar ini mencakup seluruh

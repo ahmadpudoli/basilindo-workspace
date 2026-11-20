@@ -85,7 +85,7 @@
 - [x] Daftar claim pribadi Semua dan Reimbursement menyediakan pencarian server-side berdasarkan nama karyawan dan nomor pengajuan pada posisi pertama; keyword bekerja bersama filter lain dan dipertahankan melalui pagination.
 - [x] Field Periode sampai pada filter daftar claim pribadi memiliki lebar yang sama dengan Periode dari; kolom Jenis pengajuan dan Kategori mendapat lebar minimum yang lebih lega.
 - [x] Grid filter klaim desktop menjaga teks kontrol tetap terbaca dan menempatkan tombol Reset/Terapkan yang ringkas pada baris bawah.
-- [x] Seluruh panel filter HRIS memakai class `workspace-list-filter-form` dan padding luar serta jarak field yang konsisten dari CSS global, termasuk tab ringkasan.
+- [x] Seluruh panel filter HRIS memakai class `workspace-list-filter-form` dan padding vertikal global 6px atas/10px bawah serta jarak field konsisten, termasuk tab ringkasan.
 - [x] Filter tanggal ringkasan terisi dari awal bulan hingga hari ini, dan tombol Reset/Terapkan didekatkan ke kolom nominal maksimum.
 - [x] Tabel ringkasan pada layar kecil menjaga kolom kategori, nominal, status, dan aksi agar tidak bertumpuk; tombol serta menu dropdown aksi tampil compact.
 - [x] Tabel daftar Semua, Reimbursement, dan Cash Advance memakai dropdown aksi tiga titik yang compact dan mempertahankan aksi serta authorization yang tersedia.
@@ -594,6 +594,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Aksi Setujui pada approval HRIS menggunakan modal konfirmasi sebelum submit
 - [x] Popup konfirmasi Setujui menyediakan catatan persetujuan opsional
 - [x] Approval inbox HRIS memiliki filter, sorting, dan pagination dengan state query string
+- [x] Panel filter inbox Persetujuan HRIS memakai style global `.workspace-list-filter-form` tanpa padding `.card-body` bersarang yang menggandakan ruang vertikal.
 - [x] Header Workspace memiliki dropdown notifikasi unread, halaman daftar, detail, dan link target
 - [x] Detail notifikasi memiliki kartu informasi modern dan tombol kembali yang konsisten
 - [x] Tooltip jenis revisi di popup approval diinisialisasi saat modal ditampilkan
