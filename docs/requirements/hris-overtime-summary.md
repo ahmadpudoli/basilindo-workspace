@@ -8,6 +8,8 @@ Memudahkan peninjauan pengajuan lembur pada cakupan perusahaan yang diizinkan, d
 
 - Panel ringkasan menampilkan total pengajuan, pengajuan dalam proses, dan durasi lembur disetujui dalam satu panel compact berwarna; metrik ditampilkan datar dengan pemisah halus tanpa kartu bersarang atau bingkai warna per status.
 - Tinggi panel desktop dan mobile dijaga compact dengan padding dan tinggi minimum metrik yang ringkas.
+- Header ikhtisar menempatkan tanggal dan judul pada satu baris ringkas, tanpa paragraf pengantar yang mengulang fungsi filter.
+- Latar panel memakai token global `--workspace-kpi-panel-background` yang sama dengan panel KPI Workspace; teks navy dan pemisah tetap netral.
 - Pada tata letak mobile dua kolom, pemisah vertikal dan horizontal harus terlihat jelas di antara metrik.
 - Pada mobile, panel dapat diciutkan/dibuka melalui kontrol ringkasan dan terbuka secara default; di desktop panel tetap tampil tanpa kontrol tambahan.
 - Filter mendukung pencarian server-side berdasarkan nama karyawan, NIP/nomor karyawan, dan nomor pengajuan.

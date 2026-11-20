@@ -1,4 +1,5 @@
 # Feature Checklist
+- [x] Beranda publik Workspace memakai palet pastel lembut, aksen teks yang terarah, animasi halus, dan layout responsif. (Requirement: `requirements/workspace-public-homepage-redesign.md`)
 - [x] Cetakan reimbursement memiliki panel terpisah untuk rincian biaya dan tanda tangan/persetujuan, serta mencantumkan pengguna dan waktu cetak.
 - [x] Pratinjau cetak menempatkan rincian biaya dan persetujuan pada ruang halaman yang tersedia, memindahkannya bila tidak muat, dan memulai lampiran pada halaman baru.
 - [x] Halaman cetak reimbursement menyediakan pilihan A4, Letter, Legal, dan A3; preview seluruh lembar dan ukuran cetak mengikuti pilihan aktif.
@@ -708,6 +709,7 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Filter jenis dan status pengajuan cuti/sakit menggunakan dropdown multiple select dan query server-side
 - [x] Daftar lembur memakai rentang tanggal default awal bulan sampai hari ini dan panel ringkasan jumlah serta total durasi sesuai filter
 - [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
+- [x] Header dan KPI ringkasan lembur dibuat lebih compact dengan judul sejajar tanggal dan latar memakai token global panel KPI Workspace.
 - [x] KPI daftar lembur memakai satu panel ringkasan compact tanpa kartu bersarang, pemisah tipis, dan aksen warna status yang lembut serta responsif
 - [x] Panel KPI lembur dapat diciutkan pada mobile, terbuka secara default, dan tetap statis di desktop
 - [x] KPI cuti/sakit pada halaman daftar memakai pola satu panel compact gradasi lembut seperti KPI lembur, dengan metrik tetap dapat dibuka untuk rincian

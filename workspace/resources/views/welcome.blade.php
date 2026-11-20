@@ -22,13 +22,13 @@
         <section class="workspace-landing-hero" id="platform">
             <div class="workspace-landing-hero-copy">
                 <div class="workspace-landing-eyebrow"><span></span> Satu workspace, semua pekerjaan</div>
-                <h1>Kerja lebih <em>terarah.</em><br>Bisnis lebih terkoneksi.</h1>
-                <p class="workspace-landing-lead">Basilindo Workspace menyatukan data, proses, dan kolaborasi perusahaan dalam satu platform yang aman, terukur, dan mudah digunakan.</p>
+                <h1>Kerja lebih <em>terarah.</em><br>Semua tetap terhubung.</h1>
+                <p class="workspace-landing-lead">Dari data perusahaan hingga dokumen dan pengajuan tim, temukan konteks pekerjaan dalam satu workspace yang dikelola bersama.</p>
                 <div class="workspace-landing-actions">
                     <a class="btn btn-primary btn-lg workspace-landing-primary" href="{{ auth()->check() ? route('dashboard') : route('login') }}">Mulai bekerja <span aria-hidden="true">→</span></a>
                     <a class="workspace-landing-secondary" href="#modules">Jelajahi platform <span aria-hidden="true">↓</span></a>
                 </div>
-                <div class="workspace-landing-trust"><span class="workspace-landing-avatars"><i>B</i><i>F</i><i>A</i></span><span>Dibangun untuk tim yang ingin bekerja lebih cerdas</span></div>
+                <div class="workspace-landing-trust"><span class="workspace-landing-trust-mark" aria-hidden="true">B</span><span>Ruang kerja bersama untuk tim Basilindo</span></div>
             </div>
             <div class="workspace-landing-visual" aria-label="Pratinjau dashboard Basilindo Workspace">
                 <div class="workspace-landing-orb workspace-landing-orb-one"></div>
