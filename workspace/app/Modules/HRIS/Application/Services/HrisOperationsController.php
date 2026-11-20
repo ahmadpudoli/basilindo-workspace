@@ -176,6 +176,10 @@ class HrisOperationsController extends Controller
         $selectedCompanyIds = $normalizeIds($request->query('companies', []));
         if ($companyScope !== null) $selectedCompanyIds = array_values(array_intersect($selectedCompanyIds, $companyScope->map(fn ($id) => (int) $id)->all()));
         $selectedStatuses = collect(is_array($request->query('statuses')) ? $request->query('statuses') : [])->filter(fn ($value) => is_string($value) && array_key_exists($value, $statusOptions))->unique()->values()->all();
+        $approvalByMe = $request->query('approved_by_me');
+        $approvalByMe = in_array($approvalByMe, ['approved', 'rejected'], true)
+            ? $approvalByMe
+            : ($request->boolean('approved_by_me') ? 'approved' : '');
         $searchKeyword = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:120']])['q'] ?? ''));
         $isValidDate = static function ($value): bool { if (! is_string($value) || ! preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $value)) return false; [$year, $month, $day] = array_map('intval', explode('-', $value)); return checkdate($month, $day, $year); };
         $periodFrom = $isValidDate($request->query('from')) ? $request->query('from') : now()->startOfYear()->toDateString();
@@ -189,6 +193,7 @@ class HrisOperationsController extends Controller
             ->when($selectedCompanyIds !== [], fn ($query) => $query->whereIn('company_id', $selectedCompanyIds))
             ->whereHas('entries', fn ($entries) => $entries->whereDate('work_date', '>=', $periodFrom)->whereDate('work_date', '<=', $periodTo))
             ->when($selectedStatuses !== [], fn ($query) => $query->whereIn('status', $selectedStatuses))
+            ->when($approvalByMe !== '', fn ($query) => $query->whereHas('approvalEvents', fn ($events) => $events->where('actor_id', $request->user()->getKey())->where('action', $approvalByMe === 'approved' ? 'approve' : 'reject')))
             ->when($searchKeyword !== '', function ($query) use ($searchKeyword): void { $pattern = '%'.$searchKeyword.'%'; $query->where(function ($search) use ($pattern): void { $search->where('request_number', 'ilike', $pattern)->orWhereHas('employee', fn ($employee) => $employee->where('full_name', 'ilike', $pattern)->orWhere('employee_number', 'ilike', $pattern)); }); });
         $itemsQuery = (clone $filteredQuery)->with(['employee.company', 'entries']);
         if ($sort === 'work_date') {
@@ -204,7 +209,7 @@ class HrisOperationsController extends Controller
             'approved_minutes' => (int) (clone $metricsQuery)->where('status', 'approved')->sum('duration_minutes'),
         ];
 
-        return view('modules.hris-overtime-summary', compact('items', 'metrics', 'companies', 'statusOptions', 'selectedCompanyIds', 'selectedStatuses', 'searchKeyword', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction'));
+        return view('modules.hris-overtime-summary', compact('items', 'metrics', 'companies', 'statusOptions', 'selectedCompanyIds', 'selectedStatuses', 'approvalByMe', 'searchKeyword', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction'));
     }
     public function overtimeCreate(Request $request): View { Gate::authorize('create', OvertimeRequest::class); $requestNumber = OvertimeRequest::generateRequestNumber(); $request->session()->put('hris.request_number.overtime', $requestNumber); return view('modules.hris-overtime-form', ['employees' => Employee::query()->visibleTo($request->user())->where('status', 'active')->orderBy('full_name')->get(), 'requestNumber' => $requestNumber]); }
     public function overtimeStore(OvertimeRequestForm $request, OvertimeService $service): RedirectResponse { Gate::authorize('create', OvertimeRequest::class); $employee = Employee::query()->visibleTo($request->user())->findOrFail($request->validated('employee_id')); $data = $request->validated(); $data['request_number'] = $request->session()->pull('hris.request_number.overtime', null); $service->submit($employee, $data, $request->user()->id); return redirect()->route('workspace.hris.overtime')->with('status', 'Pengajuan lembur berhasil dikirim.'); }
@@ -292,7 +297,9 @@ class HrisOperationsController extends Controller
             'q' => ['nullable', 'string', 'max:120'],
             'min_amount' => ['nullable', 'numeric', 'min:0'],
             'max_amount' => ['nullable', 'numeric', 'min:0'],
+            'decision_by_me' => ['nullable', 'in:approved,rejected'],
         ]) : [];
+        $decisionByMe = $summaryFilterInput['decision_by_me'] ?? '';
         $listFilterInput = $summaryView ? [] : $request->validate(['q' => ['nullable', 'string', 'max:120']]);
         $searchKeyword = trim((string) (($summaryFilterInput['q'] ?? null) ?? ($listFilterInput['q'] ?? '')));
         $minimumAmount = isset($summaryFilterInput['min_amount']) ? (float) $summaryFilterInput['min_amount'] : null;
@@ -306,6 +313,7 @@ class HrisOperationsController extends Controller
             ->whereDate('created_at', '<=', $periodTo)
             ->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))
             ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
+            ->when($decisionByMe !== '', fn ($q) => $q->whereHas('approvalEvents', fn ($events) => $events->where('actor_id', $request->user()->getKey())->where('action', $decisionByMe === 'approved' ? 'approve' : 'reject')))
             ->when($selectedPaymentStatuses !== [], function ($q) use ($selectedPaymentStatuses): void {
                 $paymentStates = array_values(array_intersect($selectedPaymentStatuses, ['pending_payment', 'paid']));
                 $q->where('type', 'reimbursement')->where(function ($paymentQuery) use ($selectedPaymentStatuses, $paymentStates): void {
@@ -375,7 +383,7 @@ class HrisOperationsController extends Controller
             ->orderBy($sort, $direction)
             ->paginate($perPage)
             ->withQueryString();
-        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedPaymentStatuses', 'paymentStatusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'claimListMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount'));
+        return view('modules.hris-claims-enhanced', compact('items', 'activeTabType', 'selectedStatuses', 'statusOptions', 'selectedPaymentStatuses', 'paymentStatusOptions', 'selectedTypes', 'typeOptions', 'selectedCategories', 'categoryOptions', 'periodFrom', 'periodTo', 'perPage', 'sort', 'direction', 'summaryView', 'summaryMetrics', 'claimListMetrics', 'summaryCompanies', 'selectedCompanyIds', 'searchKeyword', 'minimumAmount', 'maximumAmount', 'decisionByMe'));
     }
     public function claimCreate(Request $request): View
     {

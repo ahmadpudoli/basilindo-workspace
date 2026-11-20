@@ -14,6 +14,7 @@ Memudahkan peninjauan pengajuan lembur pada cakupan perusahaan yang diizinkan, d
 - Pada mobile, panel dapat diciutkan/dibuka melalui kontrol ringkasan dan terbuka secara default; di desktop panel tetap tampil tanpa kontrol tambahan.
 - Filter mendukung pencarian server-side berdasarkan nama karyawan, NIP/nomor karyawan, dan nomor pengajuan.
 - Filter perusahaan dan status mendukung pilihan berganda melalui dropdown dan hanya menawarkan pilihan yang berada dalam scope akses pengguna.
+- Filter riwayat approval menyediakan “Disetujui oleh saya” dan “Ditolak oleh saya”, masing-masing hanya menampilkan pengajuan lembur yang memiliki event `approve` atau `reject` oleh pengguna login pada tahap atasan atau HR; filter ini dapat dipakai bersama filter tanggal, perusahaan, status, kata kunci, sorting, dan pagination.
 - Periode mulai default ke 1 Januari tahun berjalan dan periode akhir default ke hari ini; filter tanggal, perusahaan, status, kata kunci, dan pagination bekerja bersama.
 - Tabel menampilkan karyawan/NIP, nomor pengajuan, perusahaan, realisasi (jumlah rincian dan rentang tanggal), jam, durasi, status, dan aksi dengan lebar kolom proporsional serta scroll horizontal pada layar kecil. Rentang filter tanggal mengevaluasi tanggal realisasi rincian lembur.
 - Kolom aksi memakai tombol dropdown compact berikon tiga titik vertikal dengan menu Lihat detail.

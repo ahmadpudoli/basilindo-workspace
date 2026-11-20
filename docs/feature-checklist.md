@@ -63,7 +63,10 @@
 - [x] Ikon menu aksi daftar klaim dibedakan sesuai tindakan Detail, Edit draft, dan Hapus draft.
 - [x] Kolom status pada daftar klaim cukup lebar untuk menjaga label status tetap satu baris, dengan kolom aksi tetap ringkas.
 - [x] Filter ringkasan klaim menyediakan kata kunci nama/nomor/status/kategori, rentang nominal total, dan tata letak dua baris responsif.
+- [x] Filter Status pembayaran hanya muncul pada ringkasan Reimbursement; Cash Advance tidak menampilkan filter tersebut.
+- [x] Pada ringkasan reimbursement desktop lebar, kolom periode/nominal/jumlah baris memiliki lebar seragam dan tombol filter berada di baris kedua.
 - [x] Filter status ringkasan klaim hanya menawarkan status yang berlaku untuk jenis workflow aktif; status pembayaran khusus reimbursement dan pertanggungjawaban khusus cash advance dipisahkan.
+- [x] Ringkasan reimbursement dan cash advance menyediakan filter riwayat “Disetujui oleh saya”/“Ditolak oleh saya” berdasarkan event keputusan pengguna login.
 - [x] Status pengajuan dan status pembayaran reimbursement disimpan, difilter, ditampilkan, serta diagregasi terpisah; status pembayaran tetap null sebelum approval, otomatis menunggu pembayaran setelah approval final, lalu dibayar tanpa mengubah status pengajuan dari Disetujui.
 - [x] Ringkasan Reimbursement menyediakan modal AJAX untuk mencatat pembayaran tanpa meninggalkan halaman, menampilkan loading setelah validasi client lolos hingga response server diterima, memakai format nominal `id-ID` dengan input angka/koma saja dan tanpa pemisah ribuan saat diedit, serta memberi informasi dan konfirmasi melalui modal Workspace ketika nominal pembayaran berbeda dari total pengajuan; aksi dibatasi untuk `finance_admin`/`super_admin` dan endpoint mencegah pencatatan ganda.
 - [x] Ringkasan reimbursement hanya merender satu tabel; popup mewajibkan tanggal dan file bukti pembayaran maksimal 5 MB dengan thumbnail gambar serta aksi ganti/hapus; validasi client/server dan kompresi gambar tetap berlaku.
@@ -710,6 +713,9 @@ Status: `[ ]` belum mulai, `[-]` berjalan, `[x]` selesai, `[!]` blocked/keputusa
 - [x] Daftar lembur memakai rentang tanggal default awal bulan sampai hari ini dan panel ringkasan jumlah serta total durasi sesuai filter
 - [x] Ringkasan lembur memecah jumlah dan durasi menjadi total, disetujui, dalam proses, ditolak, dan draft
 - [x] Header dan KPI ringkasan lembur dibuat lebih compact dengan judul sejajar tanggal dan latar memakai token global panel KPI Workspace.
+- [x] Ringkasan lembur memiliki filter “Disetujui oleh saya” dan “Ditolak oleh saya” berdasarkan event approval pengguna login.
+- [x] Ringkasan cuti dan sakit memiliki filter keputusan “Disetujui oleh saya”/“Ditolak oleh saya” berdasarkan event approval pengguna login.
+- [x] KPI Ringkasan Cuti & Sakit memakai style global, tinggi compact, ornamen lingkaran kanan, dan collapsible default tertutup pada mobile.
 - [x] KPI daftar lembur memakai satu panel ringkasan compact tanpa kartu bersarang, pemisah tipis, dan aksen warna status yang lembut serta responsif
 - [x] Panel KPI lembur dapat diciutkan pada mobile, terbuka secara default, dan tetap statis di desktop
 - [x] KPI cuti/sakit pada halaman daftar memakai pola satu panel compact gradasi lembut seperti KPI lembur, dengan metrik tetap dapat dibuka untuk rincian

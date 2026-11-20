@@ -142,6 +142,11 @@ class LeaveRequestController extends Controller
         };
         $selectedTypes = $normalizeSelections($request->input('type', []), $typeOptions);
         $selectedStatuses = $normalizeSelections($request->input('status', []), $statusOptions);
+        $decisionByMe = in_array($request->query('decision_by_me'), ['approved', 'rejected'], true)
+            ? $request->query('decision_by_me')
+            : ($request->boolean('approved_by_me') ? 'approved' : null);
+        $myDecisionAction = match ($decisionByMe) { 'approved' => 'approve', 'rejected' => 'reject', default => null };
+        $approverId = (int) $request->user()->getKey();
         $yearInput = $request->string('year')->toString();
         $year = $yearInput === 'all' ? null : ($request->integer('year') ?: now()->year);
         $searchKeyword = trim((string) ($request->validate(['q' => ['nullable', 'string', 'max:120']])['q'] ?? ''));
@@ -155,6 +160,7 @@ class LeaveRequestController extends Controller
             ->where('status', '!=', 'draft')
             ->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))
             ->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))
+            ->when($myDecisionAction !== null, fn ($q) => $q->whereHas('approvalEvents', fn ($events) => $events->where('actor_id', $approverId)->where('action', $myDecisionAction)))
             ->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)))
             ->when($searchKeyword !== '', function (Builder $q) use ($searchKeyword): void {
                 $pattern = '%'.$searchKeyword.'%';
@@ -172,14 +178,14 @@ class LeaveRequestController extends Controller
         }
 
         $requests = $query->paginate($perPage)->withQueryString();
-        $metricsQuery = LeaveRequestModel::query()->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))->where('status', '!=', 'draft')->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)))->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses));
+        $metricsQuery = LeaveRequestModel::query()->when($companyScope !== null, fn ($q) => $q->whereIn('company_id', $companyScope))->where('status', '!=', 'draft')->when($year !== null, fn ($q) => $q->whereHas('dates', fn ($dateQuery) => $dateQuery->whereYear('leave_date', $year)))->when($selectedTypes !== [], fn ($q) => $q->whereIn('type', $selectedTypes))->when($selectedStatuses !== [], fn ($q) => $q->whereIn('status', $selectedStatuses))->when($myDecisionAction !== null, fn ($q) => $q->whereHas('approvalEvents', fn ($events) => $events->where('actor_id', $approverId)->where('action', $myDecisionAction)));
         $metrics = [
             'total' => (clone $metricsQuery)->count(),
             'pending' => (clone $metricsQuery)->whereIn('status', ['pending_manager', 'pending_hr'])->count(),
-            'approved_days' => $selectedStatuses !== [] && ! in_array('approved', $selectedStatuses, true) ? 0 : (int) LeaveRequestDate::query()->whereHas('leaveRequest', fn ($q) => $q->when($companyScope !== null, fn ($nested) => $nested->whereIn('company_id', $companyScope))->where('status', 'approved')->when($selectedTypes !== [], fn ($nested) => $nested->whereIn('type', $selectedTypes)))->when($year !== null, fn ($q) => $q->whereYear('leave_date', $year))->count(),
+            'approved_days' => $decisionByMe === 'rejected' || ($selectedStatuses !== [] && ! in_array('approved', $selectedStatuses, true)) ? 0 : (int) LeaveRequestDate::query()->whereHas('leaveRequest', fn ($q) => $q->when($companyScope !== null, fn ($nested) => $nested->whereIn('company_id', $companyScope))->where('status', 'approved')->when($selectedTypes !== [], fn ($nested) => $nested->whereIn('type', $selectedTypes))->when($myDecisionAction !== null, fn ($nested) => $nested->whereHas('approvalEvents', fn ($events) => $events->where('actor_id', $approverId)->where('action', $myDecisionAction))))->when($year !== null, fn ($q) => $q->whereYear('leave_date', $year))->count(),
         ];
 
-        return view('modules.hris-leave-summary', compact('requests', 'typeOptions', 'statusOptions', 'selectedTypes', 'selectedStatuses', 'year', 'perPage', 'sort', 'direction', 'metrics', 'searchKeyword'));
+        return view('modules.hris-leave-summary', compact('requests', 'typeOptions', 'statusOptions', 'selectedTypes', 'selectedStatuses', 'decisionByMe', 'year', 'perPage', 'sort', 'direction', 'metrics', 'searchKeyword'));
     }
 
     public function edit(Request $request, LeaveRequestModel $leaveRequest): View

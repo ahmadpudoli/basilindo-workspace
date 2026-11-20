@@ -14,6 +14,7 @@ Menyajikan ikhtisar pengajuan biaya karyawan yang mudah dibaca pada desktop dan 
 - Ikhtisar menampilkan jumlah pengajuan, jumlah nominal yang dikelompokkan per mata uang (tanpa menjumlahkan mata uang berbeda), jumlah dalam proses, serta jumlah disetujui (atau selesai untuk Cash Advance).
 - Tabel pengajuan menampilkan identitas karyawan, nomor pengajuan, perusahaan, tanggal, tujuan, kategori, referensi project jika ada, nominal, Status pengajuan, Status pembayaran, dan tautan detail yang diotorisasi.
 - Daftar dan metrik mengikuti periode, perusahaan, kedua status, kategori, kata kunci, rentang nominal, serta pagination yang dipilih; filter dipertahankan di query string.
+- Ringkasan Reimbursement dan Cash Advance menyediakan filter riwayat “Disetujui oleh saya”/“Ditolak oleh saya” berdasarkan event approval (`approve`/`reject`) oleh pengguna login; filter berlaku pada daftar, metrik, dan pagination bersama filter lainnya.
 - Tampilan ringkasan menggunakan tabel yang dapat digeser horizontal pada layar kecil, dengan pagination dan jumlah baris standar 10/25/50/100.
 - Tabel memakai lebar kolom eksplisit; Status dibatasi sekitar 10% dan Aksi mendapat sekitar 10% agar tombol tetap muat. Label status panjang membungkus di dalam kolom.
 - Kolom Aksi hanya menampilkan tombol dropdown ikon tiga titik vertikal yang dirender sebagai SVG inline; menu bergaya modern menyediakan ikon SVG untuk detail dan cetak.
@@ -29,6 +30,8 @@ Menyajikan ikhtisar pengajuan biaya karyawan yang mudah dibaca pada desktop dan 
 - Pencarian kata kunci menyaring nama karyawan, nomor pengajuan, label/kode status, dan kategori rincian.
 - Filter rentang nominal minimum/maksimum menyaring total pengajuan, memvalidasi nilai numerik non-negatif, dan mengikuti seluruh agregat serta pagination.
 - Filter disusun dalam dua baris di desktop lebar dan membungkus pada viewport yang lebih sempit.
+- Filter Status pembayaran hanya tersedia pada ringkasan Reimbursement. Cash Advance tidak merender kontrol tersebut dan menata ulang field lain dalam grid desktop dua baris.
+- Pada ringkasan Reimbursement di desktop lebar, filter periode, nominal minimum/maksimum, dan jumlah baris memiliki lebar kolom seragam; tombol Reset/Terapkan berada pada baris kedua bersama field tersebut.
 - Periode tanggal pada filter terisi otomatis dari awal bulan berjalan hingga hari ini, selaras dengan rentang pada ikhtisar.
 - Tombol Reset/Terapkan berada tepat setelah kolom nominal maksimum pada desktop lebar.
 - Pada layar kecil, tabel tetap dapat digulir horizontal tanpa kolom kategori, nominal, status, dan aksi saling menimpa; tombol aksi dan dropdown menu memakai ukuran compact.

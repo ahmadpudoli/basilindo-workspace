@@ -11,8 +11,13 @@ Menyediakan ringkasan pengajuan cuti dan sakit dalam scope perusahaan yang mudah
 - Lebar kolom ditetapkan proporsional; tanggal dapat membungkus, status tetap terbaca, dan tabel dapat digulir horizontal pada layar kecil tanpa isi kolom saling menimpa.
 - Kolom Aksi hanya menampilkan tombol dropdown compact berikon tiga titik vertikal. Menu menyediakan detail dan pratinjau dokumen bila tersedia, menggunakan pola posisi viewport agar tidak terpotong tabel, dan mempertahankan authorization yang berlaku.
 - Metrik Total pengajuan, Masih diproses, dan Hari disetujui disajikan dalam satu panel ringkasan modern berwarna dengan pemisah, bukan kartu terpisah.
+- KPI Ringkasan Cuti & Sakit memakai panel global `workspace-overtime-summary-panel` dan `workspace-overtime-summary-card`, termasuk latar, aksen lingkaran kanan, serta padding vertikal compact. Toggle collapsible memakai class global `.workspace-mobile-panel` sehingga border dan latarnya sama dengan panel Filter data.
+- Pada mobile, panel KPI dapat dibuka/tutup dan dimulai dalam keadaan collapsed; pada desktop panel tampil tanpa toggle.
 - Scope data ringkasan tetap dibatasi berdasarkan permission dan perusahaan yang dapat diakses pengguna.
 - Filter jenis cuti dan status mendukung banyak pilihan melalui dropdown, menerapkan seluruh pilihan di server, serta mempertahankan pilihan melalui query string dan pagination. Filter tahun, kata kunci, dan jumlah baris tetap bekerja bersama.
+- Dropdown riwayat approval menyediakan “Disetujui oleh saya” dan “Ditolak oleh saya”, berdasarkan event keputusan (`approve`/`reject`) oleh pengguna login pada tahap atasan atau HR; filter dapat dipakai bersama jenis, status, tahun, kata kunci, sorting, dan pagination.
+- Panel KPI memakai style global `workspace-overtime-summary-panel`/`workspace-overtime-summary-card`, dengan padding vertikal compact dan aksen lingkaran di ujung kanan.
+- Pada tampilan mobile, KPI menggunakan panel collapsible global dan dalam kondisi collapsed secara default.
 - Detail cuti/sakit menempatkan dokumen pendukung di panel tanggal dan alasan, tepat setelah alasan pengajuan; pratinjau/unduh tetap mengikuti authorization yang berlaku.
 - Panel tanggal detail menampilkan identitas pemohon, NIP/nomor karyawan, perusahaan, dan unit/jabatan seperti informasi pemohon pada detail approval.
 - Pada desktop, panel tanggal menggunakan 7/12 lebar baris dan timeline approval 5/12; pada layar kecil kedua panel tetap menumpuk.

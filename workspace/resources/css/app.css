@@ -207,6 +207,7 @@ html[data-theme="dark"] .theme-icon-dark { display: block; }
 .workspace-mobile-panel-toggle { display: none; }
 .workspace-mobile-panel-content { display: block; }
 .workspace-mobile-kpi-panel > .workspace-mobile-panel-content { padding: 0; }
+.workspace-mobile-kpi-panel > .workspace-overtime-summary-panel { padding: 0; }
 @media (min-width: 769px) { .workspace-leave-quota.workspace-mobile-panel-content { display: grid; } }
 .workspace-leave-dates { display: flex; flex-direction: column; gap: 8px; }
 .workspace-leave-date-row { align-items: start; display: grid; gap: 0 9px; grid-template-columns: 28px minmax(0, 320px) auto; }
@@ -269,6 +270,9 @@ html[data-theme="dark"] .theme-icon-dark { display: block; }
     .workspace-mobile-panel-toggle span { align-items: center; border: 1px solid var(--workspace-border); border-radius: 50%; color: var(--workspace-primary); display: inline-flex; font-size: 1rem; height: 24px; justify-content: center; line-height: 1; width: 24px; }
     .workspace-mobile-panel-content { display: none; }
     .workspace-mobile-panel.is-open .workspace-mobile-panel-content { display: block; }
+    .workspace-mobile-kpi-panel:not(.is-open) > .workspace-mobile-panel-content { display: none; }
+    .workspace-mobile-kpi-panel.is-open > .workspace-mobile-panel-content { display: grid; margin-top: 6px !important; }
+    .workspace-mobile-kpi-panel.is-open > .workspace-overtime-summary-panel { margin: 8px !important; padding: 0; width: calc(100% - 16px); }
     .workspace-mobile-kpi-panel.is-open > .workspace-mobile-panel-content { padding: 8px 10px 10px; }
     .workspace-mobile-kpi-panel.is-open .workspace-mobile-kpi-panel-grid { display: grid; }
     .workspace-mobile-panel.is-open .workspace-leave-quota { display: grid; }
